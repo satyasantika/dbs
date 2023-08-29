@@ -30,7 +30,7 @@ class RoleController extends Controller
     public function store(RoleRequest $request)
     {
         Role::create($request->all());
-        return $this->index();
+        return to_route('roles.index');
     }
 
     public function edit(Role $role)
@@ -43,14 +43,12 @@ class RoleController extends Controller
         $data = $request->all();
         $role->fill($data)->save();
 
-        return $this->index();
+        return to_route('roles.index');
     }
 
     public function destroy(Role $role)
     {
-        $name = $role->name;
-
         $role->delete();
-        return $this->index();
+        return to_route('roles.index');
     }
 }

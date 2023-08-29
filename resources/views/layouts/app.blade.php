@@ -31,23 +31,6 @@
                     <!-- Left Side Of Navbar -->
                     <ul class="navbar-nav me-auto">
                         @auth
-                            {{-- add MENU from database --}}
-                            <li class="nav-item dropdown">
-                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
-                                    menu
-                                </a>
-                                @foreach (\App\Models\Navigation::whereNotNull('parent_id')->orderBy('order')->get() as $menu)
-                                @can('read '.$menu->url)
-
-                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
-                                    <a href="{{ url($menu->url) }}" class="dropdown-item">
-                                        {{-- <i class="ti-home"></i> --}}
-                                        <span>{{ $menu->name }}</span>
-                                    </a>
-                                </div>
-                                @endcan
-                                @endforeach
-                            </li>
                         @endauth
                     </ul>
 
@@ -67,6 +50,22 @@
                                 </li>
                             @endif
                         @else
+                            {{-- add MENU from database --}}
+                            <li class="nav-item dropdown">
+                                <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
+                                    Menu
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    @foreach (\App\Models\Navigation::whereNotNull('parent_id')->orderBy('order')->get() as $menu)
+                                    @can('read '.$menu->url)
+                                    <a href="{{ url($menu->url) }}" class="dropdown-item">
+                                        <span>{{ $menu->name }}</span>
+                                    </a>
+                                    @endcan
+                                    @endforeach
+                                </div>
+                            </li>
+                            {{-- menu default for Logout --}}
                             <li class="nav-item dropdown">
                                 <a id="navbarDropdown" class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" v-pre>
                                     {{ Auth::user()->name }}
