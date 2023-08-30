@@ -19,7 +19,7 @@
                                     {{ $role->name }}
                                 </td>
                                 <td>
-                                    <form id="delete-form" action="{{ route('roles.destroy',[ 'role'=>$role->id ]) }}" method="POST">
+                                    <form id="delete-form" action="{{ route('roles.destroy',$role->id) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $role->name }}?');">

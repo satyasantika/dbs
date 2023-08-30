@@ -32,6 +32,9 @@ class PermissionSeeder extends Seeder
             'roles',
             'users',
             'permissions',
+            'setting/rolepermissions',
+            'setting/userroles',
+            'setting/userpermissions',
         ];
         $permissions = [];
         foreach ($alone_access as $access_value) {
@@ -48,9 +51,6 @@ class PermissionSeeder extends Seeder
             ['role','setting/roles'],
             ['permission','setting/permissions'],
             ['user','setting/users'],
-            ['role permission','setting/rolepermissions'],
-            ['user role','setting/userroles'],
-            ['user permission','setting/userpermissions'],
             ['navigation','setting/navigations'],
         ];
 

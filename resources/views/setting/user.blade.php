@@ -20,7 +20,7 @@
                                     {{ $user->name }} <span class="text-primary">({{ $user->getRoleNames()->implode(', ') }})</span>
                                 </td>
                                 <td>
-                                    <form id="activation-form" action="{{ route('users.activation',[ 'user'=>$user->id ]) }}" method="POST">
+                                    <form id="activation-form" action="{{ route('users.activation',$user->id) }}" method="POST">
                                         @csrf
                                         @method('PUT')
                                         <button type="submit" class="btn btn-{{ $user->na ? 'outline-danger' : 'primary' }} btn-sm float-end">
