@@ -14,15 +14,16 @@
                             @forelse ($users as $user)
                             <tr>
                                 <td>
-                                    <a href="{{ route('users.edit',[ 'user'=>$user->id ]) }}" class="btn btn-outline-primary btn-sm">{{ $user->username }}</a>
-                                    {{ $user->name }}
+                                    <a href="{{ route('userroles.edit',$user->id) }}" class="btn btn-outline-primary btn-sm">R</a>
+                                    <a href="{{ route('userpermissions.edit',$user->id) }}" class="btn btn-outline-primary btn-sm">P</a>
+                                    <a href="{{ route('users.edit',$user->id) }}" class="btn btn-outline-primary btn-sm">E</a>
+                                    {{ $user->name }} <span class="text-primary">({{ $user->getRoleNames()->implode(', ') }})</span>
                                 </td>
                                 <td>
                                     <form id="activation-form" action="{{ route('users.activation',[ 'user'=>$user->id ]) }}" method="POST">
                                         @csrf
                                         @method('PUT')
-                                        {{-- <input type="hidden" name="na" value={{ $user->na ? 0 : 1 }}> --}}
-                                        <button type="submit" class="btn btn-outline-danger btn-sm float-end">
+                                        <button type="submit" class="btn btn-{{ $user->na ? 'outline-danger' : 'primary' }} btn-sm float-end">
                                             {{ $user->na ? 'non aktif' : 'aktif' }}
                                         </button>
                                     </form>
@@ -39,3 +40,5 @@
     </div>
 </div>
 @endsection
+
+

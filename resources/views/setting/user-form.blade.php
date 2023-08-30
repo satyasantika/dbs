@@ -9,7 +9,7 @@
                     {{ $user->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
                     @if ($user->id)
 
-                    <form id="delete-form" action="{{ route('users.destroy',[ 'user'=>$user->id ]) }}" method="POST">
+                    <form id="delete-form" action="{{ route('users.destroy',$user->id) }}" method="POST">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $user->name }}?');">

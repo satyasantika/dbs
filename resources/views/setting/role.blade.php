@@ -14,8 +14,8 @@
                             @forelse ($roles as $role)
                             <tr>
                                 <td>
-                                    <a href="#" class="btn btn-outline-secondary btn-sm">P</a>
-                                    <a href="{{ route('roles.edit',[ 'role'=>$role->id ]) }}" class="btn btn-outline-primary btn-sm">E</a>
+                                    <a href="{{ route('rolepermissions.edit',$role->id) }}" class="btn btn-outline-primary btn-sm">P</a>
+                                    <a href="{{ route('roles.edit',$role->id) }}" class="btn btn-outline-primary btn-sm">E</a>
                                     {{ $role->name }}
                                 </td>
                                 <td>
