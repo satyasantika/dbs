@@ -33,12 +33,12 @@ class PermissionController extends Controller
         return to_route('permissions.index');
     }
 
-    public function edit(Permission $Permission)
+    public function edit(Permission $permission)
     {
         return view('setting.permission-form', compact('permission'));
     }
 
-    public function update(PermissionRequest $request, Permission $Permission)
+    public function update(PermissionRequest $request, Permission $permission)
     {
         $data = $request->all();
         $permission->fill($data)->save();
