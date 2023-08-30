@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('birth_date')->nullable();
             $table->text('address')->nullable();
             $table->string('phone')->nullable();
-            $table->boolean('na')->nullable()->default(0);
+            $table->boolean('na')->default(0);
         });
     }
 
