@@ -29,9 +29,11 @@ class UserRoleController extends Controller
     public function update(Request $request, $id)
     {
         DB::table('model_has_roles')->where('model_id',$id)->delete();
-        User::find($id)->assignRole($request->roles);
+        $user = User::find($id);
+        $name = strtoupper($user->name);
+        $user->assignRole($request->roles);
 
-        return to_route('users.index');
+        return to_route('users.index')->with('success','role untuk user '.$name.' telah diperbarui');
     }
 
 }

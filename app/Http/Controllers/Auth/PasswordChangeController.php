@@ -42,12 +42,10 @@ class PasswordChangeController extends Controller
     {
         //Change Password
         $user = User::find($id);
+        $name = strtoupper($user->name);
         $user->password = bcrypt($user->username);
         $user->save();
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Password untuk <strong>'.$user->name.'</strong> telah direset'
-        ]);
+        return to_route('users.edit',$id)->with("success",'Password untuk '.$name.' telah direset');
     }
 }

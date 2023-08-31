@@ -19,9 +19,9 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::put('/setting/users/{user}/activation', [App\Http\Controllers\Setting\UserController::class, 'activation'])->name('users.activation');
-    Route::get('/password/change', [App\Http\Controllers\Auth\PasswordChangeController::class, 'showChangePasswordGet'])->name('password.change');
-    Route::post('/password/change', [App\Http\Controllers\Auth\PasswordChangeController::class, 'changePasswordPost'])->name('password.update');
-    Route::post('/password/reset/{id}', [App\Http\Controllers\Auth\PasswordChangeController::class, 'resetPasswordPost'])->name('password.reset');
+    Route::get('/mypassword/change', [App\Http\Controllers\Auth\PasswordChangeController::class, 'showChangePasswordGet'])->name('mypassword.change');
+    Route::post('/mypassword/change', [App\Http\Controllers\Auth\PasswordChangeController::class, 'changePasswordPost'])->name('mypassword.update');
+    Route::post('/mypassword/reset/{id}', [App\Http\Controllers\Auth\PasswordChangeController::class, 'resetPasswordPost'])->name('mypassword.reset');
     Route::resource('profiles', App\Http\Controllers\ProfileController::class)->only(['index','edit','update']);
     Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
     Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');

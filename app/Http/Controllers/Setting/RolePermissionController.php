@@ -28,9 +28,11 @@ class RolePermissionController extends Controller
 
     public function update(Request $request, $id)
     {
-        Role::find($id)->syncPermissions($request->permission);
+        $role = Role::find($id);
+        $name = strtoupper($role->name);
+        $role->syncPermissions($request->permission);
 
-        return to_route('roles.index');
+        return to_route('roles.index')->with('success','permission untuk role '.$name.' telah diperbarui');
     }
 
 }

@@ -42,11 +42,11 @@ class UserSeeder extends Seeder
                 User::create([
                     'username'  => $data[0],
                     'name'      => $data[1],
-                    'email'     => $data[2],
-                    'password'  => Hash::make($data[3]),
+                    'phone'     => $data[2],
+                    'address'   => $data[3],
+                    'email'     => $data[4],
+                    'password'  => Hash::make($data[5]),
 
-                    'phone'     => $data[5],
-                    'address'   => $data[6],
                 ])->assignRole('mahasiswa');
             }
             $transRow = false;

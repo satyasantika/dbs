@@ -73,7 +73,7 @@
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     <a class="dropdown-item" href="{{ route('profiles.index') }}">Profil</a>
-                                    <a class="dropdown-item" href="{{ route('password.change') }}">Ubah Password</a>
+                                    <a class="dropdown-item" href="{{ route('mypassword.change') }}">Ubah Password</a>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
                                        onclick="event.preventDefault();
                                                      document.getElementById('logout-form').submit();">

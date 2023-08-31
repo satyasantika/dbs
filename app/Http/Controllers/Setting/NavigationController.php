@@ -35,13 +35,14 @@ class NavigationController extends Controller
 
     public function store(Request $request)
     {
+        $name = strtoupper($request->name);
         if ($request->parent_id > 0) {
             Navigation::find($request->parent_id)->children()->create($request->all());
         } else {
             $request->parent_id = null;
             Navigation::create($request->all());
         }
-        return to_route('navigations.index');
+        return to_route('navigations.index')->with('success','menu '.$name.' telah ditambahkan');
     }
 
     public function edit(Navigation $navigation)
@@ -56,17 +57,18 @@ class NavigationController extends Controller
 
     public function update(Request $request, Navigation $navigation)
     {
+        $name = strtoupper($navigation->name);
         $data = $request->all();
         $navigation->fill($data)->save();
 
-        return to_route('navigations.index');
+        return to_route('navigations.index')->with('success','menu '.$name.' telah diperbarui');
     }
 
     public function destroy(Navigation $navigation)
     {
-        $name = $navigation->name;
+        $name = strtoupper($navigation->name);
         $navigation->delete();
-        return to_route('navigations.index');
+        return to_route('navigations.index')->with('warning','menu '.$name.' telah dihapus');
     }
 
     private function _dataSelection()

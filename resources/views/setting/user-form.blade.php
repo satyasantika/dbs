@@ -14,6 +14,7 @@
 @endpush
 
 @push('body')
+
 <form id="formAction" action="{{ $user->id ? route('users.update',$user->id) : route('users.store') }}" method="post">
     @csrf
     @if ($user->id)
@@ -47,18 +48,11 @@
             <div class="col-md-6">
                 @if ($user->id)
                     {{-- TODO - Reset Password --}}
-                    <a class="btn btn-warning" href="#"
-                        onclick="event.preventDefault();
-                                    if (confirm('yakin direset?')){
-                                        document.getElementById('passwordreset-form').submit();
-                                    }
-                                    ">
+                    <a class="btn btn-warning btn-sm" href="#" onclick="event.preventDefault(); if (confirm('yakin direset?')){ document.getElementById('formReset').submit(); }">
                         {{ __('Reset') }}
                     </a>
-                    <form id="passwordreset-form" action="{{ route('password.reset',$user->id) }}" method="POST" class="d-none">
-                        @csrf
-                    </form>
-                    <input type="hidden" placeholder="password" value="{{ $user->password }}" name="password" class="form-control" id="password" required>
+
+                    <input type="hidden" value="{{ $user->password }}" name="password" class="form-control" id="password">
                 @else
                     <input type="password" placeholder="password" value="{{ $user->password }}" name="password" class="form-control" id="password" required>
                 @endif
@@ -108,7 +102,20 @@
                 <input type="date" placeholder="birth_date" value="{{ $user->birth_date ? $user->birth_date->format('Y-m-d') : date('Y-m-d') }}" name="birth_date" class="form-control" id="birth_date">
             </div>
         </div>
-        {{-- submit Button --}}
+        {{-- Address --}}
+        <div class="row mb-3">
+            <label for="address" class="col-md-4 col-form-label text-md-end">Alamat Jelas</label>
+            <div class="col-md-8">
+                <textarea name="address" rows="5" class="form-control" id="address">{{ $user->address }}</textarea>
+            </div>
+        </div>
+        {{-- Phone --}}
+        <div class="row mb-3">
+            <label for="phone" class="col-md-4 col-form-label text-md-end">no. WA aktif</label>
+            <div class="col-md-8">
+                <input type="text" placeholder="phone" value="{{ $user->phone }}" name="phone" class="form-control" id="phone">
+            </div>
+        </div>        {{-- submit Button --}}
         <div class="row mb-0">
             <div class="col-md-8 offset-md-4">
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
@@ -117,4 +124,10 @@
         </div>
     </div>
 </form>
+
+@if ($user->id)
+<form id="formReset" action="{{ route('mypassword.reset',$user->id) }}" method="POST" class="d-none">
+    @csrf
+</form>
+@endif
 @endpush

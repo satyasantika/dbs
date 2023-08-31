@@ -29,8 +29,9 @@ class RoleController extends Controller
 
     public function store(RoleRequest $request)
     {
+        $name = strtoupper($request->name);
         Role::create($request->all());
-        return to_route('roles.index');
+        return to_route('roles.index')->with('success','role '.$name.' telah ditambahkan');
     }
 
     public function edit(Role $role)
@@ -40,15 +41,17 @@ class RoleController extends Controller
 
     public function update(RoleRequest $request, Role $role)
     {
+        $name = strtoupper($role->name);
         $data = $request->all();
         $role->fill($data)->save();
 
-        return to_route('roles.index');
+        return to_route('roles.index')->with('success','role '.$name.' telah diperbarui');
     }
 
     public function destroy(Role $role)
     {
+        $name = strtoupper($role->name);
         $role->delete();
-        return to_route('roles.index');
+        return to_route('roles.index')->with('warning','role '.$name.' telah dihapus');
     }
 }

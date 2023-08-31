@@ -29,8 +29,9 @@ class PermissionController extends Controller
 
     public function store(PermissionRequest $request)
     {
+        $name = strtoupper($request->name);
         Permission::create($request->all());
-        return to_route('permissions.index');
+        return to_route('permissions.index')->with('success','permission '.$name.' telah ditambahkan');
     }
 
     public function edit(Permission $permission)
@@ -40,15 +41,17 @@ class PermissionController extends Controller
 
     public function update(PermissionRequest $request, Permission $permission)
     {
+        $name = strtoupper($permission->name);
         $data = $request->all();
         $permission->fill($data)->save();
 
-        return to_route('permissions.index');
+        return to_route('permissions.index')->with('success','permission '.$name.' telah diperbarui');
     }
 
     public function destroy(Permission $permission)
     {
+        $name = strtoupper($permission->name);
         $permission->delete();
-        return to_route('permissions.index');
+        return to_route('permissions.index')->with('warning','permission '.$name.' telah dihapus');
     }
 }

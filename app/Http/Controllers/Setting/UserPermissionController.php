@@ -27,8 +27,10 @@ class UserPermissionController extends Controller
     public function update(Request $request, $id)
     {
         DB::table('model_has_permissions')->where('model_id',$id)->delete();
-        User::find($id)->givePermissionTo($request->permission);
+        $user = User::find($id);
+        $name = strtoupper($user->name);
+        $user->givePermissionTo($request->permission);
 
-        return to_route('users.index');
+        return to_route('users.index')->with('success','permission untuk user '.$name.' telah diperbarui');
     }
 }
