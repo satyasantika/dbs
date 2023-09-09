@@ -3,21 +3,20 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use App\Models\ExamExaminer;
+use App\Models\ProposalGuide;
+use App\Models\ProposalStage;
+use App\Models\ExamRegistration;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
@@ -28,28 +27,38 @@ class User extends Authenticatable
         'birth_date',
         'address',
         'phone',
-        'na',
+        'is_active',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'birth_date' => 'date',
-        'na' => 'boolean',
+        'is_active' => 'boolean',
     ];
+
+    public function proposalstudents(): hasMany
+    {
+        return $this->hasMany(ProposalStage::class);
+    }
+
+    public function proposalguides(): hasMany
+    {
+        return $this->hasMany(ProposalGuide::class);
+    }
+
+    public function examregistrations(): hasMany
+    {
+        return $this->hasMany(ExamRegistration::class);
+    }
+
+    public function examexaminer(): hasMany
+    {
+        return $this->hasMany(ExamExaminer::class);
+    }
 }

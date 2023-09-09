@@ -69,9 +69,9 @@ class UserController extends Controller
     public function activation(User $user)
     {
         $name = strtoupper($user->name);
-        $user->na = $user->na ? 0 : 1;
+        $user->is_active = $user->is_active ? 0 : 1;
         $user->save();
-        $status = $user->na ? 'non-aktiv':'aktiv';
+        $status = $user->is_active ? 'aktiv':'non-aktiv';
         return to_route('users.index')->with('success','user '.$name.' telah di'.$status.'kan');
     }
 

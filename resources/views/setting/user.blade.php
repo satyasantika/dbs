@@ -16,8 +16,8 @@
                 <form id="activation-form" action="{{ route('users.activation',$user->id) }}" method="POST">
                     @csrf
                     @method('PUT')
-                    <button type="submit" class="btn btn-{{ $user->na ? 'outline-danger' : 'primary' }} btn-sm float-end">
-                        {{ $user->na ? 'non aktif' : 'aktif' }}
+                    <button type="submit" class="btn btn-{{ $user->is_active ? 'primary' : 'outline-danger' }} btn-sm float-end">
+                        {{ $user->is_active ? 'aktif' : 'non aktif' }}
                     </button>
                 </form>
             </td>
