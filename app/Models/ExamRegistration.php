@@ -13,6 +13,10 @@ class ExamRegistration extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'exam_date' => 'date',
+    ];
+
     public function students(): belongsTo
     {
         return $this->belongsTo(User::class);

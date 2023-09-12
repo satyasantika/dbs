@@ -15,12 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code')->nullable();
+            $table->boolean('is_active')->default(0);
             $table->timestamps();
         });
         Schema::create('exam_form_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('exam_type_id')->constrained();
-            $table->integer('order');
+            $table->integer('item_order');
             $table->string('name');
             $table->string('code')->nullable();
             $table->boolean('is_active')->default(0);
@@ -30,7 +31,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained(); //mahasiswa
             $table->foreignId('exam_type_id')->constrained();
-            $table->integer('order'); // ujian ke-...
+            $table->integer('registration_order'); // ujian ke-...
             $table->text('title');
             $table->double('ipk');
             $table->string('room');
@@ -46,7 +47,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('exam_registration_id')->constrained();
             $table->foreignId('user_id')->constrained(); // penguji
-            $table->integer('user_order'); // urutan penguji
+            $table->integer('examiner_order'); // urutan penguji
             $table->boolean('is_chief'); // ketua penguji?
             $table->text('note')->nullable();
             $table->boolean('need_revision')->nullable(); // perlu revisi?
@@ -58,6 +59,7 @@ return new class extends Migration
             $table->foreignId('exam_examiner_id')->constrained();
             $table->foreignId('exam_form_item_id')->constrained();
             $table->integer('score')->nullable();
+            $table->boolean('is_final')->default(0);
             $table->timestamps();
         });
     }

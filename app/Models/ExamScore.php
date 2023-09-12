@@ -12,7 +12,11 @@ class ExamScore extends Model
     use HasFactory;
     protected $guarded = ['id'];
 
-    public function examexaminers(): belongsTo
+    protected $casts = [
+        'is_final' => 'boolean',
+    ];
+
+    public function examiners(): belongsTo
     {
         return $this->belongsTo(ExamExaminer::class);
     }

@@ -14,10 +14,15 @@ class ExamExaminer extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
+        'is_chief' => 'boolean',
         'need_revision' => 'boolean',
         'is_approved' => 'boolean',
-        'is_chief' => 'boolean',
     ];
+
+    public function registrations(): belongsTo
+    {
+        return $this->belongsTo(ExamRegistration::class);
+    }
 
     public function examiners(): belongsTo
     {

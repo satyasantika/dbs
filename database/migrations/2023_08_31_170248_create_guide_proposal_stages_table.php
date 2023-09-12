@@ -23,7 +23,7 @@ return new class extends Migration
         Schema::create('proposal_steps', function (Blueprint $table) {
             $table->id();
             $table->foreignId('proposal_stage_id')->constrained();
-            $table->integer('revision')->nullable();
+            $table->integer('revision_order')->nullable();
             $table->string('element')->nullable(); // title, novelty, urgency, impact, references
             $table->longText('description')->nullable();
             $table->string('link')->nullable();
@@ -43,7 +43,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('proposal_stage_id')->constrained();
             $table->foreignId('user_id')->constrained(); //dosen
-            $table->integer('order')->nullable();
+            $table->integer('guide_order')->nullable();
             $table->boolean('is_accepted')->nullable();
             $table->timestamps();
         });
@@ -52,7 +52,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained(); //dosen
             $table->integer('year')->nullable();
             $table->string('position')->nullable(); // pembimbing or penguji
-            $table->integer('order')->nullable();
+            $table->integer('position_order')->nullable();
             $table->integer('quota')->nullable();
             $table->boolean('is_final')->nullable();
             $table->timestamps();

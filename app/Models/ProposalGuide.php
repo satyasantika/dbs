@@ -13,9 +13,7 @@ class ProposalGuide extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'is_accept' => 'boolean',
-        'guide_response_time' => 'datetime',
-        'council_response_time' => 'datetime',
+        'is_accepted' => 'boolean',
     ];
 
     public function guides(): belongsTo

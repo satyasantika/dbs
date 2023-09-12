@@ -20,11 +20,6 @@ class ExamFormItem extends Model
         return $this->belongsTo(ExamType::class);
     }
 
-    public function examexaminers(): hasMany
-    {
-        return $this->hasMany(ExamExaminer::class);
-    }
-
     public function examscores(): hasMany
     {
         return $this->hasMany(ExamScore::class);

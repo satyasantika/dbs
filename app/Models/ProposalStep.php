@@ -11,7 +11,7 @@ class ProposalStep extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'is_accept' => 'boolean',
+        'is_approved' => 'boolean',
     ];
 
     public function proposalstages(): belongsTo

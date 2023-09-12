@@ -24,7 +24,7 @@ class ExamSeeder extends Seeder
             foreach ($form_items as $item_key => $item) {
                 ExamFormItem::create([
                     'exam_type_id'=>$type_key+1,
-                    'order'=>$item_key+1,
+                    'item_order'=>$item_key+1,
                     'name'=>$item.($type=='Proposal'?'Proposal':'Skripsi'),
                     'is_active'=>1,
                 ]);

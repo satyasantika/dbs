@@ -14,7 +14,7 @@ class ExamType extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'is_final' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function examformitems(): hasMany
