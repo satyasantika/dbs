@@ -57,11 +57,11 @@
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
                                     @foreach (\App\Models\Navigation::whereNotNull('parent_id')->orderBy('order')->get() as $menu)
-                                    @can('read '.$menu->url)
-                                    <a href="{{ url($menu->url) }}" class="dropdown-item">
-                                        <span>{{ $menu->name }}</span>
-                                    </a>
-                                    @endcan
+                                        @can('access '.$menu->url)
+                                        <a href="{{ url($menu->url) }}" class="dropdown-item">
+                                            <span>{{ $menu->name }}</span>
+                                        </a>
+                                        @endcan
                                     @endforeach
                                 </div>
                             </li>

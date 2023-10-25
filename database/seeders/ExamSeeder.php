@@ -26,7 +26,7 @@ class ExamSeeder extends Seeder
                     'exam_type_id'=>$type_key+1,
                     'item_order'=>$item_key+1,
                     'name'=>$item.($type=='Proposal'?'Proposal':'Skripsi'),
-                    'is_active'=>1,
+                    'active'=>1,
                 ]);
             }
         }

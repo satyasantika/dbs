@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\Permission;
+use App\Models\Navigation;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -12,7 +12,7 @@ use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
-class PermissionsDataTable extends DataTable
+class NavigationsDataTable extends DataTable
 {
     /**
      * Build the DataTable class.
@@ -24,7 +24,7 @@ class PermissionsDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
                 $action = ' ';
-                $action .= ' <a href="'.route('permissions.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
+                $action .= ' <a href="'.route('navigations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
             ->setRowId('id');
@@ -33,9 +33,9 @@ class PermissionsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(Permission $model): QueryBuilder
+    public function query(Navigation $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->OrderBy('order')->newQuery();
     }
 
     /**
@@ -44,7 +44,7 @@ class PermissionsDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-                    ->setTableId('permissions-table')
+                    ->setTableId('navigations-table')
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
@@ -67,7 +67,9 @@ class PermissionsDataTable extends DataTable
                   ->printable(false)
                   ->width(60)
                   ->addClass('text-center'),
+            Column::make('order')->width(30),
             Column::make('name'),
+            Column::make('url'),
         ];
     }
 
@@ -76,6 +78,6 @@ class PermissionsDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'Permissions_' . date('YmdHis');
+        return 'Navigations_' . date('YmdHis');
     }
 }

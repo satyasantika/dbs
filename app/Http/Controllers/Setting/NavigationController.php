@@ -5,21 +5,21 @@ namespace App\Http\Controllers\Setting;
 use App\Models\Navigation;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\DataTables\NavigationsDataTable;
 
 class NavigationController extends Controller
 {
     function __construct()
     {
-        $this->middleware('permission:read setting/navigations', ['only' => ['index','show']]);
-        $this->middleware('permission:create setting/navigations', ['only' => ['create','store']]);
-        $this->middleware('permission:update setting/navigations', ['only' => ['edit','update']]);
-        $this->middleware('permission:delete setting/navigations', ['only' => ['destroy']]);
+        $this->middleware('permission:read navigations', ['only' => ['index','show']]);
+        $this->middleware('permission:create navigations', ['only' => ['create','store']]);
+        $this->middleware('permission:update navigations', ['only' => ['edit','update']]);
+        $this->middleware('permission:delete navigations', ['only' => ['destroy']]);
     }
 
-    public function index()
+    public function index(NavigationsDataTable $dataTable)
     {
-
-        return view('setting.navigation',['navigations'=>Navigation::orderBy('order')->get()]);
+        return $dataTable->render('setting.navigation');
     }
 
     public function create()

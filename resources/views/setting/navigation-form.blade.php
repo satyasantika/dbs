@@ -2,6 +2,15 @@
 
 @push('header')
     {{ $navigation->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    @if ($navigation->id)
+        <form id="delete-form" action="{{ route('navigations.destroy',$navigation->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $navigation->name }}?');">
+                {{ __('delete') }}
+            </button>
+        </form>
+    @endif
 @endpush
 
 @push('body')
@@ -20,12 +29,6 @@
         <label for="url" class="col-md-4 col-form-label text-md-end">URL</label>
         <div class="col-md-6">
             <input type="text" placeholder="URL" value="{{ $navigation->url }}" name="url" class="form-control" id="url" required>
-        </div>
-    </div>
-    <div class="row mb-3">
-        <label for="icon" class="col-md-4 col-form-label text-md-end">icon</label>
-        <div class="col-md-6">
-            <input type="text" placeholder="icon" value="{{ $navigation->icon }}" name="icon" class="form-control" id="icon">
         </div>
     </div>
     <div class="row mb-3">

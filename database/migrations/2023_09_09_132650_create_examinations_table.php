@@ -11,22 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // ADMIN
         Schema::create('exam_types', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('code')->nullable();
-            $table->boolean('is_active')->default(0);
+            $table->boolean('active')->default(0);
             $table->timestamps();
         });
+        // ADMIN
         Schema::create('exam_form_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('exam_type_id')->constrained();
             $table->integer('item_order');
             $table->string('name');
             $table->string('code')->nullable();
-            $table->boolean('is_active')->default(0);
+            $table->boolean('active')->default(0);
             $table->timestamps();
         });
+        // MAHASISWA
         Schema::create('exam_registrations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained(); //mahasiswa
@@ -43,23 +46,25 @@ return new class extends Migration
             $table->string('schedule_link');
             $table->timestamps();
         });
-        Schema::create('exam_examiners', function (Blueprint $table) {
+        // DBS
+        Schema::create('examiners', function (Blueprint $table) {
             $table->id();
             $table->foreignId('exam_registration_id')->constrained();
             $table->foreignId('user_id')->constrained(); // penguji
             $table->integer('examiner_order'); // urutan penguji
-            $table->boolean('is_chief'); // ketua penguji?
+            $table->boolean('chief'); // ketua penguji?
             $table->text('note')->nullable();
-            $table->boolean('need_revision')->nullable(); // perlu revisi?
-            $table->boolean('is_approved')->nullable(); // disetujui or layak or lulus?
+            $table->boolean('revision')->nullable(); // perlu revisi?
+            $table->boolean('approved')->nullable(); // disetujui or layak or lulus?
             $table->timestamps();
         });
+        // DOSEN
         Schema::create('exam_scores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('exam_examiner_id')->constrained();
+            $table->foreignId('examiner_id')->constrained();
             $table->foreignId('exam_form_item_id')->constrained();
             $table->integer('score')->nullable();
-            $table->boolean('is_final')->default(0);
+            $table->boolean('final')->default(0);
             $table->timestamps();
         });
     }
@@ -70,7 +75,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('exam_scores');
-        Schema::dropIfExists('exam_examiners');
+        Schema::dropIfExists('examiners');
         Schema::dropIfExists('exam_registrations');
         Schema::dropIfExists('exam_form_items');
         Schema::dropIfExists('exam_types');
