@@ -20,10 +20,10 @@ class PermissionSeeder extends Seeder
         Role::create(['name' => 'dosen']);
         Role::create(['name' => 'mahasiswa']);
 
-        Permission::create(['name' => 'read dashboard/kajur'])->assignRole('kajur');
-        Permission::create(['name' => 'read dashboard/dbs'])->assignRole('dbs');
-        Permission::create(['name' => 'read dashboard/dosen'])->assignRole('dosen');
-        Permission::create(['name' => 'read dashboard/mahasiswa'])->assignRole('mahasiswa');
+        Permission::create(['name' => 'read dashboard kajur'])->assignRole('kajur');
+        Permission::create(['name' => 'read dashboard dbs'])->assignRole('dbs');
+        Permission::create(['name' => 'read dashboard dosen'])->assignRole('dosen');
+        Permission::create(['name' => 'read dashboard mahasiswa'])->assignRole('mahasiswa');
 
         $actions = ['read', 'create', 'update', 'delete'];
 
@@ -32,9 +32,6 @@ class PermissionSeeder extends Seeder
             'roles',
             'users',
             'permissions',
-            'setting/rolepermissions',
-            'setting/userroles',
-            'setting/userpermissions',
         ];
         $permissions = [];
         foreach ($general_permissions as $general_permission) {
@@ -58,9 +55,9 @@ class PermissionSeeder extends Seeder
         // Role Admin
         $permissions = [];
         foreach ($admin_access as $access_value) {
-            foreach ($actions as $action_value) {
-                array_push($permissions,$action_value.' '.$access_value[1]);
-            }
+            // foreach ($actions as $action_value) {
+                array_push($permissions,'read '.$access_value[1]);
+            // }
         }
         foreach ($permissions as $permission) {
             Permission::create(['name' => $permission])->assignRole('admin');
@@ -91,9 +88,9 @@ class PermissionSeeder extends Seeder
         ];
         $permissions = [];
         foreach ($mahasiswa_access as $access_value) {
-            foreach ($actions as $action_value) {
-                array_push($permissions,$action_value.' '.$access_value);
-            }
+            // foreach ($actions as $action_value) {
+                array_push($permissions,'read '.$access_value);
+            // }
         }
 
         foreach ($permissions as $permission) {
@@ -107,9 +104,10 @@ class PermissionSeeder extends Seeder
         ];
         $permissions = [];
         foreach ($dosen_access as $access_value) {
-            foreach ($actions as $action_value) {
-                array_push($permissions,$action_value.' '.$access_value);
-            }
+            // foreach ($actions as $action_value) {
+                array_push($permissions,'read '.$access_value);
+                // array_push($permissions,$action_value.' '.$access_value);
+            // }
         }
 
         foreach ($permissions as $permission) {

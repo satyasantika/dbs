@@ -18,7 +18,7 @@ return new class extends Migration
             $table->date('birth_date')->nullable();
             $table->text('address')->nullable();
             $table->string('phone')->nullable();
-            $table->boolean('is_active')->default(0);
+            // $table->boolean('is_active')->default(0);
         });
     }
 
@@ -35,7 +35,7 @@ return new class extends Migration
                 'birth_date',
                 'address',
                 'phone',
-                'is_active'
+                // 'is_active'
             ]);
         });
     }

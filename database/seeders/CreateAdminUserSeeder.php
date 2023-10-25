@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class CreateAdminUserSeeder extends Seeder
@@ -22,6 +23,8 @@ class CreateAdminUserSeeder extends Seeder
             ]);
 
         $role = Role::create(['name' => 'admin']);
+        Permission::create(['name' => 'active'])->assignRole('admin');
+
 
         $user->assignRole([$role->id]);
     }

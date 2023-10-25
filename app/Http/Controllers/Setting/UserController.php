@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Setting;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\DataTables\UsersDataTable;
 use App\Http\Requests\UserRequest;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
@@ -18,10 +19,15 @@ class UserController extends Controller
         $this->middleware('permission:delete users', ['only' => ['destroy']]);
     }
 
-    public function index()
+    public function index(UsersDataTable $dataTable)
     {
-        return view('setting.user',['users'=>User::orderBy('name')->get()]);
+        return $dataTable->render('setting.user');
     }
+
+    // public function index()
+    // {
+    //     return view('setting.user',['users'=>User::orderBy('name')->get()]);
+    // }
 
     public function create()
     {
@@ -69,10 +75,12 @@ class UserController extends Controller
     public function activation(User $user)
     {
         $name = strtoupper($user->name);
-        $user->is_active = $user->is_active ? 0 : 1;
-        $user->save();
-        $status = $user->is_active ? 'aktiv':'non-aktiv';
-        return to_route('users.index')->with('success','user '.$name.' telah di'.$status.'kan');
+        $user->hasPermissionTo('active') ? $user->revokePermissionTo('active') : $user->givePermissionTo('active');
+        // $user->is_active = $user->is_active ? 0 : 1;
+        // $user->save();
+        $status = $user->hasPermissionTo('active') ? 'aktiv':'non-aktiv';
+        return redirect()->back();
+        // return to_route('users.index')->with('success','user '.$name.' telah di'.$status.'kan');
     }
 
     private function _dataSelection()
