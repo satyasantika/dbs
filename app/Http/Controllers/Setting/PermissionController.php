@@ -3,9 +3,10 @@
 namespace App\Http\Controllers\Setting;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\DataTables\PermissionsDataTable;
 use App\Http\Requests\PermissionRequest;
 use Spatie\Permission\Models\Permission;
-use App\Http\Controllers\Controller;
 
 class PermissionController extends Controller
 {
@@ -17,9 +18,10 @@ class PermissionController extends Controller
         $this->middleware('permission:delete permissions', ['only' => ['destroy']]);
     }
 
-    public function index()
+
+    public function index(PermissionsDataTable $dataTable)
     {
-        return view('setting.permission',['permissions'=>Permission::orderBy('name')->get()]);
+        return $dataTable->render('setting.permission');
     }
 
     public function create()

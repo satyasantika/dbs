@@ -2,6 +2,15 @@
 
 @push('header')
     {{ $role->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    @if ($role->id)
+        <form id="delete-form" action="{{ route('roles.destroy',$role->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $role->name }}?');">
+                {{ __('delete') }}
+            </button>
+        </form>
+    @endif
 @endpush
 
 @push('body')

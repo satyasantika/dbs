@@ -24,11 +24,6 @@ class UserController extends Controller
         return $dataTable->render('setting.user');
     }
 
-    // public function index()
-    // {
-    //     return view('setting.user',['users'=>User::orderBy('name')->get()]);
-    // }
-
     public function create()
     {
         $user = new User();

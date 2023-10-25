@@ -2,6 +2,15 @@
 
 @push('header')
     {{ $permission->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    @if ($permission->id)
+        <form id="delete-form" action="{{ route('permissions.destroy',$permission->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $permission->name }}?');">
+                {{ __('delete') }}
+            </button>
+        </form>
+    @endif
 @endpush
 
 @push('body')
