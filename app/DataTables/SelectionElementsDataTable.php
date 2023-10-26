@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\SelectionStage;
+use App\Models\SelectionElement;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -12,7 +12,7 @@ use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
-class SelectionStagesDataTable extends DataTable
+class SelectionElementsDataTable extends DataTable
 {
     /**
      * Build the DataTable class.
@@ -23,37 +23,12 @@ class SelectionStagesDataTable extends DataTable
     {
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
-                $action = ' ';
-                $action .= ' <a href="'.route('selectionstages.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
+                $action = '';
+                $action .= ' <a href="'.route('selectionelements.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
-            ->editColumn('user_id', function($row){
-                    return $row->student->name;
-            })
-            ->editColumn('guide1_id', function($row){
-                if (isset($row->guide1_id)) {
-                    return $row->guide1->name;
-                }
-            })
-            ->editColumn('guide2_id', function($row){
-                if (isset($row->guide2_id)) {
-                    return $row->guide2->name;
-                }
-            })
-            ->editColumn('examiner1_id', function($row){
-                if (isset($row->examiner1_id)) {
-                    return $row->examiner1->name;
-                }
-            })
-            ->editColumn('examiner2_id', function($row){
-                if (isset($row->examiner2_id)) {
-                    return $row->examiner2->name;
-                }
-            })
-            ->editColumn('examiner3_id', function($row){
-                if (isset($row->examiner3_id)) {
-                    return $row->examiner3->name;
-                }
+            ->editColumn('selection_stage_id', function($row){
+                    return $row->stage->student->name;
             })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
@@ -67,7 +42,7 @@ class SelectionStagesDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(SelectionStage $model): QueryBuilder
+    public function query(SelectionElement $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -78,7 +53,7 @@ class SelectionStagesDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-                    ->setTableId('selectionstages-table')
+                    ->setTableId('selectionelements-table')
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
@@ -101,14 +76,12 @@ class SelectionStagesDataTable extends DataTable
                   ->printable(false)
                   ->width(60)
                   ->addClass('text-center'),
-            Column::make('final'),
-            Column::make('user_id')->title('nama'),
-            Column::make('stage_order')->title('tahap'),
-            Column::make('guide1_id')->title('pembimbing 1'),
-            Column::make('guide2_id')->title('pembimbing 2'),
-            Column::make('examiner1_id')->title('penguji 1'),
-            Column::make('examiner2_id')->title('penguji 2'),
-            Column::make('examiner3_id')->title('penguji 3'),
+            Column::make('selection_stage_id')->title('mahasiswa'),
+            Column::make('element')->title('NUIR'),
+            Column::make('revision_order')->title('revisi ke-'),
+            Column::make('approved'),
+            // Column::make('description')->title('usulan'),
+            // Column::make('link'),
             Column::make('created_at'),
             Column::make('updated_at'),
         ];
@@ -119,6 +92,6 @@ class SelectionStagesDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'SelectionStages_' . date('YmdHis');
+        return 'SelectionElements_' . date('YmdHis');
     }
 }

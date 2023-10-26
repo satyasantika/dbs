@@ -35,10 +35,10 @@ class UsersDataTable extends DataTable
                 return $row->username.($row->hasPermissionTo('active')?'-a':'-na');
             })
             ->editColumn('updated_at', function($row) {
-                return $row->updated_at->format('d/m/Y H:i:s');
+                return $row->updated_at->format('Y-m-d H:i:s');
             })
             ->editColumn('created_at', function($row) {
-                return $row->created_at->format('d/m/Y H:i:s');
+                return $row->created_at->format('Y-m-d H:i:s');
             })
 
             ->setRowId('id');
