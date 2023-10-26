@@ -115,7 +115,8 @@
             <div class="col-md-8">
                 <input type="text" placeholder="phone" value="{{ $user->phone }}" name="phone" class="form-control" id="phone">
             </div>
-        </div>        {{-- submit Button --}}
+        </div>
+        {{-- submit Button --}}
         <div class="row mb-0">
             <div class="col-md-8 offset-md-4">
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>

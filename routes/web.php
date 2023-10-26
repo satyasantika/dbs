@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('setting/navigations', App\Http\Controllers\Setting\NavigationController::class)->except('show');
     Route::resource('setting/selectionstages', App\Http\Controllers\Setting\Selection\StageController::class)->except('show');
     Route::resource('setting/selectionelements', App\Http\Controllers\Setting\Selection\ElementController::class)->except('show');
+    Route::resource('setting/selectionelementcomments', App\Http\Controllers\Setting\Selection\ElementCommentController::class)->except('show');
 });
 
 Auth::routes();
