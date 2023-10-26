@@ -21,7 +21,7 @@ class UserController extends Controller
 
     public function index(UsersDataTable $dataTable)
     {
-        return $dataTable->render('setting.user');
+        return $dataTable->render('layouts.setting');
     }
 
     public function create()

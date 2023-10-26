@@ -16,10 +16,13 @@ return new class extends Migration
         Schema::create('selection_stages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained(); //mahasiswa
-            $table->integer('stage')->nullable();
+            $table->integer('stage_order')->nullable();
             $table->bigInteger('guide1_id')->nullable()->unsigned();
             $table->bigInteger('guide2_id')->nullable()->unsigned();
             $table->boolean('final')->default(0);// final?
+            $table->bigInteger('examiner1_id')->nullable()->unsigned();
+            $table->bigInteger('examiner2_id')->nullable()->unsigned();
+            $table->bigInteger('examiner3_id')->nullable()->unsigned();
             $table->timestamps();
         });
         // MAHASISWA > DBS | DOSEN
@@ -70,7 +73,7 @@ return new class extends Migration
             $table->boolean('final')->nullable();// final?
             $table->timestamps();
         });
-        
+
         // DBS
         // Set kuota pembimbing dan penguji
         Schema::create('selection_guide_groups', function (Blueprint $table) {

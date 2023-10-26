@@ -19,7 +19,7 @@ class NavigationController extends Controller
 
     public function index(NavigationsDataTable $dataTable)
     {
-        return $dataTable->render('setting.navigation');
+        return $dataTable->render('layouts.setting');
     }
 
     public function create()

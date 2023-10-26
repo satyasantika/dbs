@@ -4,8 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use App\Models\ExamExaminer;
-use App\Models\ProposalGuide;
-use App\Models\ProposalStage;
+use App\Models\SelectionGuide;
+use App\Models\SelectionStage;
 use App\Models\ExamRegistration;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
@@ -27,7 +27,6 @@ class User extends Authenticatable
         'birth_date',
         'address',
         'phone',
-        'is_active',
     ];
 
     protected $hidden = [
@@ -39,17 +38,16 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'birth_date' => 'date',
-        'is_active' => 'boolean',
     ];
 
-    public function proposalstudents(): hasMany
+    public function selectionstudents(): hasMany
     {
-        return $this->hasMany(ProposalStage::class);
+        return $this->hasMany(SelectionStage::class);
     }
 
-    public function proposalguides(): hasMany
+    public function selectionguides(): hasMany
     {
-        return $this->hasMany(ProposalGuide::class);
+        return $this->hasMany(SelectionGuide::class);
     }
 
     public function examregistrations(): hasMany

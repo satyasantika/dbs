@@ -24,28 +24,28 @@
         {{-- Nama Lengkap --}}
         <div class="row mb-3">
             <label for="name" class="col-md-4 col-form-label text-md-end">Nama Lengkap</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <input type="text" placeholder="Nama Lengkap (bergelar - bila ada)" value="{{ $user->name }}" name="name" class="form-control" id="name" required autofocus>
             </div>
         </div>
         {{-- Username --}}
         <div class="row mb-3">
             <label for="username" class="col-md-4 col-form-label text-md-end">Username</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <input type="text" placeholder="username" value="{{ $user->username }}" name="username" class="form-control" id="username" required>
             </div>
         </div>
         {{-- Email --}}
         <div class="row mb-3">
             <label for="email" class="col-md-4 col-form-label text-md-end">Alamat Email</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <input type="email" placeholder="email" value="{{ $user->email }}" name="email" class="form-control" id="email" required>
             </div>
         </div>
         {{-- Password --}}
         <div class="row mb-3">
             <label for="password" class="col-md-4 col-form-label text-md-end">Password</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 @if ($user->id)
                     {{-- TODO - Reset Password --}}
                     <a class="btn btn-warning btn-sm" href="#" onclick="event.preventDefault(); if (confirm('yakin direset?')){ document.getElementById('formReset').submit(); }">
@@ -61,14 +61,14 @@
         {{-- Role --}}
         <div class="row mb-3">
             <label for="role" class="col-md-4 col-form-label text-md-end">Tetapkan Role</label>
-            <div class="col-md-6">
-                <select id="role" class="form-control @error('role') is-invalid @enderror" name="role" required {{ $user->id ? 'disabled' : '' }}>
+            <div class="col-md-8">
+                <select id="role" class="form-control @error('role') is-invalid @enderror" name="role" required @disabled($user->id)>
                     @if ($user->id)
                     <option value="">{{ $user->getRoleNames()->implode(', ') }}</option>
                     @else
                     <option value="">-- Tanpa Role --</option>
                     @foreach ($roles as $role)
-                    <option value="{{ $role }}" {{ $role == $user->getRoleNames()->implode(', ') ? 'selected' : '' }}>{{ $role }}</option>
+                    <option value="{{ $role }}">{{ $role }}</option>
                     @endforeach
                     @endif
                 </select>
@@ -77,13 +77,13 @@
         {{-- Gender --}}
         <div class="row mb-3">
             <label for="gender" class="col-md-4 col-form-label text-md-end">Jenis Kelamin</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="gender" id="genderL" value="L" {{ $user->gender == 'L' ? 'checked' : '' }}>
+                    <input class="form-check-input" type="radio" name="gender" id="genderL" value="L" @checked($user->gender == 'L')>
                     <label class="form-check-label" for="genderL">Laki-laki</label>
                 </div>
                 <div class="form-check">
-                    <input class="form-check-input" type="radio" name="gender" id="genderP" value="P" {{ $user->gender == 'P' ? 'checked' : '' }}>
+                    <input class="form-check-input" type="radio" name="gender" id="genderP" value="P" @checked($user->gender == 'P')>
                     <label class="form-check-label" for="genderP">Perempuan</label>
                 </div>
             </div>
@@ -91,14 +91,14 @@
         {{-- Birth Place --}}
         <div class="row mb-3">
             <label for="birth_place" class="col-md-4 col-form-label text-md-end">Tempat Lahir</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <input type="text" placeholder="birth_place" value="{{ $user->birth_place }}" name="birth_place" class="form-control" id="birth_place">
             </div>
         </div>
         {{-- Birth Date --}}
         <div class="row mb-3">
             <label for="birth_date" class="col-md-4 col-form-label text-md-end">Tanggal Lahir</label>
-            <div class="col-md-6">
+            <div class="col-md-8">
                 <input type="date" placeholder="birth_date" value="{{ $user->birth_date ? $user->birth_date->format('Y-m-d') : date('Y-m-d') }}" name="birth_date" class="form-control" id="birth_date">
             </div>
         </div>

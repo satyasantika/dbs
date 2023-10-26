@@ -30,7 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('setting/userroles', App\Http\Controllers\Setting\UserRoleController::class)->only('edit', 'update');
     Route::resource('setting/users', App\Http\Controllers\Setting\UserController::class)->except('show');
     Route::resource('setting/navigations', App\Http\Controllers\Setting\NavigationController::class)->except('show');
-
+    Route::resource('setting/selectionstages', App\Http\Controllers\Setting\Selection\StageController::class)->except('show');
 });
 
 Auth::routes();

@@ -21,7 +21,7 @@ class PermissionController extends Controller
 
     public function index(PermissionsDataTable $dataTable)
     {
-        return $dataTable->render('setting.permission');
+        return $dataTable->render('layouts.setting');
     }
 
     public function create()

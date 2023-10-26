@@ -20,7 +20,7 @@ class RoleController extends Controller
 
     public function index(RolesDataTable $dataTable)
     {
-        return $dataTable->render('setting.permission');
+        return $dataTable->render('layouts.setting');
     }
 
     public function create()
