@@ -2,6 +2,15 @@
 
 @push('header')
     {{ $selectionelement->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    @if ($selectionelement->id)
+        <form id="delete-form" action="{{ route('selectionelements.destroy',$selectionelement->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $selectionelement->name }}?');">
+                {{ __('delete') }}
+            </button>
+        </form>
+    @endif
 @endpush
 
 @push('body')

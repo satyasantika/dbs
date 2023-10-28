@@ -11,6 +11,31 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // DBS
+        // Set kuota pembimbing dan penguji
+        Schema::create('guide_allocations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained(); //dosen
+            $table->integer('year')->nullable();
+            $table->integer('guide1_quota')->default(0);
+            $table->integer('guide2_quota')->default(0);
+            $table->integer('examiner_quota')->default(0);
+            $table->boolean('active')->default(0);// final?
+            $table->timestamps();
+        });
+
+        // DBS
+        // Set kuota pembimbing dan penguji
+        Schema::create('guide_groups', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('guide_allocation_id')->constrained(); //dosen
+            $table->integer('group')->nullable();
+            $table->integer('guide1_quota')->default(0);
+            $table->integer('guide2_quota')->default(0);
+            $table->boolean('active')->default(0);// final?
+            $table->timestamps();
+        });
+
         // MAHASISWA > DOSEN
         // Tahap pemilihan pembimbing 1/2/3
         Schema::create('selection_stages', function (Blueprint $table) {
@@ -19,10 +44,10 @@ return new class extends Migration
             $table->integer('stage_order')->nullable();
             $table->bigInteger('guide1_id')->nullable()->unsigned();
             $table->bigInteger('guide2_id')->nullable()->unsigned();
-            $table->boolean('final')->default(0);// final?
             $table->bigInteger('examiner1_id')->nullable()->unsigned();
             $table->bigInteger('examiner2_id')->nullable()->unsigned();
             $table->bigInteger('examiner3_id')->nullable()->unsigned();
+            $table->boolean('final')->default(0);// final?
             $table->timestamps();
         });
         // MAHASISWA > DBS | DOSEN
@@ -34,7 +59,7 @@ return new class extends Migration
             $table->string('element')->nullable(); // title, novelty, urgency, impact, references
             $table->longText('description')->nullable();
             $table->string('link')->nullable();
-            $table->boolean('approved')->default(0); //disetujui?
+            $table->boolean('final')->default(0); //disetujui?
             $table->timestamps();
         });
 
@@ -46,7 +71,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained(); //dosen
             $table->string('verificator')->nullable(); //dosen or dbs
             $table->longText('comment')->nullable();
-            $table->boolean('revised')->nullable(); //direvisi?
+            $table->boolean('final')->nullable(); //direvisi?
             $table->timestamps();
         });
 
@@ -55,33 +80,9 @@ return new class extends Migration
         Schema::create('selection_guides', function (Blueprint $table) {
             $table->id();
             $table->foreignId('selection_stage_id')->constrained();
-            $table->foreignId('user_id')->constrained(); //dosen
+            $table->foreignId('guide_group_id')->constrained(); //dosen
             $table->integer('guide_order')->nullable();
-            $table->boolean('approved')->nullable(); //disetujui?
-            $table->timestamps();
-        });
-
-        // DBS
-        // Set kuota pembimbing dan penguji
-        Schema::create('selection_guide_allocations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained(); //dosen
-            $table->integer('year')->nullable();
-            $table->string('position')->nullable(); // pembimbing or penguji
-            $table->integer('position_order')->nullable();
-            $table->integer('quota')->nullable();
-            $table->boolean('final')->nullable();// final?
-            $table->timestamps();
-        });
-
-        // DBS
-        // Set kuota pembimbing dan penguji
-        Schema::create('selection_guide_groups', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('selection_guide_allocation_id')->constrained(); //dosen
-            $table->integer('group')->nullable();
-            $table->integer('quota')->nullable();
-            $table->boolean('final')->nullable();// final?
+            $table->boolean('final')->nullable(); //disetujui?
             $table->timestamps();
         });
     }
@@ -91,11 +92,11 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('selection_guide_groups');
-        Schema::dropIfExists('selection_guide_allocations');
         Schema::dropIfExists('selection_guides');
         Schema::dropIfExists('selection_element_comments');
         Schema::dropIfExists('selection_elements');
         Schema::dropIfExists('selection_stages');
+        Schema::dropIfExists('guide_groups');
+        Schema::dropIfExists('guide_allocations');
     }
 };

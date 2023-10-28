@@ -2,6 +2,15 @@
 
 @push('header')
     {{ $selectionelementcomment->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    @if ($selectionelementcomment->id)
+        <form id="delete-form" action="{{ route('selectionelementcomments.destroy',$selectionelementcomment->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $selectionelementcomment->name }}?');">
+                {{ __('delete') }}
+            </button>
+        </form>
+    @endif
 @endpush
 
 @push('body')
@@ -51,7 +60,7 @@
     </div>
     {{-- comment --}}
     <div class="row mb-3">
-        <label for="comment" class="col-md-4 col-form-label text-md-end">Komentar</label>
+        <label for="comment" class="col-md-4 col-form-label text-md-end">Komentar {{ $element->element }} <br>{{ $element->description }}</label>
         <div class="col-md-8">
             <textarea name="comment" rows="20" class="form-control" id="comment">{{ $selectionelementcomment->comment }}</textarea>
         </div>

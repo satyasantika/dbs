@@ -2,6 +2,15 @@
 
 @push('header')
     {{ $selectionstage->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    @if ($selectionstage->id)
+        <form id="delete-form" action="{{ route('selectionstages.destroy',$selectionstage->id) }}" method="POST">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $selectionstage->name }}?');">
+                {{ __('delete') }}
+            </button>
+        </form>
+    @endif
 @endpush
 
 @push('body')
@@ -10,6 +19,7 @@
     @if ($selectionstage->id)
         @method('PUT')
     @endif
+    {{-- tahapan --}}
     <div class="row mb-3">
         <label for="stage_order" class="col-md-4 col-form-label text-md-end">Tahapan Pemiliahan</label>
         <div class="col-md-6">
@@ -21,6 +31,7 @@
             </select>
         </div>
     </div>
+    {{-- mahasiswa --}}
     <div class="row mb-3">
         <label for="user_id" class="col-md-4 col-form-label text-md-end">Mahasiswa</label>
         <div class="col-md-6">
@@ -32,6 +43,7 @@
             </select>
         </div>
     </div>
+    {{-- pembimbing 1 --}}
     <div class="row mb-3">
         <label for="guide1_id" class="col-md-4 col-form-label text-md-end">Pembimbing 1</label>
         <div class="col-md-6">
@@ -43,6 +55,7 @@
             </select>
         </div>
     </div>
+    {{-- pembimbing 1 --}}
     <div class="row mb-3">
         <label for="guide2_id" class="col-md-4 col-form-label text-md-end">Pembimbing 2</label>
         <div class="col-md-6">
@@ -54,6 +67,7 @@
             </select>
         </div>
     </div>
+    {{-- penguji 1 --}}
     <div class="row mb-3">
         <label for="examiner1_id" class="col-md-4 col-form-label text-md-end">Penguji 1</label>
         <div class="col-md-6">
@@ -65,6 +79,7 @@
             </select>
         </div>
     </div>
+    {{-- penguji 2 --}}
     <div class="row mb-3">
         <label for="examiner2_id" class="col-md-4 col-form-label text-md-end">Penguji 2</label>
         <div class="col-md-6">
@@ -76,6 +91,7 @@
             </select>
         </div>
     </div>
+    {{-- penguji 3 --}}
     <div class="row mb-3">
         <label for="examiner3_id" class="col-md-4 col-form-label text-md-end">Penguji 3</label>
         <div class="col-md-6">
@@ -87,12 +103,6 @@
             </select>
         </div>
     </div>
-    {{-- <div class="row mb-3">
-        <label for="stage_order" class="col-md-4 col-form-label text-md-end">Tahap Pemilihan</label>
-        <div class="col-md-6">
-            <input type="number" placeholder="selectionstage name" value="{{ $selectionstage->stage_order }}" name="stage_order" class="form-control" id="stage_order">
-        </div>
-    </div> --}}
     <div class="row mb-0">
         <div class="col-md-8 offset-md-4">
             <button type="submit" class="btn btn-primary btn-sm">Save</button>

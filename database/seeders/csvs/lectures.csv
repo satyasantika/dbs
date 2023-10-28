@@ -1,27 +1,30 @@
 username,name,phone,email,password
-0420127003,"Dedi Muhtadi, S.Pd., M.Pd.",085351926993,dedimuhtadi@unsil.ac.id,0420127003
-0407076101,"Dedi Nurjamil, Drs., M.Pd.",081323244333,dedinurjamil@unsil.ac.id,0407076101
-0007028902,"Depi Ardian Nugraha, S.Pd., M.Pd",0811211478,depi@unsil.ac.id,0007028902
-0419117705,"Depi Setialesmana, S.Pd., M.Pd.",085353622058,depisetialesmana@unsii.ac.id,0419117705
-0427127904,"Dian Kurniawan, S.Pd., M.Pd.",081336238785,diankurniawan@unsil.ac.id,0427127904
-0429046101,"Edi Hidayat, Drs., M.Pd.",08122427561,edihidayat@unsil.ac.id,0429046101
-0003079801,"Dr. Eko Yulianto, S.Pd., M.Pd.",085223904150,ekoyulianto@unsil.ac.id,0003079801
-0424098103,"Elis Nurhayati, S.Pd., M.Pd",085353292281,elisnurhayati@unsil.ac.id,0424098103
-0420058303,"Eva Mulyani, S.Pd., M.Pd.",085322669558,evamulyani@unsil.ac.id,0420058303
-0429017801,"Dr. Hetty Patmawati, S.Pd., M.Pd.",081321883318,hettypatmawati@unsil.ac.id,0429017801
-0405128005,"Ike Natalliasari, S.Pd., M.Pd.",085212361296,ikenatalliasari@unsil.ac.id,0405128005
-0408076501,"Ipah Muzdalipah, Dra., M.Pd.",08122487658,ipahmuzdalipah@unsil.ac.id,0408076501
-0427108101,"Linda Herawati, S.Pd., M.Pd.",081322601441,lindaherawati@unsil.ac.id,0427108101
-0424018801,"Dr. Mega Nur Prabawati, S.Pd., M.Pd.",081221801414,meganurprabawati@unsil.ac.id,0424018801
-0017059303,"Muhamad Zulfikar Mansyur, S.Pd., M.Pd.",085224849770,zulfikar.mansyur@unsil.ac.id,0017059303
-0430056602,"Dr. Nani Ratnaningsih, Dra., M.Pd.",081313647451,naniratnaningsih@unsil.ac.id,0430056602
-0420068303,"Ratna Rustina, S.Pd., M.Pd.",08112344983,ratnarustina@unsil.ac.id,0420068303
-0410098101,"Redi Hermanto, S.Pd., M.Pd.",081320279905,redihermanto@unsil.ac.id,0410098101
-0027118602,"Satya Santika, S.Pd., M.Pd.",085294194510,satyasantika@unsil.ac.id,0027118602
-0008098504,"Dr. Sinta Verawati Dewi, S.Pd., M.Pd.",085353533993,sintaverawati@unsil.ac.id,0008098504
-0428018102,"Siska Ryane Muslim, S.Pd., M.Pd.",08112002728,siskaryanemuslim@unsil.ac.id,0428018102
-0416118004,"Dr. Sri Tirto Madawistama, S.Pd., M.Pd.",085222333631,sritirtomadawistama@unsil.ac.id,0416118004
-0016097903,"Dr. Sukirwan, S.Pd., M.Pd.",081287785270,sukirwan@unsil.ac.id,0016097903
-0018126201,"Dr. Supratman, Drs., M.Pd.",081221309123,supratman@unsil.ac.id,0018126201
-0427047502,"Vepi Apiati, S.Pd., M.Pd.",081312888555,vepiapiati@unsil.ac.id,0427047502
-0409118003,"Yeni Heryani, S.Pd., M.Pd.",085224101516,yeniheryani@unsil.ac.id,0409118003
+0420127003,"Dedi Muhtadi, S.Pd., M.Pd.",085351926993,dedimuhtadi@unsil.ac.id,0420127003,DDM
+0407076101,"Dedi Nurjamil, Drs., M.Pd.",081323244333,dedinurjamil@unsil.ac.id,0407076101,DDN
+0007028902,"Depi Ardian Nugraha, S.Pd., M.Pd",0811211478,depi@unsil.ac.id,0007028902,DPA
+0419117705,"Depi Setialesmana, S.Pd., M.Pd.",085353622058,depisetialesmana@unsii.ac.id,0419117705,DPS
+0427127904,"Dian Kurniawan, S.Pd., M.Pd.",081336238785,diankurniawan@unsil.ac.id,0427127904,DNK
+0429046101,"Edi Hidayat, Drs., M.Pd.",08122427561,edihidayat@unsil.ac.id,0429046101,EDI
+0003079801,"Dr. Eko Yulianto, S.Pd., M.Pd.",085223904150,ekoyulianto@unsil.ac.id,0003079801,EKO
+0424098103,"Elis Nurhayati, S.Pd., M.Pd",085353292281,elisnurhayati@unsil.ac.id,0424098103,ELS
+0420058303,"Eva Mulyani, S.Pd., M.Pd.",085322669558,evamulyani@unsil.ac.id,0420058303,EVA
+0429017801,"Dr. Hetty Patmawati, S.Pd., M.Pd.",081321883318,hettypatmawati@unsil.ac.id,0429017801,HET
+0405128005,"Ike Natalliasari, S.Pd., M.Pd.",085212361296,ikenatalliasari@unsil.ac.id,0405128005,IKE
+0408076501,"Ipah Muzdalipah, Dra., M.Pd.",08122487658,ipahmuzdalipah@unsil.ac.id,0408076501,IPH
+0427108101,"Linda Herawati, S.Pd., M.Pd.",081322601441,lindaherawati@unsil.ac.id,0427108101,LIN
+0424018801,"Dr. Mega Nur Prabawati, S.Pd., M.Pd.",081221801414,meganurprabawati@unsil.ac.id,0424018801,MEG
+0017059303,"Muhamad Zulfikar Mansyur, S.Pd., M.Pd.",085224849770,zulfikar.mansyur@unsil.ac.id,0017059303,ZUL
+0430056602,"Dr. Nani Ratnaningsih, Dra., M.Pd.",081313647451,naniratnaningsih@unsil.ac.id,0430056602,NAN
+0420068303,"Ratna Rustina, S.Pd., M.Pd.",08112344983,ratnarustina@unsil.ac.id,0420068303,RAT
+0410098101,"Redi Hermanto, S.Pd., M.Pd.",081320279905,redihermanto@unsil.ac.id,0410098101,RED
+0027118602,"Satya Santika, S.Pd., M.Pd.",085294194510,satyasantika@unsil.ac.id,0027118602,SAT
+0008098504,"Dr. Sinta Verawati Dewi, S.Pd., M.Pd.",085353533993,sintaverawati@unsil.ac.id,0008098504,SIN
+0428018102,"Siska Ryane Muslim, S.Pd., M.Pd.",08112002728,siskaryanemuslim@unsil.ac.id,0428018102,SIS
+0416118004,"Dr. Sri Tirto Madawistama, S.Pd., M.Pd.",085222333631,sritirtomadawistama@unsil.ac.id,0416118004,MAD
+0016097903,"Dr. Sukirwan, S.Pd., M.Pd.",081287785270,sukirwan@unsil.ac.id,0016097903,SUK
+0018126201,"Dr. Supratman, Drs., M.Pd.",081221309123,supratman@unsil.ac.id,0018126201,SUP
+0427047502,"Vepi Apiati, S.Pd., M.Pd.",081312888555,vepiapiati@unsil.ac.id,0427047502,VEP
+0409118003,"Yeni Heryani, S.Pd., M.Pd.",085224101516,yeniheryani@unsil.ac.id,0409118003,YEN
+0403078702,"Dr. Diar Veni Rahayu, S.Pd., M.Pd.",085221257824,diarvenirahayu@unsil.ac.id,0403078702,DVR
+0703018502,"Dr. Khomsatun Ni'mah, S.Pd., M.Pd.",081234237231,khomsatunnimah@unsil.ac.id,0703018502,KHO
+0408018402,"Dr. Puji Lestari, S.Si., M.Pd.",081395130540,pujilestari@unsil.ac.id,0408018402,PUJ

@@ -12,11 +12,11 @@ class GuideAllocation extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'is_final' => 'boolean',
+        'active' => 'boolean',
     ];
 
-    public function guides(): belongsTo
+    public function lecture()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class,'user_id');
     }
 }

@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\SelectionElementComment;
+use App\Models\GuideAllocation;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -12,7 +12,7 @@ use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
-class SelectionElementCommentsDataTable extends DataTable
+class GuideAllocationsDataTable extends DataTable
 {
     /**
      * Build the DataTable class.
@@ -23,15 +23,12 @@ class SelectionElementCommentsDataTable extends DataTable
     {
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
-                $action = '';
-                $action .= ' <a href="'.route('selectionelementcomments.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
+                $action = ' ';
+                $action .= ' <a href="'.route('selectionguideallocations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
-            ->editColumn('selection_element_id', function($row){
-                    return $row->element->element.' - '.$row->element->stage->student->name;
-            })
             ->editColumn('user_id', function($row){
-                    return $row->verifiedBy->name;
+                    return $row->lecture->name;
             })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
@@ -45,7 +42,7 @@ class SelectionElementCommentsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(SelectionElementComment $model): QueryBuilder
+    public function query(GuideAllocation $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -56,7 +53,7 @@ class SelectionElementCommentsDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-                    ->setTableId('selectionelementcomments-table')
+                    ->setTableId('selectionguideallocations-table')
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
@@ -79,13 +76,12 @@ class SelectionElementCommentsDataTable extends DataTable
                   ->printable(false)
                   ->width(60)
                   ->addClass('text-center'),
-            Column::make('selection_element_id')->title('NUIR mahasiswa'),
-            Column::make('user_id')->title('verifikator'),
-            Column::make('verificator')->title('sebagai'),
-            // Column::make('comment')->title('catatan'),
-            Column::make('revised')->title('direvisi?'),
-            Column::make('created_at'),
-            Column::make('updated_at'),
+            Column::make('active'),
+            Column::make('user_id')->title('nama'),
+            Column::make('guide1_quota')->title('P1'),
+            Column::make('guide2_quota')->title('P2'),
+            Column::make('examiner_quota')->title('Penguji'),
+            Column::make('year')->title('tahun'),
         ];
     }
 
@@ -94,6 +90,6 @@ class SelectionElementCommentsDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'SelectionElementComments_' . date('YmdHis');
+        return 'SelectionGuideAllocations_' . date('YmdHis');
     }
 }

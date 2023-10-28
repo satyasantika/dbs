@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('username')->unique()->after('name');
+            $table->string('initial')->unique()->nullable()->after('username');
             $table->string('gender')->nullable(); //L,P
             $table->string('birth_place')->nullable();
             $table->date('birth_date')->nullable();
@@ -30,6 +31,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn([
                 'username',
+                'initial',
                 'gender',
                 'birth_place',
                 'birth_date',
