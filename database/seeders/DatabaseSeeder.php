@@ -16,8 +16,8 @@ class DatabaseSeeder extends Seeder
             ExamSeeder::class,
             CreateAdminUserSeeder::class,
             PermissionSeeder::class,
-            // UserRolePermissionSeeder::class,
             UserSeeder::class,
+            GuideAllocationGroupSeeder::class,
         ]);
 
         // \App\Models\User::factory(10)->create();

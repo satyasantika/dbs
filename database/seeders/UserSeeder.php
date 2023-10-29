@@ -15,22 +15,22 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // Import Data Dosen
-        // $csvData = fopen(base_path('/database/seeders/csvs/lectures.csv'), 'r');
-        // $transRow = true;
-        // while (($data = fgetcsv($csvData, 555, ',')) !== false) {
-        //     if (!$transRow) {
-        //         User::create([
-        //             'username'  => $data[0],
-        //             'name'      => $data[1],
-        //             'phone'     => $data[2],
-        //             'email'     => $data[3],
-        //             'password' => bcrypt($data[4]),
-        //             'initial'  => $data[5],
-        //         ])->assignRole('dosen');
-        //     }
-        //     $transRow = false;
-        // }
-        // fclose($csvData);
+        $csvData = fopen(base_path('/database/seeders/csvs/lectures.csv'), 'r');
+        $transRow = true;
+        while (($data = fgetcsv($csvData, 555, ',')) !== false) {
+            if (!$transRow) {
+                User::create([
+                    'username'  => $data[0],
+                    'name'      => $data[1],
+                    'phone'     => $data[2],
+                    'email'     => $data[3],
+                    'password' => bcrypt($data[4]),
+                    'initial'  => $data[5],
+                ])->assignRole('dosen');
+            }
+            $transRow = false;
+        }
+        fclose($csvData);
 
         // Import Data Mahasiswa
         // $csvData = fopen(base_path('/database/seeders/csvs/students.csv'), 'r');
