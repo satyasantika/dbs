@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\GuideGroup;
+use App\Models\SelectionStage;
 use App\Models\GuideAllocation;
 use Illuminate\Database\Seeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -43,6 +44,35 @@ class GuideAllocationGroupSeeder extends Seeder
                     'guide1_quota'     => $data[2],
                     'guide2_quota'     => $data[3],
                     'active' => $data[4],
+                ]);
+            }
+            $transRow = false;
+        }
+        fclose($csvData);
+
+        // Import hasil tahap 1
+        $csvData = fopen(base_path('/database/seeders/csvs/hasiltahap1.csv'), 'r');
+        $transRow = true;
+        while (($data = fgetcsv($csvData, 555, ',')) !== false) {
+            if (!$transRow) {
+                $stage = SelectionStage::create([
+                    'user_id' => User::where('username',$data[0])->first()->id,
+                    'stage_order'=>1,
+                    'guide1_id'=>User::where('initial',$data[1])->first()->id,
+                    'guide2_id'=>User::where('initial',$data[2])->first()->id,
+                    'final'=>1,
+                ]);
+                $stage->guides()->create([
+                    'guide_group_id'  => 1,
+                    'user_id'     => User::where('initial',$data[1])->first()->id,
+                    'guide_order'     => 1,
+                    'approved' => 1,
+                ]);
+                $stage->guides()->create([
+                    'guide_group_id'  => 1,
+                    'user_id'     => User::where('initial',$data[2])->first()->id,
+                    'guide_order'     => 2,
+                    'approved' => 1,
                 ]);
             }
             $transRow = false;

@@ -47,12 +47,12 @@ class SelectionStage extends Model
         return $this->belongsTo(User::class,'examiner3_id');
     }
 
-    public function selection_elements()
+    public function elements()
     {
         return $this->hasMany(SelectionElement::class);
     }
 
-    public function selection_guides()
+    public function guides()
     {
         return $this->hasMany(SelectionGuide::class);
     }

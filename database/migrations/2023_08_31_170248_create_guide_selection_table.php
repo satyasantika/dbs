@@ -80,7 +80,8 @@ return new class extends Migration
         Schema::create('selection_guides', function (Blueprint $table) {
             $table->id();
             $table->foreignId('selection_stage_id')->constrained();
-            $table->foreignId('guide_group_id')->constrained(); //dosen
+            $table->foreignId('guide_group_id')->constrained();//kelompok
+            $table->integer('user_id')->constrained();//dosen
             $table->integer('guide_order')->nullable();
             $table->boolean('approved')->nullable(); //disetujui?
             $table->timestamps();
