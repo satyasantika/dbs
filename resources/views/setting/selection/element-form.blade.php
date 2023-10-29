@@ -33,13 +33,17 @@
     </div>
     {{-- revisi usulan --}}
     <div class="row mb-3">
-        <label for="revision_order" class="col-md-4 col-form-label text-md-end">Tahapan Pemilihan</label>
+        <label for="parent_id" class="col-md-4 col-form-label text-md-end">Revisi Element</label>
         <div class="col-md-6">
-            <select id="revision_order" class="form-control @error('revision_order') is-invalid @enderror" name="revision_order" required @disabled($selectionelement->id)>
-                <option value="">-- Pilih Tahapan --</option>
-                @foreach ([0,1,2,3] as $order)
-                <option value="{{ $order }}" @selected($selectionelement->revision_order == $order)>{{ $order }}</option>
+            <select id="parent_id" class="form-control @error('parent_id') is-invalid @enderror" name="parent_id" required @disabled($selectionelement->id)>
+                <option value="0">-- Pilih Elemen Revisi --</option>
+                @foreach ($parent_elements as $element)
+                    <option value="{{ $element->id }}" @selected($element->id == $selectionelement->parent_id)>{{ $element->element }}-Tahap{{ $element->stage->stage_order }}-{{ $element->stage->student->name }}</option>
                 @endforeach
+{{--
+                @foreach ([0,1,2,3] as $order)
+                <option value="{{ $order }}" @selected($selectionelement->parent_id == $order)>{{ $order }}</option>
+                @endforeach --}}
             </select>
         </div>
     </div>

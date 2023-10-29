@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('setting/selectionelementcomments', App\Http\Controllers\Setting\Selection\ElementCommentController::class)->except('show');
     Route::resource('setting/selectionguideallocations', App\Http\Controllers\Setting\Selection\GuideAllocationController::class)->except('show');
     Route::resource('setting/selectionguidegroups', App\Http\Controllers\Setting\Selection\GuideGroupController::class)->except('show');
+    Route::resource('setting/selectionguides', App\Http\Controllers\Setting\Selection\GuideController::class)->except('show');
 });
 
 Auth::routes();

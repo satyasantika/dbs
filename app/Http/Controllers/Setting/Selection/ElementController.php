@@ -69,6 +69,7 @@ class ElementController extends Controller
         return [
             'stages' =>  SelectionStage::where('final',0)->latest()->get(),
             'elements' =>  ['title','urgency','novelty','impact','references'],
+            'parent_elements' => SelectionElement::where('approved',0)->get(),
         ];
     }
 }

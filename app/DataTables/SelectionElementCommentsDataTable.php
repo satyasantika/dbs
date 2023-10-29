@@ -83,7 +83,7 @@ class SelectionElementCommentsDataTable extends DataTable
             Column::make('user_id')->title('verifikator'),
             Column::make('verificator')->title('sebagai'),
             // Column::make('comment')->title('catatan'),
-            Column::make('revised')->title('direvisi?'),
+            Column::make('revised'),
             Column::make('created_at'),
             Column::make('updated_at'),
         ];

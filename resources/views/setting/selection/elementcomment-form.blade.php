@@ -67,7 +67,7 @@
     </div>
     {{-- status revisi --}}
     <div class="row mb-3">
-        <label for="link" class="col-md-4 col-form-label text-md-end">Direvisi?</label>
+        <label for="revised" class="col-md-4 col-form-label text-md-end">Direvisi?</label>
         <div class="col-md-8">
             <div class="form-check">
                 <input class="form-check-input" type="radio" name="revised" id="revisedYes" value="1" @checked($selectionelementcomment->revised == '1')>

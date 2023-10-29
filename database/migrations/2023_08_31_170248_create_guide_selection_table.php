@@ -20,7 +20,7 @@ return new class extends Migration
             $table->integer('guide1_quota')->default(0);
             $table->integer('guide2_quota')->default(0);
             $table->integer('examiner_quota')->default(0);
-            $table->boolean('active')->default(0);// final?
+            $table->boolean('active')->default(0);// aktif?
             $table->timestamps();
         });
 
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->integer('group')->nullable();
             $table->integer('guide1_quota')->default(0);
             $table->integer('guide2_quota')->default(0);
-            $table->boolean('active')->default(0);// final?
+            $table->boolean('active')->default(0);// aktif?
             $table->timestamps();
         });
 
@@ -55,11 +55,11 @@ return new class extends Migration
         Schema::create('selection_elements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('selection_stage_id')->constrained();
-            $table->integer('revision_order')->nullable();
-            $table->string('element')->nullable(); // title, novelty, urgency, impact, references
+            $table->bigInteger('parent_id')->nullable()->unsigned();
+            $table->string('element'); // title, novelty, urgency, impact, references
             $table->longText('description')->nullable();
             $table->string('link')->nullable();
-            $table->boolean('final')->default(0); //disetujui?
+            $table->boolean('approved')->nullable(); //disetujui?
             $table->timestamps();
         });
 
@@ -71,7 +71,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained(); //dosen
             $table->string('verificator')->nullable(); //dosen or dbs
             $table->longText('comment')->nullable();
-            $table->boolean('final')->nullable(); //direvisi?
+            $table->boolean('revised')->nullable(); //direvisi?
             $table->timestamps();
         });
 
@@ -82,7 +82,7 @@ return new class extends Migration
             $table->foreignId('selection_stage_id')->constrained();
             $table->foreignId('guide_group_id')->constrained(); //dosen
             $table->integer('guide_order')->nullable();
-            $table->boolean('final')->nullable(); //disetujui?
+            $table->boolean('approved')->nullable(); //disetujui?
             $table->timestamps();
         });
     }

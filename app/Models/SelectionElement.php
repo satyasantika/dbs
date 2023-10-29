@@ -19,4 +19,9 @@ class SelectionElement extends Model
     {
         return $this->belongsTo(SelectionStage::class,'selection_stage_id');
     }
+
+    public function children()
+    {
+        return $this->hasMany(SelectionElement::class, 'parent_id');
+    }
 }

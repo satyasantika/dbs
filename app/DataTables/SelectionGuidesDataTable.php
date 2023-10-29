@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\SelectionElement;
+use App\Models\SelectionGuide;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -12,7 +12,7 @@ use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
-class SelectionElementsDataTable extends DataTable
+class SelectionGuidesDataTable extends DataTable
 {
     /**
      * Build the DataTable class.
@@ -24,11 +24,14 @@ class SelectionElementsDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
                 $action = '';
-                $action .= ' <a href="'.route('selectionelements.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
+                $action .= ' <a href="'.route('selectionguides.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
             ->editColumn('selection_stage_id', function($row){
                     return $row->stage->student->name;
+            })
+            ->editColumn('guide_group_id', function($row){
+                    return $row->group->guide->name;
             })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
@@ -42,7 +45,7 @@ class SelectionElementsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(SelectionElement $model): QueryBuilder
+    public function query(SelectionGuide $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -53,7 +56,7 @@ class SelectionElementsDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-                    ->setTableId('selectionelements-table')
+                    ->setTableId('selectionguides-table')
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
@@ -77,10 +80,9 @@ class SelectionElementsDataTable extends DataTable
                   ->width(60)
                   ->addClass('text-center'),
             Column::make('selection_stage_id')->title('mahasiswa'),
-            Column::make('element')->title('NUIR'),
-            Column::make('approved'),
-            // Column::make('description')->title('usulan'),
-            // Column::make('link'),
+            Column::make('guide_group_id')->title('dosen'),
+            Column::make('guide_order')->title('pembimbing'),
+            Column::make('approved')->title('disetujui'),
             Column::make('created_at'),
             Column::make('updated_at'),
         ];
@@ -91,6 +93,6 @@ class SelectionElementsDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'SelectionElements_' . date('YmdHis');
+        return 'SelectionGuides_' . date('YmdHis');
     }
 }
