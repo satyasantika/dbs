@@ -23,9 +23,10 @@ class GuideController extends Controller
     public function index($stage)
     {
         $guides = SelectionGuide::where('selection_stage_id',$stage)->oldest()->get();
+        $max_guides = SelectionGuide::where('selection_stage_id',$stage)->whereNull('approved')->oldest()->count()/2;
         $available_guide1s = GuideGroup::whereNot('guide1_quota',0)->where('active',1)->orderBy('guide_allocation_id')->get();
         $available_guide2s = GuideGroup::whereNot('guide2_quota',0)->where('active',1)->orderBy('guide_allocation_id')->get();
-        return view('selection.guide-submission',compact('guides','available_guide1s','available_guide2s'));
+        return view('selection.guide-submission',compact('guides','available_guide1s','available_guide2s','max_guides'));
     }
 
     public function create()

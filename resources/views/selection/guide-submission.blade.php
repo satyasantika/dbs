@@ -4,13 +4,14 @@
 
 @endpush
 @push('body')
+@if (!($max_guides == 5))
 <form id="add-form" action="{{ route('guides.store') }}" method="POST">
     @csrf
-    {{-- <input type="hidden" name="selection_stage_id" value="{{ $stage->id }}"> --}}
     <button type="submit" class="btn btn-success btn-sm">
         {{ __('+ tambah usulan pasangan pembimbing') }}
     </button>
 </form>
+@endif
 <table class="table table-hover">
     <thead>
         <tr>
