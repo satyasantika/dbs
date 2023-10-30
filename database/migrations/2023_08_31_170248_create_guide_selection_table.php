@@ -41,7 +41,7 @@ return new class extends Migration
         Schema::create('selection_stages', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained(); //mahasiswa
-            $table->integer('stage_order')->nullable();
+            $table->integer('stage_order');
             $table->bigInteger('guide1_id')->nullable()->unsigned();
             $table->bigInteger('guide2_id')->nullable()->unsigned();
             $table->bigInteger('examiner1_id')->nullable()->unsigned();
@@ -80,8 +80,9 @@ return new class extends Migration
         Schema::create('selection_guides', function (Blueprint $table) {
             $table->id();
             $table->foreignId('selection_stage_id')->constrained();
-            $table->foreignId('guide_group_id')->constrained();//kelompok
-            $table->integer('user_id')->constrained();//dosen
+            $table->foreignId('guide_group_id')->nullable()->constrained();//kelompok
+            $table->integer('pair_order')->nullable();//urutan pasangan pembimbing
+            $table->foreignId('user_id')->nullable()->constrained();//dosen
             $table->integer('guide_order')->nullable();
             $table->boolean('approved')->nullable(); //disetujui?
             $table->timestamps();

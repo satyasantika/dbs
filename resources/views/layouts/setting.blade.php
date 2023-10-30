@@ -19,7 +19,7 @@
                             {{ session('warning') }}
                         </div>
                     @endif
-                    {{ $dataTable->table() }}
+                    {{ $dataTable->table()}}
                     @stack('body')
                 </div>
             </div>

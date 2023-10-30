@@ -3,14 +3,16 @@
 @section('content')
 <div class="container">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col">
             <div class="card">
-                <div class="card-header">{{ __('Dashboard') }}</div>
-
+                <div class="card-header">
+                    {{ ucFirst(request()->segment(1)) }} > {{ ucFirst(request()->segment(2)) }}
+                    @stack('header')
+                </div>
                 <div class="card-body">
-                    @if (session('status'))
-                        <div class="alert alert-success" role="alert">
-                            {{ session('status') }}
+                    @if (session('success'))
+                        <div class="alert alert-success">
+                            {{ session('success') }}
                         </div>
                     @endif
                     @if (session('warning'))
@@ -18,8 +20,7 @@
                             {{ session('warning') }}
                         </div>
                     @endif
-
-                    @includeWhen(auth()->user()->can('access dashboard mahasiswa'),'dashboard.mahasiswa')
+                    @stack('body')
                 </div>
             </div>
         </div>

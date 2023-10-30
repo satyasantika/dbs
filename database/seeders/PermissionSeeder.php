@@ -44,6 +44,9 @@ class PermissionSeeder extends Seeder
             'exam registrations',
             'examiners',
             'exam scores',
+            'stages',
+            'elements',
+            'element comments',
         ];
         $permissions = [];
         foreach ($general_permissions as $general_permission) {
@@ -101,6 +104,7 @@ class PermissionSeeder extends Seeder
         // general permission for MAHASISWA
         // MENU for MAHASISWA
         $mahasiswa_access = [
+            ['join tahapan','selection/stages'],
             ['ajuan NUIR','selection/elements'],
             ['ajuan pembimbing','selection/guides'],
             ['registrasi ujian','exam/registrations'],
