@@ -25,7 +25,7 @@ return new class extends Migration
         });
 
         // DBS
-        // Set kuota pembimbing dan penguji
+        // Set kuota di grup pembimbing dan penguji
         Schema::create('guide_groups', function (Blueprint $table) {
             $table->id();
             $table->foreignId('guide_allocation_id')->constrained(); //dosen
@@ -33,6 +33,19 @@ return new class extends Migration
             $table->integer('guide1_quota')->default(0);
             $table->integer('guide2_quota')->default(0);
             $table->boolean('active')->default(0);// aktif?
+            $table->timestamps();
+        });
+
+        // DBS
+        // Set pembimbing dan penguji
+        Schema::create('guide_examiners', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained(); //mahasiswa
+            $table->bigInteger('guide1_id')->nullable()->unsigned();
+            $table->bigInteger('guide2_id')->nullable()->unsigned();
+            $table->bigInteger('examiner1_id')->nullable()->unsigned();
+            $table->bigInteger('examiner2_id')->nullable()->unsigned();
+            $table->bigInteger('examiner3_id')->nullable()->unsigned();
             $table->timestamps();
         });
 
@@ -44,9 +57,6 @@ return new class extends Migration
             $table->integer('stage_order');
             $table->bigInteger('guide1_id')->nullable()->unsigned();
             $table->bigInteger('guide2_id')->nullable()->unsigned();
-            $table->bigInteger('examiner1_id')->nullable()->unsigned();
-            $table->bigInteger('examiner2_id')->nullable()->unsigned();
-            $table->bigInteger('examiner3_id')->nullable()->unsigned();
             $table->boolean('final')->default(0);// final?
             $table->timestamps();
         });
@@ -85,6 +95,7 @@ return new class extends Migration
             $table->foreignId('user_id')->nullable()->constrained();//dosen
             $table->integer('guide_order')->nullable();
             $table->boolean('approved')->nullable(); //disetujui?
+            $table->string('information')->nullable(); //disetujui?
             $table->timestamps();
         });
     }
@@ -98,6 +109,7 @@ return new class extends Migration
         Schema::dropIfExists('selection_element_comments');
         Schema::dropIfExists('selection_elements');
         Schema::dropIfExists('selection_stages');
+        Schema::dropIfExists('guide_examiners');
         Schema::dropIfExists('guide_groups');
         Schema::dropIfExists('guide_allocations');
     }

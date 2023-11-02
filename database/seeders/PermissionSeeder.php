@@ -117,7 +117,6 @@ class PermissionSeeder extends Seeder
         foreach ($permissions as $permission) {
             $permissionOne = Permission::create(['name' => $permission]);
             $permissionOne->assignRole('mahasiswa');
-            $permissionOne->assignRole('dosen');
         }
 
         // MENU selection
@@ -198,6 +197,23 @@ class PermissionSeeder extends Seeder
                 'order' => (Navigation::where('parent_id',$setting->id)->count()+1<10 ? 'C0':'C').Navigation::where('parent_id',$setting->id)->count()+1,
             ]);
         }
+        // khusus dosen
+        $permissions = [
+            'respon selection guide',
+            'decline selection',
+            'accept selection',
+        ];
 
+        foreach ($permissions as $permission) {
+            Permission::create(['name' => $permission])->assignRole('dosen');
+        }
+        // khusus mahasiswa
+        $permissions = [
+            'cancel selection',
+        ];
+
+        foreach ($permissions as $permission) {
+            Permission::create(['name' => $permission])->assignRole('dosen');
+        }
     }
 }

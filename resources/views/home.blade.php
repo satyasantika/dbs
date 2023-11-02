@@ -19,6 +19,7 @@
                         </div>
                     @endif
 
+                    @includeWhen(auth()->user()->can('access dashboard dosen'),'dashboard.dosen')
                     @includeWhen(auth()->user()->can('access dashboard mahasiswa'),'dashboard.mahasiswa')
                 </div>
             </div>

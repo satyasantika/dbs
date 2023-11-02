@@ -12,14 +12,6 @@ use Illuminate\Support\Facades\Auth;
 
 class GuideController extends Controller
 {
-    function __construct()
-    {
-        $this->middleware('permission:read selection guides', ['only' => ['index','show']]);
-        $this->middleware('permission:create selection guides', ['only' => ['create','store']]);
-        $this->middleware('permission:update selection guides', ['only' => ['edit','update']]);
-        $this->middleware('permission:delete selection guides', ['only' => ['destroy']]);
-    }
-
     public function index($stage)
     {
         $guides = SelectionGuide::where('selection_stage_id',$stage)->oldest()->get();
@@ -27,17 +19,6 @@ class GuideController extends Controller
         $available_guide1s = GuideGroup::whereNot('guide1_quota',0)->where('active',1)->orderBy('guide_allocation_id')->get();
         $available_guide2s = GuideGroup::whereNot('guide2_quota',0)->where('active',1)->orderBy('guide_allocation_id')->get();
         return view('selection.guide-submission',compact('guides','available_guide1s','available_guide2s','max_guides'));
-    }
-
-    public function create()
-    {
-        $guide = new SelectionGuide();
-        return view('selection.guide-form', array_merge(
-            $this->_dataSelection(),
-            [
-                'guide'=> $guide,
-            ],
-        ));
     }
 
     public function store(Request $request)
@@ -53,16 +34,6 @@ class GuideController extends Controller
         return redirect()->back()->with('success','usulanmu telah ditambahkan');
     }
 
-    public function show(string $id)
-    {
-        //
-    }
-
-    public function edit(string $id)
-    {
-        //
-    }
-
     public function update(Request $request, SelectionGuide $guide)
     {
         $data = $request->all();
@@ -74,23 +45,9 @@ class GuideController extends Controller
         return to_route('guides.index',$guide->selection_stage_id)->with('success','pembimbing/penguji '.$name.' telah disahkan');
     }
 
-    public function destroy(SelectionGuide $selectionguide)
-    {
-        $name = strtoupper(User::find($selectionguide->user_id)->name);
-        $selectionguide->delete();
-        return to_route('guides.index')->with('warning','usulan '.$name.' telah dihapus');
-    }
-
-    private function _dataSelection()
-    {
-        return [
-            'groups' =>  GuideGroup::where('active',1)->orderBy('id')->get(),
-        ];
-    }
-
+    // batalkan usulan oleh mahasiswa
     public function cancel(Request $request, SelectionGuide $guide)
     {
-        // dd($guide);
         $name = strtoupper(User::find($guide->user_id)->name);
         $data = $request->all();
         $data['guide_group_id'] = NULL;
@@ -98,4 +55,6 @@ class GuideController extends Controller
         $guide->fill($data)->save();
         return redirect()->back()->with('warning','usulan '.$name.' telah dibatalkan');
     }
+
+
 }

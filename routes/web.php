@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return to_route('home');
+    // return view('welcome');
 });
 
 Route::middleware('auth')->group(function () {
@@ -39,8 +40,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('setting/selectionguidegroups', App\Http\Controllers\Setting\Selection\GuideGroupController::class)->except('show');
     Route::resource('setting/selectionguides', App\Http\Controllers\Setting\Selection\GuideController::class)->except('show');
     Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('index','store','update','destroy');
+    // doshboard mahasiswa
     Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
     Route::put('selection/guides/{guide}/cancel', [App\Http\Controllers\Selection\GuideController::class,'cancel'])->name('guides.cancel');
+    // dashboard dosen
+    Route::put('selection/guides/{guide}/accept', [App\Http\Controllers\Selection\GuideResponController::class,'accept'])->name('guides.accept');
+    Route::put('selection/guides/{guide}/decline', [App\Http\Controllers\Selection\GuideResponController::class,'decline'])->name('guides.decline');
     Route::resource('selection/guides', App\Http\Controllers\Selection\GuideController::class)->except('show','index');
 });
 

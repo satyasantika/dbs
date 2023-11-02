@@ -29,10 +29,10 @@ class StageController extends Controller
 
     public function store(Request $request)
     {
-        $input = $request->all();
-        $input['user_id'] = Auth::id();
-        $input['stage_order'] = 2; //make to model
-        SelectionStage::create($input);
+        SelectionStage::create([
+            'user_id' => Auth::id(),
+            'stage_order' => 2, //to FIX khusus tahap 2
+        ]);
         return redirect()->back()->with('success','usulanmu telah ditambahkan');
     }
 
