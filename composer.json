@@ -1,8 +1,8 @@
 {
-    "name": "laravel/laravel",
+    "name": "satyasantika/dbs",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "System for Dewan Bimbingan Skripsi (DBS), powered by Laravel framework.",
+    "keywords": ["dbs", "skripsi"],
     "license": "MIT",
     "require": {
         "php": "^8.1",

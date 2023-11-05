@@ -3,16 +3,26 @@
 @push('header')
 
 @endpush
+
 @push('body')
-@if (!($max_guides <= 5) && !$guide->stage->final)
-<form id="add-form" action="{{ route('guides.store') }}" method="POST">
-    @csrf
-    @can('create selection guides')
-    <button type="submit" class="btn btn-success btn-sm">
-        {{ __('+ tambah usulan pasangan pembimbing') }}
-    </button>
-    @endif
-</form>
+Catatan:
+<ol>
+    <li>Anda dapat mengusulkan hingga (5) lima usulan pasangan pembimbing</li>
+    <li>Tombol <b>+ tambah usulan pasangan pembimbing</b> hanya akan muncul jika Anda telah menentukan calon pembimbing suatu pasangan, jadi pastikan set nama calon dosen pembimbing 1 dan 2 sebelum menambah usulan baru untuk pasangan calon pembimbing</li>
+    <li>Anda masih dapat membatalkan usulan nama dosen calon pembimbing selama belum ditentukan keputusan diterima/ditolaknya oleh calon pembimbing</li>
+    <li>Pastikan tindak lanjuti dengan menghubungi calon pembimbing agar menerima kejelasan diterima/ditolaknya usulan.</li>
+    <li>Jika usulan telah diterima dua calon pembimbing yang sepasang, maka usulan ini akan otomatis dicatatkan sistem sebagai calon pembimbing Anda, dan otomatis semua usulan pasangan lainnya diubah statusnya menjadi ditolak otomatis oleh sistem.</li>
+    <li>Jika usulan ditolak oleh salah satu calon pembimbing, maka usulan pasangannya pun ini akan otomatis ditolak oleh sistem, dan Anda dapat mengajukan usulan baru untuk mengganti pasangan yang ditolak.</li>
+</ol>
+@if ($max_guides < 5 && !$stage->final && !$available_empty_guide)
+    <form id="add-form" action="{{ route('guides.store') }}" method="POST">
+        @csrf
+        @can('create selection guides')
+        <button type="submit" class="btn btn-success btn-sm">
+            {{ __('+ tambah usulan pasangan pembimbing') }}
+        </button>
+        @endif
+    </form>
 @endif
 <table class="table table-hover">
     <thead>
@@ -56,7 +66,7 @@
                                         <option
                                             value="{{ $guide1->id }}"
                                             @selected($guide1->allocation->user_id == $guide->user_id)
-                                            >{{ $guide1->allocation->lecture->name }} (Kuota: {{ $guide1->guide1_quota }})</option>
+                                            >{{ $guide1->allocation->lecture->name }} (Kuota: {{ $guide1->guide1_quota - $guide1->guide1_filled }})</option>
                                         @endforeach
                                     @else
                                         {{-- tampilan semua pembimbing 2 --}}
@@ -64,7 +74,7 @@
                                         <option
                                             value="{{ $guide2->id }}"
                                             @selected($guide2->allocation->user_id == $guide->user_id)
-                                            >{{ $guide2->allocation->lecture->name }} (Kuota: {{ $guide2->guide2_quota }})</option>
+                                            >{{ $guide2->allocation->lecture->name }} (Kuota: {{ $guide2->guide2_quota - $guide2->guide2_filled }})</option>
                                         @endforeach
                                     @endif
                                 @else
@@ -103,7 +113,7 @@
                                     <option
                                         value="{{ $other_guide->id }}"
                                         @selected($other_guide->allocation->user_id == $guide->user_id)
-                                        >{{ $other_guide->allocation->lecture->name }} (Kuota: {{ $selection_guide->guide_order == 1 ? $other_guide->guide2_quota : $other_guide->guide1_quota }})</option>
+                                        >{{ $other_guide->allocation->lecture->name }} (Kuota: {{ $selection_guide->guide_order == 1 ? $other_guide->guide2_quota - $other_guide->guide2_filled : $other_guide->guide1_quota - $other_guide->guide1_filled }})</option>
                                     @empty
                                     <option value="0">{{ $guide_for_pair }}</option>
                                     @endforelse

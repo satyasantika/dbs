@@ -1,3 +1,21 @@
+@extends('layouts.general')
+
+@push('header')
+<a href="{{ route('home') }}" class="btn btn-primary btn-sm float-end">kembali</a>
+@endpush
+
+@push('body')
+<h5>Proses Pemilihan Pembimbing Tahap 2 Tahun 2023</h5>
+Halaman ini berisi usulan proses pemilihan pembimbing tahap 2 dari mahasiswa sekait dengan kesediaan untuk menjadi Dosen Pembimbing.
+Bapak/Ibu dapat menerima atau menolak usulan tersebut selama kuota masih tersedia.
+Perhatikan catatan berikut:
+<ol>
+    <li>Setiap mahasiswa diizinkan mengusulkan hingga (5) lima usulan pasangan pembimbing</li>
+    <li>Jika Bapak/Ibu menerima usulan tersebut dan pasangan calon pembimbing juga menerimanya, maka pasangan calon pembimbing akan langsung ditetapkan</li>
+    <li>Jika Bapak/Ibu menerima usulan tersebut, sementara pasangan calon pembimbing yang diusulkan menolak, maka usulan pasangan ini dibatalkan oleh sistem dan usulan ini tetap diarsipkan, sementara mahasiswa dapat mengajukan usulan lain pasangan baru.</li>
+    <li>Jika Bapak/Ibu menolak usulan tersebut, maka secara otomatis usulan terhadap pasangan calon pembimbing lain juga ditolak.</li>
+    <li>Jika satu usulan telah diterima oleh dua calon pembimbing yang berpasangan, maka usulan pasangan lain otomatis ditolak oleh sistem.</li>
+</ol>
 <table class="table table-hover">
     <thead>
         <tr>
@@ -9,7 +27,7 @@
         </tr>
     </thead>
     <tbody>
-        @foreach (\App\Models\SelectionGuide::where('user_id',Auth::id())->oldest()->get() as $key => $guide)
+        @foreach ($guides as $key => $guide)
         <tr>
             <th scope="row">{{ $key+1 }}</th>
             <td>
@@ -21,7 +39,7 @@
                 @if (!$guide->stage->final)
                     @if (is_null($guide->approved))
                         <div class="col">
-                            <form id="accept-form" action="{{ route('guides.accept',$guide) }}" method="POST">
+                            <form id="accept-form" action="{{ route('respons.accept',$guide) }}" method="POST">
                                 @csrf @method('PUT')
                                 <button type="submit" class="btn btn-outline-success btn-sm" onclick="return confirm('Yakin akan menerima usulan ini?');">
                                     {{ __('terima') }}
@@ -29,7 +47,7 @@
                             </form>
                         </div>
                         <div class="col">
-                            <form id="decline-form" action="{{ route('guides.decline',$guide) }}" method="POST">
+                            <form id="decline-form" action="{{ route('respons.decline',$guide) }}" method="POST">
                                 @csrf @method('PUT')
                                 <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Yakin akan menolak usulan ini?');">
                                     {{ __('tolak') }}
@@ -68,10 +86,10 @@
             </td>
             <td>
                 {{ $guide->information }}
-                @if (!$guide->stage->final && !is_null($guide->approved))
+                {{-- @if (!$guide->stage->final && !is_null($guide->approved))
                     @if ($guide->approved)
                     <div class="col">
-                        <form id="decline-form" action="{{ route('guides.decline',$guide) }}" method="POST">
+                        <form id="decline-form" action="{{ route('respons.decline',$guide) }}" method="POST">
                             @csrf @method('PUT')
                             <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Yakin akan menolak usulan ini?');">
                                 {{ __('tolak (ralat)') }}
@@ -80,7 +98,7 @@
                     </div>
                     @else
                         <div class="col">
-                            <form id="accept-form" action="{{ route('guides.accept',$guide) }}" method="POST">
+                            <form id="accept-form" action="{{ route('respons.accept',$guide) }}" method="POST">
                                 @csrf @method('PUT')
                                 <button type="submit" class="btn btn-outline-success btn-sm" onclick="return confirm('Yakin akan menerima usulan ini?');">
                                     {{ __('diterima (ralat)') }}
@@ -88,9 +106,10 @@
                             </form>
                         </div>
                     @endif
-                @endif
+                @endif --}}
             </td>
         </tr>
         @endforeach
     </tbody>
 </table>
+@endpush
