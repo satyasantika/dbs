@@ -32,6 +32,8 @@ return new class extends Migration
             $table->integer('group')->nullable();
             $table->integer('guide1_quota')->default(0);
             $table->integer('guide2_quota')->default(0);
+            $table->integer('guide1_filled')->default(0);
+            $table->integer('guide2_filled')->default(0);
             $table->boolean('active')->default(0);// aktif?
             $table->timestamps();
         });

@@ -215,5 +215,8 @@ class PermissionSeeder extends Seeder
         foreach ($permissions as $permission) {
             Permission::create(['name' => $permission])->assignRole('dosen');
         }
+        Permission::create(['name' => 'join stage 1']);
+        Permission::create(['name' => 'join stage 2']);
+        Permission::create(['name' => 'join stage 3']);
     }
 }
