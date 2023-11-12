@@ -40,6 +40,7 @@ Catatan:
             <th scope="row">{{ $guide->pair_order }}</th>
             <td>{{ $guide->stage->stage_order }}</td>
             <td>
+                <span class="badge bg-dark">calon Pembimbing {{ $guide->guide_order }}</span><br>
                 @if ($guide->user_id)
                     {{ $guide->guide->name }}
                 @else
@@ -129,6 +130,11 @@ Catatan:
                     @endif
                 @endif
                 @if (!$guide->stage->final && $guide->user_id)
+                    @php
+                        $guide_group = App\Models\GuideGroup::find($guide->guide_group_id);
+                        $available1 = $guide_group->guide1_quota > $guide_group->guide1_filled ? true : false;
+                        $available2 = $guide_group->guide2_quota > $guide_group->guide2_filled ? true : false;
+                    @endphp
                     @if (is_null($guide->approved))
                         <form id="cancel-form" action="{{ route('guides.cancel',$guide) }}" method="POST">
                             @csrf
@@ -137,6 +143,9 @@ Catatan:
                                 {{ __('batalkan') }}
                             </button>
                         </form>
+                        @if (!($available1 || $available2))
+                        <span class="badge bg-warning text-dark">ajuan melebihi kuota, berpotensi ditolak otomatis</span>
+                        @endif
                     @endif
                 @endif
             </td>
@@ -153,6 +162,8 @@ Catatan:
             </td>
             <td>
                 {{ $guide->updated_at->format('d-m-Y H:i:s') }}
+                <br>
+                {{ $guide->information }}
             </td>
         </tr>
         @endforeach

@@ -37,7 +37,24 @@ Perhatikan catatan berikut:
                         <span class="badge bg-light text-dark">usulan Pembimbing {{ $guide->guide_order }}</span>
                     </div>
                 @if (!$guide->stage->final)
-                    @if (is_null($guide->approved))
+                    @php
+                        $guide_group = App\Models\GuideGroup::find($guide->guide_group_id);
+                        if ($guide->guide_order == 1) {
+                            $available = $guide_group->guide1_quota > $guide_group->guide1_filled;
+                        } else {
+                            $available = $guide_group->guide2_quota > $guide_group->guide2_filled;
+                        }
+
+                    @endphp
+                    @php
+                        $guide_order = $guide->guide_order == 1 ? 2 : 1;
+                        $mypair = \App\Models\SelectionGuide::where([
+                            'selection_stage_id'=>$guide->selection_stage_id,
+                            'pair_order'=>$guide->pair_order,
+                            'guide_order'=>$guide_order,
+                        ])->first();
+                    @endphp
+                    @if (is_null($guide->approved) && $available)
                         <div class="col">
                             <form id="accept-form" action="{{ route('respons.accept',$guide) }}" method="POST">
                                 @csrf @method('PUT')
@@ -54,19 +71,20 @@ Perhatikan catatan berikut:
                                 </button>
                             </form>
                         </div>
+                    @else
+                        @if ($mypair->approved == 0)
+                        @endif
+                        <span class="badge bg-warning text-dark">tidak bisa merespon, ajuan melebihi kuota</span>
+                    @endif
+                @else
+                    {{-- jika sudah ditetapkan pada hasil pemilihan --}}
+                    @if ($guide->approved == 1)
+                        <span class="badge bg-success text-dark">pasangan pembimbing sudah ditetapkan</span>
                     @endif
                 @endif
                 </div>
             </td>
             <td>
-                @php
-                    $guide_order = $guide->guide_order == 1 ? 2 : 1;
-                    $mypair = \App\Models\SelectionGuide::where([
-                        'selection_stage_id'=>$guide->selection_stage_id,
-                        'pair_order'=>$guide->pair_order,
-                        'guide_order'=>$guide_order,
-                    ])->first();
-                @endphp
                 @if ($mypair->user_id)
                     <span class="badge bg-secondary">Pembimbing {{ $guide_order }}</span><br>
                     {{ $mypair->guide->name }}
@@ -86,26 +104,15 @@ Perhatikan catatan berikut:
             </td>
             <td>
                 {{ $guide->information }}
-                {{-- @if (!$guide->stage->final && !is_null($guide->approved))
-                    @if ($guide->approved)
+                {{-- @if (!is_null($guide->approved))
                     <div class="col">
-                        <form id="decline-form" action="{{ route('respons.decline',$guide) }}" method="POST">
+                        <form id="retract-form" action="{{ route('respons.retract',$guide) }}" method="POST">
                             @csrf @method('PUT')
-                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Yakin akan menolak usulan ini?');">
-                                {{ __('tolak (ralat)') }}
+                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Yakin akan membatalkan usulan ini?');">
+                                {{ __('ralat') }}
                             </button>
                         </form>
                     </div>
-                    @else
-                        <div class="col">
-                            <form id="accept-form" action="{{ route('respons.accept',$guide) }}" method="POST">
-                                @csrf @method('PUT')
-                                <button type="submit" class="btn btn-outline-success btn-sm" onclick="return confirm('Yakin akan menerima usulan ini?');">
-                                    {{ __('diterima (ralat)') }}
-                                </button>
-                            </form>
-                        </div>
-                    @endif
                 @endif --}}
             </td>
         </tr>

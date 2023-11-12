@@ -6,7 +6,7 @@
             <div class="card-header">Info hasil pemilihan pembimbing di tahun 2023</div>
             <div class="card-body">
                 untuk melihat hasil pemilihan pembimbing tahap 1,2,3,dst... silakan klik tombol berikut:<br>
-                <a href="{{ route('respons.result') }}" class="btn btn-sm btn-primary">Pemilihan Pembimbing</a>
+                <a href="{{ route('respons.result') }}" class="btn btn-sm btn-primary">Hasil Pemilihan</a>
             </div>
         </div>
     </div>
@@ -26,8 +26,8 @@
     Informasi kuota Pembimbing
 </div>
 @php
-        $guide = App\Models\GuideAllocation::where('user_id',auth()->user()->id)->where('active',1)->first()
-        @endphp
+    $guide = App\Models\GuideAllocation::where('user_id',auth()->user()->id)->where('active',1)->first()
+@endphp
 
 <div class="card">
     <div class="card-header bg-light">Pembimbing 1</div>
@@ -48,10 +48,8 @@
             </div>
             <div class="col">
                 <div class="h1">
-                    {{ App\Models\SelectionGuide::where([
-                        'user_id'=>auth()->user()->id,
-                        'guide_order'=>1,
-                        'approved'=>1,
+                    {{ App\Models\SelectionStage::where([
+                        'guide1_id'=>auth()->user()->id,
                         ])->count() }}
                 </div>Acc
             </div>
@@ -95,10 +93,8 @@
             </div>
             <div class="col">
                 <div class="h1">
-                    {{ App\Models\SelectionGuide::where([
-                        'user_id'=>auth()->user()->id,
-                        'guide_order'=>2,
-                        'approved'=>1,
+                    {{ App\Models\SelectionStage::where([
+                        'guide2_id'=>auth()->user()->id,
                         ])->count() }}
                 </div>Acc
             </div>
@@ -118,6 +114,7 @@
                         'guide_order'=>2,
                         'approved'=>NULL,
                         ])->count() }}
+
                 </div>Menunggu
             </div>
         </div>
