@@ -29,42 +29,46 @@ return new class extends Migration
             $table->boolean('active')->default(0);
             $table->timestamps();
         });
-        // MAHASISWA
+
+        // MAHASISWA + DBS
         Schema::create('exam_registrations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained(); //mahasiswa
             $table->foreignId('exam_type_id')->constrained();
             $table->integer('registration_order'); // ujian ke-...
-            $table->text('title');
-            $table->double('ipk');
-            $table->string('room');
-            $table->date('exam_date');
-            $table->string('exam_time');
-            $table->string('online_link');
-            $table->string('online_user');
-            $table->string('online_password');
-            $table->string('schedule_link');
+            $table->foreignId('user_id')->constrained(); //mahasiswa
+            $table->bigInteger('examiner1_id')->nullable()->unsigned();
+            $table->bigInteger('examiner2_id')->nullable()->unsigned();
+            $table->bigInteger('examiner3_id')->nullable()->unsigned();
+            $table->bigInteger('guide1_id')->nullable()->unsigned();
+            $table->bigInteger('guide2_id')->nullable()->unsigned();
+            $table->bigInteger('chief')->nullable()->unsigned(); // ketua penguji?
+            $table->date('exam_date')->nullable();
+            $table->time('exam_time')->nullable();
+            $table->text('title')->nullable();
+            $table->double('ipk')->nullable();
+            $table->string('room')->nullable();
+            $table->string('online_link')->nullable();
+            $table->string('online_user')->nullable();
+            $table->string('online_password')->nullable();
+            $table->string('schedule_link')->nullable();
+            $table->boolean('pass_exam')->default(0);
             $table->timestamps();
         });
-        // DBS
-        Schema::create('examiners', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('exam_registration_id')->constrained();
-            $table->foreignId('user_id')->constrained(); // penguji
-            $table->integer('examiner_order'); // urutan penguji
-            $table->boolean('chief'); // ketua penguji?
-            $table->text('note')->nullable();
-            $table->boolean('revision')->nullable(); // perlu revisi?
-            $table->boolean('approved')->nullable(); // disetujui or layak or lulus?
-            $table->timestamps();
-        });
+        
         // DOSEN
         Schema::create('exam_scores', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('examiner_id')->constrained();
-            $table->foreignId('exam_form_item_id')->constrained();
-            $table->integer('score')->nullable();
-            $table->boolean('final')->default(0);
+            $table->foreignId('exam_registration_id')->constrained();
+            $table->foreignId('user_id')->constrained(); // dosen penguji
+            $table->integer('examiner_order'); // urutan penguji
+            $table->integer('score01')->nullable();
+            $table->integer('score02')->nullable();
+            $table->integer('score03')->nullable();
+            $table->integer('score04')->nullable();
+            $table->integer('score05')->nullable();
+            $table->boolean('revision')->nullable(); // perlu revisi?
+            $table->text('revision_note')->nullable();
+            $table->boolean('pass_approved')->nullable(); // disetujui or layak or lulus?
             $table->timestamps();
         });
     }
@@ -75,7 +79,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('exam_scores');
-        Schema::dropIfExists('examiners');
         Schema::dropIfExists('exam_registrations');
         Schema::dropIfExists('exam_form_items');
         Schema::dropIfExists('exam_types');

@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
         Route::get('selection/respon/result', [App\Http\Controllers\Selection\GuideResponController::class,'result'])->name('respons.result');
         Route::put('selection/respons/{guide}/accept', [App\Http\Controllers\Selection\GuideResponController::class,'accept'])->name('respons.accept');
         Route::put('selection/respons/{guide}/decline', [App\Http\Controllers\Selection\GuideResponController::class,'decline'])->name('respons.decline');
+        Route::put('selection/respons/{guide}/retract', [App\Http\Controllers\Selection\GuideResponController::class,'retract'])->name('respons.retract');
         Route::resource('selection/guides', App\Http\Controllers\Selection\GuideController::class)->except('show','index');
     });
 });

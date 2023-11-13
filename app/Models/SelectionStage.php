@@ -32,6 +32,21 @@ class SelectionStage extends Model
         return $this->belongsTo(User::class,'guide2_id');
     }
 
+    public function examiner1()
+    {
+        return $this->belongsTo(User::class,'examiner1_id');
+    }
+
+    public function examiner2()
+    {
+        return $this->belongsTo(User::class,'examiner2_id');
+    }
+
+    public function examiner3()
+    {
+        return $this->belongsTo(User::class,'examiner3_id');
+    }
+
     public function elements()
     {
         return $this->hasMany(SelectionElement::class);

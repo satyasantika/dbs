@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\GuideGroup;
+use App\Models\ViewGuideGroup;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -27,14 +27,8 @@ class GuideGroupsDataTable extends DataTable
                 $action .= ' <a href="'.route('selectionguidegroups.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
-            ->editColumn('guide_group_id', function($row){
-                    return $row->allocation->lecture->name;
-            })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
-            })
-            ->editColumn('created_at', function($row) {
-                return $row->created_at->format('Y-m-d H:i:s');
             })
             ->setRowId('id');
     }
@@ -42,7 +36,7 @@ class GuideGroupsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(GuideGroup $model): QueryBuilder
+    public function query(ViewGuideGroup $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -77,10 +71,12 @@ class GuideGroupsDataTable extends DataTable
                   ->width(60)
                   ->addClass('text-center'),
             Column::make('active'),
-            Column::make('guide_group_id')->title('nama')->orderable(false)->searchable(false),
-            Column::make('group')->title('Kelompok'),
-            Column::make('guide1_quota')->title('P1'),
-            Column::make('guide2_quota')->title('P2'),
+            Column::make('dosen'),
+            Column::make('group'),
+            Column::make('guide1_quota')->title('P1-kuota'),
+            Column::make('guide1_filled')->title('P1-isi'),
+            Column::make('guide2_quota')->title('P2-kuota'),
+            Column::make('guide2_filled')->title('P2-isi'),
         ];
     }
 

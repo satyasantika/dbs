@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\GuideAllocation;
+use App\Models\ViewGuideAllocation;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -27,14 +27,8 @@ class GuideAllocationsDataTable extends DataTable
                 $action .= ' <a href="'.route('selectionguideallocations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
-            ->editColumn('user_id', function($row){
-                    return $row->lecture->name;
-            })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
-            })
-            ->editColumn('created_at', function($row) {
-                return $row->created_at->format('Y-m-d H:i:s');
             })
             ->setRowId('id');
     }
@@ -42,7 +36,7 @@ class GuideAllocationsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(GuideAllocation $model): QueryBuilder
+    public function query(ViewGuideAllocation $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -77,11 +71,11 @@ class GuideAllocationsDataTable extends DataTable
                   ->width(60)
                   ->addClass('text-center'),
             Column::make('active'),
-            Column::make('user_id')->title('nama'),
+            Column::make('year'),
+            Column::make('dosen'),
             Column::make('guide1_quota')->title('P1'),
             Column::make('guide2_quota')->title('P2'),
             Column::make('examiner_quota')->title('Penguji'),
-            Column::make('year')->title('tahun'),
         ];
     }
 

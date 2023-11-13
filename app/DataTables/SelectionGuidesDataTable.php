@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\SelectionGuide;
+use App\Models\ViewSelectionGuide;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -27,17 +27,8 @@ class SelectionGuidesDataTable extends DataTable
                 $action .= ' <a href="'.route('selectionguides.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
-            ->editColumn('selection_stage_id', function($row){
-                    return $row->stage->student->name;
-            })
-            ->editColumn('guide_group_id', function($row){
-                    return $row->group->guide->name;
-            })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
-            })
-            ->editColumn('created_at', function($row) {
-                return $row->created_at->format('Y-m-d H:i:s');
             })
             ->setRowId('id');
     }
@@ -45,7 +36,7 @@ class SelectionGuidesDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(SelectionGuide $model): QueryBuilder
+    public function query(ViewSelectionGuide $model): QueryBuilder
     {
         return $model->newQuery();
     }
@@ -79,11 +70,13 @@ class SelectionGuidesDataTable extends DataTable
                   ->printable(false)
                   ->width(60)
                   ->addClass('text-center'),
-            Column::make('selection_stage_id')->title('mahasiswa'),
-            Column::make('guide_group_id')->title('dosen'),
-            Column::make('guide_order')->title('pembimbing'),
-            Column::make('approved')->title('disetujui'),
-            Column::make('created_at'),
+            Column::make('mahasiswa'),
+            Column::make('group_id'),
+            Column::make('pasangan'),
+            Column::make('pembimbing'),
+            Column::make('dosen'),
+            Column::make('status'),
+            Column::make('keterangan'),
             Column::make('updated_at'),
         ];
     }

@@ -43,12 +43,16 @@ return new class extends Migration
         Schema::create('guide_examiners', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained(); //mahasiswa
-            $table->bigInteger('guide1_id')->nullable()->unsigned();
-            $table->bigInteger('guide2_id')->nullable()->unsigned();
+            $table->string('year_generation'); //angkatan
             $table->bigInteger('examiner1_id')->nullable()->unsigned();
             $table->bigInteger('examiner2_id')->nullable()->unsigned();
             $table->bigInteger('examiner3_id')->nullable()->unsigned();
-            $table->timestamps();
+            $table->bigInteger('guide1_id')->nullable()->unsigned();
+            $table->bigInteger('guide2_id')->nullable()->unsigned();
+            $table->date('proposal_date')->nullable();
+            $table->date('seminar_date')->nullable();
+            $table->date('thesis_date')->nullable();
+            // $table->timestamps();
         });
 
         // MAHASISWA > DOSEN
