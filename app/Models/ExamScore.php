@@ -13,17 +13,18 @@ class ExamScore extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'is_final' => 'boolean',
+        'revision' => 'boolean',
+        'pass_approved' => 'boolean',
     ];
 
-    public function examiners(): belongsTo
+    public function registration()
     {
-        return $this->belongsTo(ExamExaminer::class);
+        return $this->belongsTo(ExamRegistration::class,'exam_registration_id');
     }
 
-    public function examformitems(): belongsTo
+    public function lecture()
     {
-        return $this->belongsTo(ExamFormItem::class);
+        return $this->belongsTo(User::class,'user_id');
     }
 }
 

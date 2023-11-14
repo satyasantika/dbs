@@ -14,15 +14,15 @@ class ExamType extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'active' => 'boolean',
     ];
 
-    public function examformitems(): hasMany
+    public function formitems()
     {
         return $this->hasMany(ExamFormItem::class);
     }
 
-    public function examregistrations(): hasMany
+    public function registrations()
     {
         return $this->hasMany(ExamRegistration::class);
     }

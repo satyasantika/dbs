@@ -1,5 +1,20 @@
 
 <h3>Selamat datang, {{ auth()->user()->name }}</h3>
+@can('respon examination score')
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">Penilaian Ujian</div>
+            <div class="card-body">
+                untuk menilai ujian, silakan klik tombol berikut:<br>
+                <a href="{{ route('scoring.index') }}" class="btn btn-sm btn-primary">Menilai Ujian</a>
+            </div>
+        </div>
+    </div>
+</div>
+@endcan
+@can('respon selection guide')
+<hr>
 <div class="row">
     <div class="col-6">
         <div class="card">
@@ -120,5 +135,6 @@
         </div>
     </div>
 </div>
+@endcan
 
 {{-- @includeWhen(auth()->user()->can('respon selection guide'), 'selection.guide-respon') --}}

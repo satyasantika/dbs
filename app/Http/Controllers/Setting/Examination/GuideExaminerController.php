@@ -37,12 +37,7 @@ class GuideExaminerController extends Controller
     public function store(Request $request)
     {
         $name = strtoupper($request->name);
-        if ($request->parent_id > 0) {
-            guideexaminer::find($request->parent_id)->children()->create($request->all());
-        } else {
-            $request->parent_id = null;
-            guideexaminer::create($request->all());
-        }
+        GuideExaminer::create($request->all());
         return to_route('guideexaminers.index')->with('success','menu '.$name.' telah ditambahkan');
     }
 

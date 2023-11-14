@@ -17,19 +17,39 @@ class ExamRegistration extends Model
         'exam_date' => 'date',
     ];
 
-    public function students(): belongsTo
+    public function examtype()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(ExamType::class,'exam_type_id');
     }
 
-    public function examtypes(): belongsTo
+    public function student()
     {
-        return $this->belongsTo(ExamType::class);
+        return $this->belongsTo(User::class,'user_id');
     }
 
-    public function examexaminer(): hasMany
+    public function examiner1()
     {
-        return $this->hasMany(ExamExaminer::class);
+        return $this->belongsTo(User::class,'examiner1_id');
+    }
+
+    public function examiner2()
+    {
+        return $this->belongsTo(User::class,'examiner2_id');
+    }
+
+    public function examiner3()
+    {
+        return $this->belongsTo(User::class,'examiner3_id');
+    }
+
+    public function guide1()
+    {
+        return $this->belongsTo(User::class,'guide1_id');
+    }
+
+    public function guide2()
+    {
+        return $this->belongsTo(User::class,'guide2_id');
     }
 }
 
