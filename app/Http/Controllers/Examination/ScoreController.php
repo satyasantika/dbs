@@ -21,8 +21,8 @@ class ScoreController extends Controller
 
     public function index()
     {
-        $examinations = ViewExamScore::where('user_id',auth()->id())->get();
-        return view('examination.scoring',compact('examinations'));
+        $exam_scores = ViewExamScore::where('user_id',auth()->id())->get();
+        return view('examination.scoring',compact('exam_scores'));
     }
 
     public function edit(ExamScore $scoring)

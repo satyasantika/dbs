@@ -11,6 +11,11 @@
                 </div>
 
                 <div class="card-body">
+                    {{-- <div class="row mb-2">
+                        <div class="col">
+                            <a href="{{ route('chief.index') }}" class="btn btn-outline-primary btn-sm float-end">>> Halaman ketua penguji</a>
+                        </div>
+                    </div> --}}
                     <div class="table-responsive">
                         <table class="table small-font table-sm" id="profile-table" role="grid">
                             <thead>
@@ -19,11 +24,6 @@
                                     <th>Nama</th>
                                     <th>Ujian</th>
                                     <th>Tanggal</th>
-                                    {{-- <th>1</th>
-                                    <th>2</th>
-                                    <th>3</th>
-                                    <th>4</th>
-                                    <th>5</th> --}}
                                     <th>Nilai</th>
                                     <th>Huruf</th>
                                     <th>direvisi?</th>
@@ -32,22 +32,23 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($examinations as $examination)
+                                @forelse ($exam_scores as $exam_score)
                                 <tr>
-                                    <td><a href="{{ route('scoring.edit',$examination->id) }}" class="btn btn-sm btn-primary">nilai</a>
-                                    <td>{{ $examination->mahasiswa }}</td>
-                                    <td>{{ $examination->ujian }}</td>
-                                    <td>{{ $examination->exam_date }}</td>
-                                    {{-- <td>{{ $examination->score01 }}</td>
-                                    <td>{{ $examination->score02 }}</td>
-                                    <td>{{ $examination->score03 }}</td>
-                                    <td>{{ $examination->score04 }}</td>
-                                    <td>{{ $examination->score05 }}</td> --}}
-                                    <td class="text-center">{{ $examination->grade }}</td>
-                                    <td class="text-center">{{ $examination->letter }}</td>
-                                    <td class="text-center">{{ $examination->revision ? 'ya' : 'tidak' }}</td>
-                                    <td>{{ is_null($examination->revision_note) ? 'tidak ada' : Str::of($examination->revision_note)->limit(20) }}</td>
-                                    <td class="text-center">{{ $examination->pass_approved ? 'ya' : 'tidak' }}</td>
+                                    <td><a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-primary">nilai</a>
+                                    <td>
+                                        {{ $exam_score->mahasiswa }}
+                                        @if ($exam_score->dosen == $exam_score->ketua)
+                                        <br>
+                                        <a href="{{ route('chief.show',$exam_score->exam_registration_id) }}" class="btn btn-outline-primary btn-sm float-end">>> Halaman ketua penguji</a>
+                                        @endif
+                                    </td>
+                                    <td>{{ $exam_score->ujian }}</td>
+                                    <td>{{ $exam_score->exam_date }}</td>
+                                    <td class="text-center">{{ $exam_score->grade }}</td>
+                                    <td class="text-center">{{ $exam_score->letter }}</td>
+                                    <td class="text-center">{{ $exam_score->revision ? 'ya' : 'tidak' }}</td>
+                                    <td>{{ is_null($exam_score->revision_note) ? 'tidak ada' : Str::of($exam_score->revision_note)->limit(20) }}</td>
+                                    <td class="text-center">{{ $exam_score->pass_approved ? 'ya' : 'tidak' }}</td>
                                 </tr>
                                 @empty
                                 belum ada data

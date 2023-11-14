@@ -27,6 +27,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/setting/users/{user}/activation', [App\Http\Controllers\Setting\UserController::class, 'activation'])->name('users.activation');
         Route::put('/setting/selectionguideallocations/{guideallocation}/activation', [App\Http\Controllers\Setting\Selection\GuideAllocationController::class, 'activation'])->name('selectionguideallocations.activation');
         Route::put('/setting/selectionguidegroups/{guidegroup}/activation', [App\Http\Controllers\Setting\Selection\GuideGroupController::class, 'activation'])->name('selectionguidegroups.activation');
+        Route::put('/setting/examregistrations/{examregistration}/scoreset', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'scoreSet'])->name('examregistrations.scoreset');
         Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
         Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');
         Route::resource('setting/rolepermissions', App\Http\Controllers\Setting\RolePermissionController::class)->only('edit', 'update');
@@ -40,12 +41,20 @@ Route::middleware('auth')->group(function () {
         Route::resource('setting/selectionguideallocations', App\Http\Controllers\Setting\Selection\GuideAllocationController::class)->except('show');
         Route::resource('setting/selectionguidegroups', App\Http\Controllers\Setting\Selection\GuideGroupController::class)->except('show');
         Route::resource('setting/selectionguides', App\Http\Controllers\Setting\Selection\GuideController::class)->except('show');
-        Route::resource('setting/examination/guideexaminers', App\Http\Controllers\Setting\Examination\GuideExaminerController::class)->except('show');
+        Route::resource('setting/guideexaminers', App\Http\Controllers\Setting\Examination\GuideExaminerController::class)->except('show');
+        Route::resource('setting/examregistrations', App\Http\Controllers\Setting\Examination\ExamRegistrationController::class)->except('show');
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
         Route::put('selection/guides/{guide}/cancel', [App\Http\Controllers\Selection\GuideController::class,'cancel'])->name('guides.cancel');
+        // dashboard ketua penguji
+        Route::get('examination/chief', [App\Http\Controllers\Examination\ChiefController::class,'index'])->name('chief.index');
+        Route::get('examination/chief/{chief}', [App\Http\Controllers\Examination\ChiefController::class,'show'])->name('chief.show');
+        Route::put('examination/chief/{chief}/pass', [App\Http\Controllers\Examination\ChiefController::class,'pass'])->name('chief.pass');
         // dashboard dosen
+        Route::get('examination/scoring', [App\Http\Controllers\Examination\ScoreController::class,'index'])->name('scoring.index');
+        Route::get('examination/scoring/{scoring}/edit', [App\Http\Controllers\Examination\ScoreController::class,'edit'])->name('scoring.edit');
+        Route::put('examination/scoring/{scoring}', [App\Http\Controllers\Examination\ScoreController::class,'update'])->name('scoring.update');
         Route::get('selection/respon', [App\Http\Controllers\Selection\GuideResponController::class,'index'])->name('respons.index');
         Route::get('selection/respon/result', [App\Http\Controllers\Selection\GuideResponController::class,'result'])->name('respons.result');
         Route::put('selection/respons/{guide}/accept', [App\Http\Controllers\Selection\GuideResponController::class,'accept'])->name('respons.accept');
