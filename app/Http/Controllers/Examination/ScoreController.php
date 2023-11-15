@@ -28,7 +28,7 @@ class ScoreController extends Controller
     public function edit(ExamScore $scoring)
     {
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
-        $form_items = ExamFormItem::select('id','name')->where('exam_type_id',$examregistration->exam_type_id)->get();
+        $form_items = ExamFormItem::select('id','name','exam_type_id')->where('exam_type_id',$examregistration->exam_type_id)->get();
         return view('examination.scoring-form',compact('form_items','scoring'));
     }
 

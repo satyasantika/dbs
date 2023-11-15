@@ -31,14 +31,21 @@
             </div>
             {{-- skor penilaian --}}
             @foreach ($form_items as $item)
+            @php
+                if ($item->exam_type_id == 3) {
+                    $order = ($item->id) - 10;
+                } elseif ($item->exam_type_id == 2) {
+                    $order = ($item->id) - 5;
+                } else {
+                    $order = ($item->id);
+                }
+                $item_order = 'score0'.$order;
+                $options = [];
+            @endphp
             <div class="row">
                 <div class="col-auto">
-                    <span class="badge bg-light text-dark">nomor {{ $item->id }}</span>
+                    <span class="badge bg-light text-dark">nomor {{ $order }}</span>
                 </div>
-                @php
-                    $item_order = 'score0'.$item->id;
-                    $options = [];
-                @endphp
                 <div class="col-10">
                     <div class="mb-3">
                         {{ $item->name }} <br>

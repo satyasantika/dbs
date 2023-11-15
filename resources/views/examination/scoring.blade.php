@@ -34,7 +34,10 @@
                             <tbody>
                                 @forelse ($exam_scores as $exam_score)
                                 <tr>
-                                    <td><a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-primary">nilai</a>
+                                    <td>
+                                        {{-- @if ($exam_score->registration->exam_pass) --}}
+                                        <a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-primary">nilai</a>
+                                        {{-- @endif --}}
                                     <td>
                                         {{ $exam_score->mahasiswa }}
                                         @if ($exam_score->dosen == $exam_score->ketua)
