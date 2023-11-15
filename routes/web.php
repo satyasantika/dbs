@@ -47,6 +47,8 @@ Route::middleware('auth')->group(function () {
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
         Route::put('selection/guides/{guide}/cancel', [App\Http\Controllers\Selection\GuideController::class,'cancel'])->name('guides.cancel');
+        Route::get('examination/student', [App\Http\Controllers\Examination\StudentController::class,'index'])->name('exam.student.index');
+        Route::get('examination/student/{student}/get-revision', [App\Http\Controllers\Examination\StudentController::class,'getRevision'])->name('exam.student.get-revision');
         // dashboard ketua penguji
         Route::get('examination/chief', [App\Http\Controllers\Examination\ChiefController::class,'index'])->name('chief.index');
         Route::get('examination/chief/{chief}', [App\Http\Controllers\Examination\ChiefController::class,'show'])->name('chief.show');

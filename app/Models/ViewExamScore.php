@@ -9,4 +9,8 @@ class ViewExamScore extends Model
 {
     use HasFactory;
     protected $table = 'view_exam_scores';
+    
+    protected $casts = [
+        'exam_date' => 'date',
+    ];
 }

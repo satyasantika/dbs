@@ -1,4 +1,17 @@
-
+<h3>Selamat datang, {{ auth()->user()->name }}</h3>
+@can('join exam')
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">Halaman Ujian</div>
+            <div class="card-body">
+                untuk melihat hasil ujian, silakan klik tombol berikut:<br>
+                <a href="{{ route('exam.student.index') }}" class="btn btn-sm btn-primary">Hasil Ujian</a>
+            </div>
+        </div>
+    </div>
+</div>
+@endcan
 
 @can('join stage 2')
     @if (App\Models\SelectionStage::where('user_id',auth()->user()->id)->doesntExist())
