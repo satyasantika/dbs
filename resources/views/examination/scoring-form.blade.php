@@ -39,7 +39,7 @@
                 } else {
                     $order = ($item->id);
                 }
-                $item_order = 'score0'.$order;
+                $item_order = 'score'.$order;
                 $options = [];
             @endphp
             <div class="row">

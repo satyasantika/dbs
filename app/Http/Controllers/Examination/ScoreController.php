@@ -38,7 +38,7 @@ class ScoreController extends Controller
         $data = $request->all();
         $grade = 0;
         for ($i=0; $i < 5; $i++) {
-            $score = 'score0'.$i+1;
+            $score = 'score'.$i+1;
             $grade += $request->$score;
         }
         $final_grade = round($grade/5,2);

@@ -51,7 +51,8 @@ class ExamRegistrationsDataTable extends DataTable
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
-                    ->orderBy(1)
+                    ->orderBy(2)
+                    ->orderBy(3,'asc')
                     ->selectStyleSingle()
                     ->buttons([
                         Button::make('add'),
@@ -74,11 +75,11 @@ class ExamRegistrationsDataTable extends DataTable
             Column::make('exam_date'),
             Column::make('exam_time'),
             Column::make('mahasiswa'),
-            Column::make('penguji_1'),
-            Column::make('penguji_2'),
-            Column::make('penguji_3'),
-            Column::make('penguji_4'),
-            Column::make('penguji_5'),
+            Column::make('penguji_1')->title('P1'),
+            Column::make('penguji_2')->title('P2'),
+            Column::make('penguji_3')->title('P3'),
+            Column::make('penguji_4')->title('P4'),
+            Column::make('penguji_5')->title('P5'),
             Column::make('updated_at'),
         ];
     }

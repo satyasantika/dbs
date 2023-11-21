@@ -37,7 +37,7 @@
         <div class="row mb-3">
             <label for="year_generation" class="col-md-4 col-form-label text-md-end">Tahun</label>
             <div class="col-md-6">
-                <select id="year_generation" class="form-control @error('year_generation') is-invalid @enderror" name="year_generation" required >
+                <select id="year_generation" class="form-control @error('year_generation') is-invalid @enderror" name="year_generation" required @disabled($guideexaminer->id)>
                     <option value="">-- Pilih Tahun --</option>
                     @foreach ([2017,2018,2019,2020,2021,2022,2023] as $year_generation)
                     <option value="{{ $year_generation }}" @selected($guideexaminer->year_generation == $year_generation)>{{ $year_generation }}</option>
@@ -127,6 +127,21 @@
                 <input type="date" placeholder="thesis_date" value="{{ $guideexaminer->thesis_date ? $guideexaminer->thesis_date->format('Y-m-d') : "" }}" name="thesis_date" class="form-control" id="thesis_date">
             </div>
         </div>
+
+        {{-- ketua penguji --}}
+        @if ($guideexaminer->id)
+        <div class="row mb-3">
+            <label for="chief_id" class="col-md-4 col-form-label text-md-end">Ketua Penguji</label>
+            <div class="col-md-6">
+                <select id="chief_id" class="form-control @error('chief_id') is-invalid @enderror" name="chief_id" required >
+                    <option value="">-- Pilih Dosen --</option>
+                    @foreach ($chiefs as $lecture)
+                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->chief_id)>{{ $lecture->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        @endif
 
         {{-- submit Button --}}
         <div class="row mb-0">

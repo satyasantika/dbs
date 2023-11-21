@@ -38,15 +38,25 @@ class GuideExaminerController extends Controller
     {
         $name = strtoupper($request->name);
         GuideExaminer::create($request->all());
-        return to_route('guideexaminers.index')->with('success','menu '.$name.' telah ditambahkan');
+        return to_route('guideexaminers.index')->with('success','Penguji '.$name.' telah ditambahkan');
     }
 
     public function edit(GuideExaminer $guideexaminer)
     {
+        $chiefs = User::role('dosen')
+                    ->select('name','id')
+                    ->whereIn('id',[
+                        $guideexaminer->examiner1_id,
+                        $guideexaminer->examiner2_id,
+                        $guideexaminer->examiner3_id,
+                        ])
+                    ->get()
+                    ->sort();
         return view('setting.examination.guideexaminer-form', array_merge(
             $this->_dataSelection(),
             [
                 'guideexaminer'=> $guideexaminer,
+                'chiefs'=> $chiefs,
             ],
         ));
     }
@@ -57,20 +67,20 @@ class GuideExaminerController extends Controller
         $data = $request->all();
         $guideexaminer->fill($data)->save();
 
-        return to_route('guideexaminers.index')->with('success','menu '.$name.' telah diperbarui');
+        return to_route('guideexaminers.index')->with('success','Penguji '.$name.' telah diperbarui');
     }
 
     public function destroy(GuideExaminer $guideexaminer)
     {
         $name = strtoupper($guideexaminer->name);
         $guideexaminer->delete();
-        return to_route('guideexaminers.index')->with('warning','menu '.$name.' telah dihapus');
+        return to_route('guideexaminers.index')->with('warning','Penguji '.$name.' telah dihapus');
     }
 
     private function _dataSelection()
     {
         return [
-            'students' =>  User::role('mahasiswa')->select('name','id')->get()->sort(),
+            'students' =>  User::role(['mahasiswa','alumni'])->select('name','id')->get()->sort(),
             'lectures' =>  User::role('dosen')->select('name','id')->get()->sort(),
         ];
     }

@@ -58,10 +58,20 @@ class ExamRegistrationController extends Controller
 
     public function edit(ExamRegistration $examregistration)
     {
+        $chiefs = User::role('dosen')
+                    ->select('name','id')
+                    ->whereIn('id',[
+                        $examregistration->examiner1_id,
+                        $examregistration->examiner2_id,
+                        $examregistration->examiner3_id,
+                        ])
+                    ->get()
+                    ->sort();
         return view('setting.examination.examregistration-form', array_merge(
             $this->_dataSelection(),
             [
                 'examregistration'=> $examregistration,
+                'chiefs'=> $chiefs,
             ],
         ));
     }
@@ -71,6 +81,27 @@ class ExamRegistrationController extends Controller
         $name = strtoupper($examregistration->name);
         $data = $request->all();
         $examregistration->fill($data)->save();
+
+        if ($examregistration->exam_type_id == 1) {
+            $tanggal_ujian = 'proposal_date';
+        }
+        if ($examregistration->exam_type_id == 2) {
+            $tanggal_ujian = 'seminar_date';
+        }
+        if ($examregistration->exam_type_id == 3) {
+            $tanggal_ujian = 'thesis_date';
+        }
+
+        GuideExaminer::where('user_id',$examregistration->user_id)->update([
+            'examiner1_id'=>$examregistration->examiner1_id,
+            'examiner2_id'=>$examregistration->examiner2_id,
+            'examiner3_id'=>$examregistration->examiner3_id,
+            'guide1_id'=>$examregistration->guide1_id,
+            'guide2_id'=>$examregistration->guide2_id,
+            'chief_id'=>$examregistration->chief_id,
+            $tanggal_ujian=>$examregistration->exam_date,
+        ]);
+
 
         return to_route('examregistrations.index')->with('success','menu '.$name.' telah diperbarui');
     }

@@ -48,7 +48,7 @@ class GuideExaminersDataTable extends DataTable
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
-                    ->orderBy(1)
+                    // ->orderBy(1)
                     ->selectStyleSingle()
                     ->buttons([
                         Button::make('add'),
@@ -70,12 +70,16 @@ class GuideExaminersDataTable extends DataTable
                   ->addClass('text-center'),
             Column::make('npm'),
             Column::make('mahasiswa'),
-            Column::make('penguji_1'),
-            Column::make('penguji_2'),
-            Column::make('penguji_3'),
-            Column::make('penguji_4'),
-            Column::make('penguji_5'),
+            Column::make('ketua'),
+            Column::make('penguji_1')->title('P1'),
+            Column::make('penguji_2')->title('P2'),
+            Column::make('penguji_3')->title('P3'),
+            Column::make('penguji_4')->title('P4'),
+            Column::make('penguji_5')->title('P5'),
             Column::make('year_generation')->title('angkatan'),
+            Column::make('proposal_date')->title('proposal'),
+            Column::make('seminar_date')->title('seminar'),
+            Column::make('thesis_date')->title('thesis'),
         ];
     }
 
