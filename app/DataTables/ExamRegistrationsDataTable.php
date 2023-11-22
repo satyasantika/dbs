@@ -27,6 +27,18 @@ class ExamRegistrationsDataTable extends DataTable
                 $action .= ' <a href="'.route('examregistrations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
+            ->editColumn('penguji_1', function($row) {
+                $ketua = $row->penguji_1 == $row->ketua ? "*" : "";
+                return $row->penguji_1.$ketua;
+            })
+            ->editColumn('penguji_2', function($row) {
+                $ketua = $row->penguji_2 == $row->ketua ? "*" : "";
+                return $row->penguji_2.$ketua;
+            })
+            ->editColumn('penguji_3', function($row) {
+                $ketua = $row->penguji_3 == $row->ketua ? "*" : "";
+                return $row->penguji_3.$ketua;
+            })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
             })
@@ -51,8 +63,9 @@ class ExamRegistrationsDataTable extends DataTable
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
-                    ->orderBy(2)
-                    ->orderBy(3,'asc')
+                    ->orderBy(3)
+                    ->orderBy(2,'asc')
+                    ->orderBy(4,'asc')
                     ->selectStyleSingle()
                     ->buttons([
                         Button::make('add'),
@@ -72,6 +85,7 @@ class ExamRegistrationsDataTable extends DataTable
                   ->width(60)
                   ->addClass('text-center'),
             Column::make('ujian'),
+            Column::make('room'),
             Column::make('exam_date'),
             Column::make('exam_time'),
             Column::make('mahasiswa'),
@@ -80,6 +94,7 @@ class ExamRegistrationsDataTable extends DataTable
             Column::make('penguji_3')->title('P3'),
             Column::make('penguji_4')->title('P4'),
             Column::make('penguji_5')->title('P5'),
+            // Column::make('ketua'),
             Column::make('updated_at'),
         ];
     }

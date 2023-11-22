@@ -27,6 +27,18 @@ class GuideExaminersDataTable extends DataTable
                 $action .= ' <a href="'.route('guideexaminers.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
+            ->editColumn('penguji_1', function($row) {
+                $ketua = $row->penguji_1 == $row->ketua ? "*" : "";
+                return $row->penguji_1.$ketua;
+            })
+            ->editColumn('penguji_2', function($row) {
+                $ketua = $row->penguji_2 == $row->ketua ? "*" : "";
+                return $row->penguji_2.$ketua;
+            })
+            ->editColumn('penguji_3', function($row) {
+                $ketua = $row->penguji_3 == $row->ketua ? "*" : "";
+                return $row->penguji_3.$ketua;
+            })
             ->setRowId('id');
     }
 
