@@ -119,7 +119,8 @@
                                     max="4.00"
                                     step="0.01">
                             </div>
-                        </div>                    </div>
+                        </div>
+                    </div>
                 </div>
             </div>
     @if ($examregistration->id)

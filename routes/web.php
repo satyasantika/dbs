@@ -43,6 +43,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('setting/selectionguides', App\Http\Controllers\Setting\Selection\GuideController::class)->except('show');
         Route::resource('setting/guideexaminers', App\Http\Controllers\Setting\Examination\GuideExaminerController::class)->except('show');
         Route::resource('setting/examregistrations', App\Http\Controllers\Setting\Examination\ExamRegistrationController::class)->except('show');
+        Route::resource('setting/examregistrations.examscores', App\Http\Controllers\Setting\Examination\ExamScoreController::class)->only('index');
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');

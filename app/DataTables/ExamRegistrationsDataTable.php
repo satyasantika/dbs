@@ -25,6 +25,7 @@ class ExamRegistrationsDataTable extends DataTable
             ->addColumn('action', function($row){
                 $action = ' ';
                 $action .= ' <a href="'.route('examregistrations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
+                $action .= ' <a href="'.route('examregistrations.examscores.index',$row->id).'" class="btn btn-outline-secondary btn-sm action">S</a>';
                 return $action;
             })
             ->editColumn('penguji_1', function($row) {

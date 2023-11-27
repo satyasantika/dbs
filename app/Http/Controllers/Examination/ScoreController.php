@@ -54,7 +54,13 @@ class ScoreController extends Controller
         $examregistration->letter = $this->_convertToLetter($final_grade);
         $examregistration->save();
 
-        return to_route('scoring.index')->with('success','data '.$name.' telah diperbarui');
+        if (auth()->user()->hasRole('admin')) {
+            return to_route('examregistrations.examscores.index',$scoring->exam_registration_id)->with('success','data '.$name.' telah diperbarui');
+        } else {
+            return to_route('scoring.index')->with('success','data '.$name.' telah diperbarui');
+        }
+
+
     }
 
     private function _convertToLetter($grade)
