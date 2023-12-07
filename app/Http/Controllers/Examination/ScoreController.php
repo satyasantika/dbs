@@ -48,10 +48,14 @@ class ScoreController extends Controller
         $scoring->fill($data)->save();
 
         $grade_sum = ExamScore::where('exam_registration_id',$scoring->exam_registration_id)->sum('grade');
+        $pass_approved_sum = ExamScore::where('exam_registration_id',$scoring->exam_registration_id)->sum('pass_approved');
         $final_grade = round($grade_sum/5,2);
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
         $examregistration->grade = $final_grade;
         $examregistration->letter = $this->_convertToLetter($final_grade);
+        if ($pass_approved_sum==5) {
+            $examregistration->pass_exam = 1;
+        }
         $examregistration->save();
 
         if (auth()->user()->hasRole('admin')) {

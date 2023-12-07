@@ -42,7 +42,7 @@
     @endif
 @endcan
 
-@if (App\Models\SelectionStage::where([
+{{-- @if (App\Models\SelectionStage::where([
     'user_id'=>auth()->user()->id,
     'stage_order'=>1,
     'final'=>1,
@@ -51,4 +51,4 @@
     berikut ini hasil pemilihan tahap 1 yang pernah Anda ikuti
     @includeWhen(auth()->user()->can('read selection stages'), 'selection.stage-submission')
 
-@endif
+@endif --}}

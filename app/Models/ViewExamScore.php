@@ -9,8 +9,14 @@ class ViewExamScore extends Model
 {
     use HasFactory;
     protected $table = 'view_exam_scores';
-    
+
     protected $casts = [
-        'exam_date' => 'date',
+        'revision' => 'boolean',
+        'pass_approved' => 'boolean',
     ];
+
+    public function lecture()
+    {
+        return $this->belongsTo(User::class,'user_id');
+    }
 }

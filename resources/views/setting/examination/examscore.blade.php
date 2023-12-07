@@ -2,6 +2,16 @@
 
 @section('content')
 <div class="container">
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+    @if (session('warning'))
+        <div class="alert alert-warning">
+            {{ session('warning') }}
+        </div>
+    @endif
     <div class="row justify-content-center">
         <div class="col-md-8">
             <div class="card">
@@ -15,7 +25,22 @@
                     {{ $examregistration->student->username }}<br>
                     {{ $examregistration->examtype->name }} ({{ $examregistration->exam_date->isoFormat('dddd, D MMMM Y') }} {{ $examregistration->exam_time }})<br>
                     {{ $examregistration->title }}
+
+                    @if ($examregistration->pass_exam == 1)
+                        <div class="alert alert-success mt-3">
+                            nilai ini sudah diverifikasi oleh ketua majelis
+                        </div>
+                    @else
+                        <form id="accept-form" action="{{ route('chief.pass',$examregistration->id) }}" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <button type="submit" class="btn btn-outline-success btn-sm float-end" onclick="return confirm('usulan ini diterima?');">
+                                {{ __('Klik untuk memverifikasi, jika semua nilai sudah terisi') }}
+                            </button>
+                        </form>
+                    @endif
                     <hr>
+
                     {{-- <div class="row mb-2">
                         <div class="col">
                             <a href="{{ route('chief.index') }}" class="btn btn-outline-primary btn-sm float-end">>> Halaman ketua penguji</a>
@@ -70,6 +95,11 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <a target="_blank" href="{{ route('report.exam-chief',$examregistration->id) }}" class="btn btn-sm btn-success">Hasil Ujian</a>
+                        <a target="_blank" href="{{ route('report.revision-table',$examregistration->id) }}" class="btn btn-sm btn-secondary">Lembar Revisi</a>
+                        <a target="_blank" href="{{ route('report.revision-sign',$examregistration->id) }}" class="btn btn-sm btn-secondary ">Keterangan Revisi</a>
+
+
                     </div>
                 </div>
             </div>

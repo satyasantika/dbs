@@ -55,7 +55,9 @@ class ExamRegistrationController extends Controller
             'examiner3_id'=>$guideexaminer->examiner3_id,
             'guide1_id'=>$guideexaminer->guide1_id,
             'guide2_id'=>$guideexaminer->guide2_id,
+            'chief_id'=>$guideexaminer->chief_id,
         ]);
+        User::find($request->user_id)->givePermissionTo('join exam');
         return to_route('examregistrations.index')->with('success','pendaftaran ujian '.$name.' telah ditambahkan');
     }
 
@@ -106,7 +108,7 @@ class ExamRegistrationController extends Controller
         ]);
 
 
-        return to_route('examregistrations.index')->with('success','menu '.$name.' telah diperbarui');
+        return back()->with('success','menu '.$name.' telah diperbarui');
     }
 
     public function destroy(ExamRegistration $examregistration)

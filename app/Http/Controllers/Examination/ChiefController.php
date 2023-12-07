@@ -36,16 +36,25 @@ class ChiefController extends Controller
         $name = strtoupper($chief->student->name);
 
         $cek = ExamScore::where([
-            'exam_registration_id'=>$chief->exam_registration_id,
+            'exam_registration_id'=>$chief->id,
             'pass_approved'=>1,
             ])->count();
         if ($cek<5) {
-            return to_route('chief.show',$chief)->with('warning','tidak bisa finalisasi, masih ada nilai yang belum terinput');
+            if (auth()->user()->hasRole('admin')) {
+                return to_route('examregistrations.examscores.index',$chief)->with('warning','tidak bisa finalisasi, masih ada nilai yang belum terinput');
+            } else {
+                return to_route('chief.show',$chief)->with('warning','tidak bisa finalisasi, masih ada nilai yang belum terinput');
+            }
         }
         $chief->pass_exam = 1;
         $chief->save();
 
-        return to_route('chief.show',$chief)->with('success','mahasiswa '.$name.' telah layak dilanjutkan');
+        if (auth()->user()->hasRole('admin')) {
+            return to_route('examregistrations.examscores.index',$chief)->with('success','mahasiswa '.$name.' telah layak dilanjutkan');
+        } else {
+            return to_route('chief.show',$chief)->with('success','mahasiswa '.$name.' telah layak dilanjutkan');
+        }
+
     }
 
     private function _convertToLetter($grade)

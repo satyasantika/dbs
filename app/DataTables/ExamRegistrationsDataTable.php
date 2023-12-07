@@ -70,6 +70,7 @@ class ExamRegistrationsDataTable extends DataTable
                     ->selectStyleSingle()
                     ->buttons([
                         Button::make('add'),
+                        Button::make('print'),
                         Button::make('reload')
                     ]);
     }

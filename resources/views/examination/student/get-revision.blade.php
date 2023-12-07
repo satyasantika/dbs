@@ -7,7 +7,7 @@
             <div class="card">
                 <div class="card-header">
                     Hasil Ujian
-                    <a href="{{ route('home') }}" class="btn btn-primary btn-sm float-end">kembali</a>
+                    <a href="{{ route('exam.student.index') }}" class="btn btn-primary btn-sm float-end">kembali</a>
                 </div>
 
                 <div class="card-body">

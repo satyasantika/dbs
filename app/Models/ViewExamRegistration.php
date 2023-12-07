@@ -9,4 +9,7 @@ class ViewExamRegistration extends Model
 {
     use HasFactory;
     protected $table = 'view_exam_registrations';
+    protected $casts = [
+        'pass_exam' => 'boolean',
+    ];
 }

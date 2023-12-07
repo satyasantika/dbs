@@ -185,6 +185,7 @@ return [
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
         'Debugbar' => Barryvdh\Debugbar\Facade::class,
+        'DomPDF' => Barryvdh\DomPDF\Facade::class,
         'Datatables' => Yajra\Datatables\Facades\Datatables::class,
     ])->toArray(),
 

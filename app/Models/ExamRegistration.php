@@ -15,6 +15,7 @@ class ExamRegistration extends Model
 
     protected $casts = [
         'exam_date' => 'date',
+        'pass_exam' => 'boolean',
     ];
 
     public function examtype()
@@ -50,6 +51,11 @@ class ExamRegistration extends Model
     public function guide2()
     {
         return $this->belongsTo(User::class,'guide2_id');
+    }
+
+    public function chief()
+    {
+        return $this->belongsTo(User::class,'chief_id');
     }
 }
 
