@@ -15,6 +15,11 @@ class ViewExamScore extends Model
         'pass_approved' => 'boolean',
     ];
 
+    public function registration()
+    {
+        return $this->belongsTo(ExamRegistration::class,'exam_registration_id');
+    }
+
     public function lecture()
     {
         return $this->belongsTo(User::class,'user_id');

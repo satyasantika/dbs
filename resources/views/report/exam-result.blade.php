@@ -97,7 +97,7 @@
                         @if (is_null($exam_score->pass_approved))
                             <strong>belum diputuskan</strong>
                         @else
-                            <strong>{{ $exam_score->pass_approved == 1 ? '':'tidak ' }} layak {{ $exam_score->exam_type_id == 3 ? 'diluluskan':'dilanjutkan' }}</strong>)
+                            <strong>{{ $exam_score->pass_approved == 1 ? '':'tidak ' }} layak {{ $exam_score->registration->exam_type_id == 3 ? 'diluluskan':'dilanjutkan' }}</strong>)
                         @endif
                     </td>
                 </tr>
@@ -107,8 +107,8 @@
                 <tr>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:10px;" class="text-end" colspan="8">Nilai {{ $examregistration->examtype->name }}: <span style="font-weight: bold; font-size:2em">{{ $examregistration->grade }} ({{ $examregistration->letter }}) </span></td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:10px;" colspan="2">
-                        Kesimpulan: {{ $examregistration->pass_exam == 1 ? '':'TIDAK ' }}
-                        LAYAK {{ $examregistration->exam_type_id == 3 ? 'diluluskan':'dilanjutkan' }}
+                        Kesimpulan: <strong>{{ $examregistration->pass_exam == 1 ? '':'TIDAK ' }}
+                        LAYAK {{ $examregistration->exam_type_id == 3 ? 'diluluskan':'dilanjutkan' }}</strong>
                     </td>
                 </tr>
             </tbody>
