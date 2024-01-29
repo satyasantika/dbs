@@ -53,33 +53,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                     <span class="badge bg-light text-dark">nomor {{ $order }}</span>
                 </div>
                 <div class="col-6">
-                    {{-- <div class="mb-3"> --}}
-                        {{ $item->name }} <br>
-                        {{-- <div class="row">
-
-                            <div class="col-md-6">
-                                <input
-                                    type="range"
-                                    class="form-range"
-                                    id="{{ $item_order }}"
-                                    name="{{ $item_order }}"
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    oninput="{{ $item_order }}out.value={{ $item_order }}.value"
-                                    value="{{ $scoring->$item_order ?? 0 }}">
-                            </div>
-                            <div class="col-md-6">
-                                <output
-                                    class="btn btn-outline-dark disabled"
-                                    id="{{ $item_order }}out"
-                                    name="{{ $item_order }}out"
-                                    for="{{ $item_order }}"
-                                    >{{ $scoring->$item_order ?? 0 }}</output>
-                                </div>
-                            </div>
-                        </div> --}}
-                    {{-- </div> --}}
+                    {{ $item->name }} <br>
                 </div>
                 <div class="col-auto">
                     <select
