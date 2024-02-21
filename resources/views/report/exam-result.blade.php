@@ -62,11 +62,11 @@
                     <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:5px;">Keterangan Revisi</th>
                 </tr>
                 <tr >
-                    <td style="writing-mode: vertical-rl;transform: scale(-1);border: 1px solid black;border-collapse:collapse;padding:2px;">orisinalitas</td>
-                    <td style="writing-mode: vertical-rl;transform: scale(-1);border: 1px solid black;border-collapse:collapse;padding:2px;">tata tulis</td>
-                    <td style="writing-mode: vertical-rl;transform: scale(-1);border: 1px solid black;border-collapse:collapse;padding:2px;">kemampuan <br>menjelaskan</td>
-                    <td style="writing-mode: vertical-rl;transform: scale(-1);border: 1px solid black;border-collapse:collapse;padding:2px;">penguasaan <br>materi</td>
-                    <td style="writing-mode: vertical-rl;transform: scale(-1);border: 1px solid black;border-collapse:collapse;padding:2px;">bobot ilmiah</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(1)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(2)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(3)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(4)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(5)</td>
                 </tr>
             </thead>
             <tbody>
@@ -110,6 +110,9 @@
                         Kesimpulan: <strong>{{ $examregistration->pass_exam == 1 ? '':'TIDAK ' }}
                         LAYAK {{ $examregistration->exam_type_id == 3 ? 'diluluskan':'dilanjutkan' }}</strong>
                     </td>
+                </tr>
+                <tr>
+                    <td colspan="9">Keterangan komponen penilaian: (1) orisinalitas (2) tata tulis (3) kemampuan menjelaskan (4) penguasaan materi (5) bobot ilmiah</td>
                 </tr>
             </tbody>
         </table>

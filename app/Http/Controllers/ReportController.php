@@ -17,7 +17,7 @@ class ReportController extends Controller
 
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.revision-table',compact('examregistration','examscores'));
-        return view('report.revision-table',compact('examregistration','examscores'));
+        // return view('report.revision-table',compact('examregistration','examscores'));
 
         return $pdf->stream('lembar-revisi.pdf');
     }
@@ -26,7 +26,7 @@ class ReportController extends Controller
     {
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.revision-sign',compact('examregistration','examscores'));
-        return view('report.revision-sign',compact('examregistration','examscores'));
+        // return view('report.revision-sign',compact('examregistration','examscores'));
 
         return $pdf->stream('keterangan-revisi.pdf');
     }
@@ -35,7 +35,7 @@ class ReportController extends Controller
     {
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.exam-result',compact('examregistration','examscores'));
-        return view('report.exam-result',compact('examregistration','examscores'));
+        // return view('report.exam-result',compact('examregistration','examscores'));
 
         return $pdf->stream('hasil-ujian.pdf');
     }
