@@ -38,16 +38,6 @@
     <span  @style('line-height: 1')>&nbsp;</span><br>
     {{-- <hr> --}}
     <p style="text-align:justify;">
-        {{-- {{ ucFirst($examregistration->examtype->name) }} mahasiswa tersebut dinyatakan: {{ $examregistration->pass_exam == 1 ? '':'TIDAK ' }}LAYAK
-        @if ($examregistration->exam_type_id == 1)
-            dilanjutkan
-        @endif
-        @if ($examregistration->exam_type_id == 2)
-            disidangkan
-        @endif
-        @if ($examregistration->exam_type_id == 3)
-            diluluskan
-        @endif --}}
         dengan pertimbangan para penguji sebagai berikut:
     </p>
     {{-- tabel penguji --}}
@@ -55,37 +45,30 @@
         <table style="width: 100%;vertical-align: middle">
             <thead>
                 <tr class="text-center" style="vertical-align: middle">
-                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:5px;">No.</th>
-                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:5px;">Penguji</th>
-                    <th colspan="5" style="border: 1px solid black;border-collapse:collapse;padding:5px;">Skor Komponen Penilaian</th>
-                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:5px;width:1.6cm;">Nilai</th>
-                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:5px;">Keterangan Revisi</th>
+                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:4px;width:.5cm;">No.</th>
+                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:4px;width:3cm;">Penguji</th>
+                    <th colspan="5" style="border: 1px solid black;border-collapse:collapse;padding:4px;">Skor Komponen Penilaian</th>
+                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:4px;width:1.3cm;">Nilai</th>
+                    <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:4px;">Keterangan Revisi</th>
                 </tr>
                 <tr >
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(1)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(2)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(3)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(4)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; " class="text-center">(5)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(1)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(2)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(3)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(4)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(5)</td>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($examscores as $key => $exam_score)
                 <tr style="vertical-align: top">
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-center">{{ $key + 1 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;">{{ $exam_score->namadosen }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-center">{{ $exam_score->score1 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-center">{{ $exam_score->score2 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-center">{{ $exam_score->score3 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-center">{{ $exam_score->score4 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-center">{{ $exam_score->score5 }}</td>
-                    {{-- <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-end">
-                        orisinalitas:&nbsp;({{ $exam_score->score1 }}) &nbsp; | &nbsp;
-                        tata&nbsp;tulis:&nbsp;({{ $exam_score->score2 }}) &nbsp; | &nbsp;
-                        kemampuan&nbsp;menjelaskan:&nbsp;({{ $exam_score->score3 }}) &nbsp; | &nbsp;
-                        penguasaan&nbsp;materi:&nbsp;({{ $exam_score->score4 }}) &nbsp; | &nbsp;
-                        bobot&nbsp;ilmiah:&nbsp;({{ $exam_score->score5 }})
-                    </td> --}}
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $key + 1 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $exam_score->namadosen }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score1 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score2 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score3 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score4 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score5 }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-end">{{ $exam_score->grade.' ('.$exam_score->letter.')' }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:5px;">
                         @if ($exam_score->revision)
@@ -106,7 +89,7 @@
                 @endforelse
                 <tr>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:10px;" class="text-end" colspan="8">Nilai {{ $examregistration->examtype->name }}: <span style="font-weight: bold; font-size:2em">{{ $examregistration->grade }} ({{ $examregistration->letter }}) </span></td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:10px;" colspan="2">
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:10px;">
                         Kesimpulan: <strong>{{ $examregistration->pass_exam == 1 ? '':'TIDAK ' }}
                         LAYAK {{ $examregistration->exam_type_id == 3 ? 'diluluskan':'dilanjutkan' }}</strong>
                     </td>
@@ -118,22 +101,19 @@
         </table>
     </div>
     <span  @style('line-height: 1')>&nbsp;</span><br>
-    <p>Demikian berita acara hasil {{ strToLower($examregistration->examtype->name) }} ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
-    {{-- pengesahan --}}
-    <div class="table-responsive" style="margin: 0 auto;width=15cm;">
+    <div class="table-responsive" style="margin: 0 auto;width=15cm; page-break-inside: avoid">
+        {{-- pengesahan --}}
+        <p>Demikian berita acara hasil {{ strToLower($examregistration->examtype->name) }} ini dibuat untuk dapat dipergunakan sebagaimana mestinya.</p>
         <table style="margin:auto;border: 1px solid white;">
             <tbody>
                 <tr>
-                    <td style="width: 10cm">Mengetahui,</td>
-                    <td>Tasikmalaya, {{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}</td>
-                </tr>
-                <tr>
-                    <td>Ketua Jurusan Pendidikan Matematika,<br>
+                    <td style="width: 10cm">Mengetahui,<br>
+                        Ketua Jurusan Pendidikan Matematika,<br>
                         <span  @style('line-height: 4')>&nbsp;</span><br>
                         Vepi Apiati, S.Pd., M.Pd.<br>
                         NIP 197504272021212004
                     </td>
-                    <td>
+                    <td>Tasikmalaya, {{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}<br>
                         Ketua Penguji,<br>
                         <span  @style('line-height: 4')>&nbsp;</span><br>
                         {{ $examregistration->chief->name }}<br>
