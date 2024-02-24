@@ -21,7 +21,11 @@ class ExamScoreController extends Controller
 
     public function index(ExamRegistration $examregistration)
     {
+        $empty_scores = ViewExamScore::where([
+            'exam_registration_id'=>$examregistration->id,
+            'grade'=>NULL,
+            ])->exists();
         $exam_scores = ViewExamScore::where('exam_registration_id',$examregistration->id)->orderBy('examiner_order')->get();
-        return view('setting.examination.examscore',compact('exam_scores','examregistration'));
+        return view('setting.examination.examscore',compact('exam_scores','examregistration','empty_scores'));
     }
 }

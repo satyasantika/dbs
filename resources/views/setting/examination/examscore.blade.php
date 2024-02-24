@@ -16,7 +16,7 @@
                     {{ $examregistration->examtype->name }} ({{ $examregistration->exam_date->isoFormat('dddd, D MMMM Y') }} {{ $examregistration->exam_time }})<br>
                     {{ $examregistration->title }}
 
-                    @if ($examregistration->pass_exam)
+                    @if (!$empty_scores)
                         <div class="alert alert-success mt-3">
                             nilai ujian ini sudah lengkap
                         </div>
@@ -80,7 +80,7 @@
                         <a target="_blank" href="{{ route('report.exam-chief',$examregistration->id) }}" class="btn btn-sm btn-success">Hasil Ujian</a>
                         <a target="_blank" href="{{ route('report.revision-table',$examregistration->id) }}" class="btn btn-sm btn-secondary">Lembar Revisi</a>
                         <a target="_blank" href="{{ route('report.revision-sign',$examregistration->id) }}" class="btn btn-sm btn-secondary ">Keterangan Revisi</a>
-                    @if ($examregistration->pass_exam)
+                    @if (!$empty_scores)
                         <a target="_blank" href="{{'https://api.whatsapp.com/send/?phone=62'
                             .$examregistration->student->phone.'&text=*INFORMASI%20Hasil%20'
                             .$examregistration->examtype->name.'*%0A%0ASaudara%20*'
