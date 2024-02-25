@@ -13,7 +13,7 @@
                 <div class="card-body">
                     <div class="row mb-2">
                         <div class="col">
-                            <a href="{{ route('scoring.archieves') }}" class="btn btn-success btn-sm float-end">Arsip Penilaian >></a>
+                            <a href="{{ route('scoring.index') }}" class="btn btn-primary btn-sm"><<< Belum input</a>
                         </div>
                     </div>
                     <div class="table-responsive">
@@ -36,7 +36,7 @@
                                 <tr>
                                     <td>
                                         {{-- @if ($exam_score->registration->exam_pass) --}}
-                                        <a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-primary">nilai</a>
+                                        <a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-success">nilai</a>
                                         {{-- @endif --}}
                                     <td>
                                         {{ $exam_score->mahasiswa }}
@@ -54,11 +54,7 @@
                                     <td class="text-center">{{ $exam_score->pass_approved ? 'ya' : 'tidak' }}</td>
                                 </tr>
                                 @empty
-                                <tr>
-                                    <td colspan="9" class="table-success">
-                                        tidak ada ujian yang belum dinilai
-                                    </td>
-                                </tr>
+                                belum ada data
                                 @endforelse
                             </tbody>
                         </table>

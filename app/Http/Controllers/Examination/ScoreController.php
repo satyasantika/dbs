@@ -21,8 +21,14 @@ class ScoreController extends Controller
 
     public function index()
     {
-        $exam_scores = ViewExamScore::where('user_id',auth()->id())->get();
+        $exam_scores = ViewExamScore::where('user_id',auth()->id())->whereNull('grade')->orderBy('exam_date','desc')->get();
         return view('examination.scoring',compact('exam_scores'));
+    }
+
+    public function archieves()
+    {
+        $exam_scores = ViewExamScore::where('user_id',auth()->id())->whereNotNull('grade')->orderBy('exam_date','desc')->get();
+        return view('examination.scoring-archieves',compact('exam_scores'));
     }
 
     public function edit(ExamScore $scoring)
@@ -59,9 +65,9 @@ class ScoreController extends Controller
         $examregistration->save();
 
         if (auth()->user()->hasRole('admin')) {
-            return to_route('examregistrations.examscores.index',$scoring->exam_registration_id)->with('success','data '.$name.' telah diperbarui');
+            return to_route('examregistrations.examscores.index',$scoring->exam_registration_id)->with('success','data penilaian '.$name.' telah diperbarui');
         } else {
-            return to_route('scoring.index')->with('success','data '.$name.' telah diperbarui');
+            return to_route('scoring.index')->with('success','data penilaian '.$name.' telah diperbarui');
         }
 
 

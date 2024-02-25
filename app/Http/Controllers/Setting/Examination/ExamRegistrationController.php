@@ -115,7 +115,7 @@ class ExamRegistrationController extends Controller
     {
         $name = strtoupper($examregistration->name);
         $examregistration->delete();
-        return to_route('examregistrations.index')->with('warning','menu '.$name.' telah dihapus');
+        return to_route('examregistrations.index')->with('warning','pendaftaran '.$name.' telah dihapus');
     }
 
     public function scoreSet(ExamRegistration $examregistration)
