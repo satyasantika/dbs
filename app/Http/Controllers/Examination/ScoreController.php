@@ -27,8 +27,8 @@ class ScoreController extends Controller
 
     public function archieves()
     {
-        $exam_scores = ViewExamScore::where('user_id',auth()->id())->whereNotNull('grade')->orderBy('exam_date','desc')->get();
-        return view('examination.scoring-archieves',compact('exam_scores'));
+        $exam_dates = ViewExamScore::distinct('exam_date')->where('user_id',auth()->id())->whereNotNull('grade')->orderBy('exam_date','desc')->pluck('exam_date');
+        return view('examination.scoring-archieves',compact('exam_dates'));
     }
 
     public function edit(ExamScore $scoring)
