@@ -108,7 +108,7 @@ class ExamRegistrationController extends Controller
         ]);
 
 
-        return back()->with('success','menu '.$name.' telah diperbarui');
+        return back()->with('success','data pendaftaran '.$name.' telah diperbarui');
     }
 
     public function destroy(ExamRegistration $examregistration)
@@ -150,8 +150,10 @@ class ExamRegistrationController extends Controller
 
     private function _dataSelection()
     {
+        $pass_students = GuideExaminer::whereNull('thesis_date')->pluck('user_id');
+        // dd($pass_students);
         return [
-            'students' =>  User::role('mahasiswa')->select('name','id')->get()->sort(),
+            'students' =>  User::role('mahasiswa')->select('name','id','username')->whereIn('id',$pass_students)->get()->sort(),
             'lectures' =>  User::role('dosen')->select('name','id')->get()->sort(),
             'exam_types' =>  ExamType::select('name','id')->get(),
         ];

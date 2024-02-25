@@ -28,7 +28,7 @@
                 <select id="user_id" class="form-control @error('user_id') is-invalid @enderror" name="user_id" required @disabled($examregistration->id)>
                     <option value="">-- Pilih Mahasiswa --</option>
                     @foreach ($students as $student)
-                    <option value="{{ $student->id }}" @selected($student->id == $examregistration->user_id)>{{ $student->name }}</option>
+                    <option value="{{ $student->id }}" @selected($student->id == $examregistration->user_id)>{{ $student->name }} - {{ $student->username }}</option>
                     @endforeach
                 </select>
             </div>
