@@ -82,7 +82,7 @@ class GuideExaminerController extends Controller
         $available_students = GuideExaminer::pluck('user_id');
         return [
             'students' =>  User::role(['mahasiswa'])->select('name','id')->whereNotIn('id',$available_students)->get()->sort(),
-            'lectures' =>  User::role('dosen')->select('name','id')->get()->sort(),
+            'lectures' =>  User::role('dosen')->select('name','id','initial')->get()->sort(),
         ];
     }
 }

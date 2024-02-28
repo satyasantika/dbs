@@ -52,7 +52,7 @@
                 <select id="examiner1_id" class="form-control @error('examiner1_id') is-invalid @enderror" name="examiner1_id" required >
                     <option value="">-- Pilih Dosen --</option>
                     @foreach ($lectures as $lecture)
-                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->examiner1_id)>{{ $lecture->name }}</option>
+                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->examiner1_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -64,7 +64,7 @@
                 <select id="examiner2_id" class="form-control @error('examiner2_id') is-invalid @enderror" name="examiner2_id" required >
                     <option value="">-- Pilih Dosen --</option>
                     @foreach ($lectures as $lecture)
-                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->examiner2_id)>{{ $lecture->name }}</option>
+                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->examiner2_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -76,7 +76,7 @@
                 <select id="examiner3_id" class="form-control @error('examiner3_id') is-invalid @enderror" name="examiner3_id" required >
                     <option value="">-- Pilih Dosen --</option>
                     @foreach ($lectures as $lecture)
-                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->examiner3_id)>{{ $lecture->name }}</option>
+                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->examiner3_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -88,7 +88,7 @@
                 <select id="guide1_id" class="form-control @error('guide1_id') is-invalid @enderror" name="guide1_id" required >
                     <option value="">-- Pilih Dosen --</option>
                     @foreach ($lectures as $lecture)
-                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->guide1_id)>{{ $lecture->name }}</option>
+                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->guide1_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -100,7 +100,7 @@
                 <select id="guide2_id" class="form-control @error('guide2_id') is-invalid @enderror" name="guide2_id" required >
                     <option value="">-- Pilih Dosen --</option>
                     @foreach ($lectures as $lecture)
-                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->guide2_id)>{{ $lecture->name }}</option>
+                    <option value="{{ $lecture->id }}" @selected($lecture->id == $guideexaminer->guide2_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                     @endforeach
                 </select>
             </div>
