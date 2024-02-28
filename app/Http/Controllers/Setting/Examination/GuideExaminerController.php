@@ -79,8 +79,9 @@ class GuideExaminerController extends Controller
 
     private function _dataSelection()
     {
+        $available_students = GuideExaminer::pluck('user_id');
         return [
-            'students' =>  User::role(['mahasiswa','alumni'])->select('name','id')->get()->sort(),
+            'students' =>  User::role(['mahasiswa'])->select('name','id')->whereNotIn('id',$available_students)->get()->sort(),
             'lectures' =>  User::role('dosen')->select('name','id')->get()->sort(),
         ];
     }
