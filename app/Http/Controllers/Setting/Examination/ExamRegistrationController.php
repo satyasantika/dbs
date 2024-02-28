@@ -63,15 +63,11 @@ class ExamRegistrationController extends Controller
 
     public function edit(ExamRegistration $examregistration)
     {
-        $chiefs = User::role('dosen')
-                    ->select('name','id')
-                    ->whereIn('id',[
+        $chiefs = User::whereIn('id',[
                         $examregistration->examiner1_id,
                         $examregistration->examiner2_id,
                         $examregistration->examiner3_id,
-                        ])
-                    ->get()
-                    ->sort();
+                        ])->role('dosen')->select('initial','name','id')->get()->sort();
         return view('setting.examination.examregistration-form', array_merge(
             $this->_dataSelection(),
             [
@@ -151,10 +147,9 @@ class ExamRegistrationController extends Controller
     private function _dataSelection()
     {
         $pass_students = GuideExaminer::whereNull('thesis_date')->pluck('user_id');
-        // dd($pass_students);
         return [
             'students' =>  User::role('mahasiswa')->select('name','id','username')->whereIn('id',$pass_students)->get()->sort(),
-            'lectures' =>  User::role('dosen')->select('name','id')->get()->sort(),
+            'lectures' =>  User::role('dosen')->select('initial','name','id')->get()->sort(),
             'exam_types' =>  ExamType::select('name','id')->get(),
         ];
     }

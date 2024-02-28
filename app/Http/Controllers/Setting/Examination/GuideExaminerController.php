@@ -43,15 +43,11 @@ class GuideExaminerController extends Controller
 
     public function edit(GuideExaminer $guideexaminer)
     {
-        $chiefs = User::role('dosen')
-                    ->select('name','id')
-                    ->whereIn('id',[
+        $chiefs = User::whereIn('id',[
                         $guideexaminer->examiner1_id,
                         $guideexaminer->examiner2_id,
                         $guideexaminer->examiner3_id,
-                        ])
-                    ->get()
-                    ->sort();
+                        ])->role('dosen')->select('initial','name','id')->get()->sort();
         return view('setting.examination.guideexaminer-form', array_merge(
             $this->_dataSelection(),
             [
