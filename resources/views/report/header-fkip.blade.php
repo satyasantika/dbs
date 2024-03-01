@@ -2,7 +2,7 @@
     <table style="margin:auto;border: 1px solid white;width:18cm;">
         <tbody>
             <tr style="border-bottom: 1px solid black;">
-                <td class="text-end"><img src="https://unsil.ac.id/wp-content/uploads/2021/07/cropped-LOGO-UNSIL.png" height="100"/></td>
+                <td class="text-end"><img src="{{ asset('LOGOUNSIL.png') }}" height="100"/></td>
                 <td class="text-center" style="font-family: Times; line-height: 1.2;vertical-align:middle;">
                     <span @style('font-size:12pt')>KEMENTERIAN PENDIDIKAN, KEBUDAYAAN, RISET, DAN TEKNOLOGI</span><br>
                     <span @style('font-size:14pt')>UNIVERSITAS SILIWANGI</span><br>
