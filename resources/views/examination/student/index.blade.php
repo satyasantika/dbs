@@ -30,14 +30,18 @@
                                 @forelse ($examinations as $examination)
                                 <tr>
                                     <td>
-                                        {{-- @if ($examination->registration->exam_pass) --}}
                                         <a href="{{ route('exam.student.get-revision',$examination->id) }}" class="btn btn-sm btn-primary">rincian</a>
-                                        {{-- @endif --}}
                                     <td>{{ $examination->ujian }}</td>
                                     <td>{{ $examination->exam_date }}</td>
                                     <td>
+                                        @if ($examination->pass_exam)
                                         <a target="_blank" href="{{ route('report.revision-table',$examination->id) }}" class="btn btn-sm btn-outline-primary mr-2">Lembar Revisi</a>
                                         <a target="_blank" href="{{ route('report.revision-sign',$examination->id) }}" class="btn btn-sm btn-outline-primary">Keterangan Revisi</a>
+                                        @else
+                                        <div class="alert bg-warning">
+                                            lembar revisi belum dapat dicetak, menunggu selesai penilaian
+                                        </div>
+                                        @endif
                                     </td>
                                 </tr>
                                 @empty
