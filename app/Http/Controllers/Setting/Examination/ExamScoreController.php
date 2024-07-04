@@ -13,7 +13,7 @@ class ExamScoreController extends Controller
 {
     function __construct()
     {
-        // $this->middleware('permission:read scoring', ['only' => ['index','show']]);
+        $this->middleware('permission:read exam registrations', ['only' => ['index']]);
         // $this->middleware('permission:create scoring', ['only' => ['create','store']]);
         // $this->middleware('permission:update scoring', ['only' => ['edit','update']]);
         // $this->middleware('permission:delete scoring', ['only' => ['destroy']]);

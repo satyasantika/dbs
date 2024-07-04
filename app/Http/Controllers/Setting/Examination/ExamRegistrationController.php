@@ -15,9 +15,9 @@ class ExamRegistrationController extends Controller
 {
     function __construct()
     {
-        // $this->middleware('permission:read examregistrations', ['only' => ['index','show']]);
+        $this->middleware('permission:read exam registrations', ['only' => ['index','index2']]);
         // $this->middleware('permission:create examregistrations', ['only' => ['create','store']]);
-        // $this->middleware('permission:update examregistrations', ['only' => ['edit','update']]);
+        $this->middleware('permission:update exam registrations', ['only' => ['edit','update']]);
         // $this->middleware('permission:delete examregistrations', ['only' => ['destroy']]);
     }
 
