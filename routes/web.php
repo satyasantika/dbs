@@ -31,6 +31,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/setting/selectionguideallocations/{guideallocation}/activation', [App\Http\Controllers\Setting\Selection\GuideAllocationController::class, 'activation'])->name('selectionguideallocations.activation');
         Route::put('/setting/selectionguidegroups/{guidegroup}/activation', [App\Http\Controllers\Setting\Selection\GuideGroupController::class, 'activation'])->name('selectionguidegroups.activation');
         Route::put('/setting/examregistrations/{examregistration}/scoreset', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'scoreSet'])->name('examregistrations.scoreset');
+        Route::get('/setting/examregistrations/date/{id}', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'index2'])->name('examregistrations.date');
         Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
         Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');
         Route::resource('setting/rolepermissions', App\Http\Controllers\Setting\RolePermissionController::class)->only('edit', 'update');
@@ -68,6 +69,10 @@ Route::middleware('auth')->group(function () {
         Route::put('selection/respons/{guide}/decline', [App\Http\Controllers\Selection\GuideResponController::class,'decline'])->name('respons.decline');
         Route::put('selection/respons/{guide}/retract', [App\Http\Controllers\Selection\GuideResponController::class,'retract'])->name('respons.retract');
         Route::resource('selection/guides', App\Http\Controllers\Selection\GuideController::class)->except('show','index');
+    });
+    Route::get('datatable/{id}', function(App\DataTables\ExamRegistrationsDataTable $dataTable, $id){
+    return $dataTable->with('id', $id)
+            ->render('layouts.setting');
     });
 });
 

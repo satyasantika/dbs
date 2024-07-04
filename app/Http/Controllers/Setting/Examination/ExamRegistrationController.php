@@ -153,4 +153,10 @@ class ExamRegistrationController extends Controller
             'exam_types' =>  ExamType::select('name','id')->get(),
         ];
     }
+
+    public function index2(ExamRegistrationsDataTable $dataTable, $id="")
+    {
+        return $dataTable->with('user_id', $id)->render('layouts.setting');
+    }
+
 }

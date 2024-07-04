@@ -51,7 +51,7 @@ class ExamRegistrationsDataTable extends DataTable
      */
     public function query(ViewExamRegistration $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->where('exam_date','like', $this->user_id.'%')->newQuery();
     }
 
     /**
@@ -97,7 +97,7 @@ class ExamRegistrationsDataTable extends DataTable
             Column::make('penguji_4')->title('P4'),
             Column::make('penguji_5')->title('P5'),
             // Column::make('ketua'),
-            Column::make('updated_at'),
+            // Column::make('updated_at'),
         ];
     }
 
