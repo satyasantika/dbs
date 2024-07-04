@@ -18,6 +18,11 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
 <div class="text-end">
     Penilai: {{ $scoring->lecture->name }}
 </div>
+{{-- jika tanggal ujian sudah lewat satu hari atau semua penguji sudah menilai, maka penilaian diblok --}}
+{{-- dikecualikan bagi user yang dapat memaksa edit penilaian --}}
+@php
+    $available_check = ($examregistration->exam_date < Carbon\Carbon::now() && $examregistration->pass_exam) && !Auth::user()->can('force edit score');
+@endphp
 <form id="formAction" action="{{ route('scoring.update',$scoring->id) }}" method="post">
     @csrf
     @method('PUT')
@@ -31,9 +36,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                     <li>pastikan mencatat apa yang perlu direvisi</li>
                     <li>pastikan memberikan keputusan apakah dapat dilanjutkan ke tahap berikutnya atau tidak</li>
                 </ol>
-
                 <br>
-
             </div>
             {{-- skor penilaian --}}
             @foreach ($form_items as $item)
@@ -62,6 +65,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                         name="{{ $item_order }}"
                         id="{{ $item_order }}"
                         onchange="gradeout.value=grade();letterout.value=letter(grade());"
+                        @disabled($available_check)
                         >
                         <option value="">Nilai ?</option>
                         @for ($i = 100; $i >= 0; $i--)
@@ -74,6 +78,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                 </div>
             @endforeach
             <hr>
+            {{-- angka dan huruf hasil penilaian --}}
             HASIL PENILAIAN:
             <div class="row">
                 @php
@@ -100,14 +105,15 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                 </div>
             </div>
             <hr>
+            {{-- revisi/tidak --}}
             <div class="row">
                 <div class="col text-end">Keputusan Revisi:</div>
                 <div class="col">
-                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision==1) value=1>
+                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($available_check)>
                     <label class="btn btn-outline-danger btn-sm float-end" for="revisi1">perlu direvisi</label>
                 </div>
                 <div class="col">
-                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision==0) value=0>
+                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($available_check)>
                     <label class="btn btn-outline-success btn-sm" for="revisi2">tidak perlu direvisi</label>
                 </div>
             </div>
@@ -118,7 +124,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                     <div class="row mb-3">
                         <label for="revision_note" class="form-label">Keterangan Revisi</label>
                         <div class="col-md-12">
-                            <textarea name="revision_note" rows="10" class="form-control" id="revision_note" placeholder="jika bagian ini kosong, maka dianggap tidak ada revisi">{{ $scoring->revision_note }}</textarea>
+                            <textarea name="revision_note" rows="10" class="form-control" id="revision_note" placeholder="jika bagian ini kosong, maka dianggap tidak ada revisi" @disabled($available_check)>{{ $scoring->revision_note }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -126,11 +132,11 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
             <div class="row">
                 <div class="col text-end">Keputusan Ujian:</div>
                 <div class="col">
-                    <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved==1) value=1>
+                    <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved==1) value=1 @disabled($available_check)>
                     <label class="btn btn-outline-success btn-sm float-end" for="approved1">layak dilanjutkan</label>
                 </div>
                 <div class="col">
-                    <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved==0) value=0>
+                    <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved==0) value=0 @disabled($available_check)>
                     <label class="btn btn-outline-danger btn-sm" for="approved2">tidak layak dilanjutkan</label>
                 </div>
             </div>
@@ -142,7 +148,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
             @else
             <a href="{{ route('scoring.index') }}" class="btn btn-outline-secondary btn-sm float-end">Close</a>
             @endif
-            <button type="submit" class="btn btn-primary btn-sm m-1">Save</button>
+            <button type="submit" class="btn btn-primary btn-sm m-1" @disabled($available_check)>Save</button>
         </div>
     </form>
 </form>
