@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
 use App\Models\ViewExamRegistration;
+use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ChiefController extends Controller
 {
@@ -26,8 +28,11 @@ class ChiefController extends Controller
 
     public function show(ExamRegistration $chief)
     {
+        if ( $chief->chief_id != Auth::id() ) {
+            return to_route('scoring.index');
+        }
+
         $examinations = ExamScore::where('exam_registration_id',$chief->id)->get();
-        // dd($chief);
         return view('examination.chief',compact('examinations','chief'));
     }
 
@@ -56,30 +61,5 @@ class ChiefController extends Controller
         }
 
     }
-
-    private function _convertToLetter($grade)
-    {
-        if ($grade >= 85)
-        { return 'A'; }
-        elseif ($grade >= 77)
-        { return 'A-'; }
-        elseif ($grade >= 69)
-        { return 'B+'; }
-        elseif ($grade >= 61)
-        { return 'B'; }
-        elseif ($grade >= 53)
-        { return 'B-'; }
-        elseif ($grade >= 45)
-        { return 'C+'; }
-        elseif ($grade >= 37)
-        { return 'C'; }
-        elseif ($grade >= 29)
-        { return 'C-'; }
-        elseif ($grade >= 21)
-        { return 'D'; }
-        else
-        { return 'E'; }
-    }
-
 
 }

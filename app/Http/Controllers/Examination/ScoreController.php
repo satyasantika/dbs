@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Models\ViewExamScore;
 use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class ScoreController extends Controller
 {
@@ -33,6 +34,10 @@ class ScoreController extends Controller
 
     public function edit(ExamScore $scoring)
     {
+        if ( $scoring->user_id != Auth::id() && !auth()->user()->can('force edit score')) {
+            return to_route('scoring.index');
+        }
+
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
         $form_items = ExamFormItem::select('id','name','exam_type_id')->where('exam_type_id',$examregistration->exam_type_id)->get();
         return view('examination.scoring-form',compact('form_items','scoring','examregistration'));
