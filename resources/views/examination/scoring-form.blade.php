@@ -64,37 +64,42 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                         aria-label=".form-select-lg example"
                         name="{{ $item_order }}"
                         id="{{ $item_order }}"
-                        onchange="gradeout.value=grade();letterout.value=letter(grade());"
+                        onchange="gradeout.value=grade();letterout.value=letter(grade());{{ $item_order }}out.value={{ $item_order }}.value"
                         @disabled($available_check)
                         >
                         <option value="">Nilai ?</option>
-                        @for ($i = 100; $i >= 0; $i--)
-                            <option value="{{ $i }}" @selected($scoring->$item_order == $i)>
-                                {{ $i }}
-                            </option>
-                        @endfor
+                        <option value="{{ rand(85,100) }}" @selected(intval($scoring->$item_order)>=85 && intval($scoring->$item_order)<=100)>A</option>
+                        <option value="{{ rand(77,84) }}" @selected(intval($scoring->$item_order)>=77 && intval($scoring->$item_order)<=84)>A-</option>
+                        <option value="{{ rand(69,76) }}" @selected(intval($scoring->$item_order)>=69 && intval($scoring->$item_order)<=76)>B+</option>
+                        <option value="{{ rand(61,68) }}" @selected(intval($scoring->$item_order)>=61 && intval($scoring->$item_order)<=68)>B</option>
+                        <option value="{{ rand(53,60) }}" @selected(intval($scoring->$item_order)>=53 && intval($scoring->$item_order)<=60)>B-</option>
+                        <option value="{{ rand(45,52) }}" @selected(intval($scoring->$item_order)>=45 && intval($scoring->$item_order)<=52)>C+</option>
+                        <option value="{{ rand(37,44) }}" @selected(intval($scoring->$item_order)>=37 && intval($scoring->$item_order)<=44)>C</option>
+                        <option value="{{ rand(29,36) }}" @selected(intval($scoring->$item_order)>=29 && intval($scoring->$item_order)<=36)>C-</option>
+                        <option value="{{ rand(21,28) }}" @selected(intval($scoring->$item_order)>=21 && intval($scoring->$item_order)<=28)>D</option>
+                        <option value="{{ rand(0,20) }}" @selected(intval($scoring->$item_order)>=0 && intval($scoring->$item_order)<=20)>E</option>
                     </select>
                 </div>
-                </div>
+                {{-- <div class="col-auto">
+                    <output
+                        class="btn btn-outline-dark disabled"
+                        id="{{ $item_order }}out"
+                        name="{{ $item_order }}out"
+                        for="allout"
+                        >{{ $scoring->$item_order }}</output>
+                </div> --}}
+            </div>
             @endforeach
             <hr>
             {{-- angka dan huruf hasil penilaian --}}
-            HASIL PENILAIAN:
-            <div class="row">
+            <div class="row alert alert-success">
+                <div class="col-auto">SIMPULAN HASIL AKHIR PENILAIAN</div>
                 @php
                     $grade = ($scoring->score1 + $scoring->score2 + $scoring->score3 + $scoring->score4 + $scoring->score5)/5;
                 @endphp
                 <div class="col-auto">
                     <output
-                        class="btn btn-outline-dark disabled"
-                        id="gradeout"
-                        name="gradeout"
-                        for="allout"
-                        >{{ $grade }}</output>
-                    </div>
-                <div class="col-auto">
-                    <output
-                        class="btn btn-outline-dark disabled"
+                        class="btn btn-success disabled"
                         id="letterout"
                         name="letterout"
                         for="allout"
@@ -103,41 +108,52 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                                 @elseif ($grade<69) B @elseif ($grade<77) B+ @elseif ($grade<85) A-
                                 @elseif ($grade<=100) A @endif</output>
                 </div>
+                <div class="col-auto">
+                    <output
+                        class="btn btn-outline-dark disabled"
+                        id="gradeout"
+                        name="gradeout"
+                        for="allout"
+                        >{{ $grade }}</output>
+                    </div>
             </div>
             <hr>
             {{-- revisi/tidak --}}
             <div class="row">
-                <div class="col text-end">Keputusan Revisi:</div>
-                <div class="col">
-                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($available_check)>
-                    <label class="btn btn-outline-danger btn-sm float-end" for="revisi1">perlu direvisi</label>
+                <div class="col-auto text-end">Perlu direvisi?</div>
+                <div class="col-auto">
+                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "block" '>
+                    <label class="btn btn-outline-danger btn-sm float-end" for="revisi1">YA</label>
                 </div>
-                <div class="col">
-                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($available_check)>
-                    <label class="btn btn-outline-success btn-sm" for="revisi2">tidak perlu direvisi</label>
+                <div class="col-auto">
+                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "none" '>
+                    <label class="btn btn-outline-success btn-sm" for="revisi2">TIDAK</label>
                 </div>
             </div>
             <hr>
-            <div class="row">
+            <div class="row" id="revision_row" @style( $scoring->revision==1 ? "display:block" : "display:none" ) >
                 <div class="col">
                     {{-- Komentar --}}
                     <div class="row mb-3">
-                        <label for="revision_note" class="form-label">Keterangan Revisi</label>
+                        <label for="revision_note" class="form-label">Catatan Revisi</label>
                         <div class="col-md-12">
                             <textarea name="revision_note" rows="10" class="form-control" id="revision_note" placeholder="jika bagian ini kosong, maka dianggap tidak ada revisi" @disabled($available_check)>{{ $scoring->revision_note }}</textarea>
                         </div>
                     </div>
                 </div>
             </div>
+            @php
+                $judgement = $scoring->registration->exam_type_id == 3 ? 'LULUS' : 'LANJUT'
+            @endphp
             <div class="row">
-                <div class="col text-end">Keputusan Ujian:</div>
-                <div class="col">
+                <div class="col-auto text-end">Layak di_{{ $judgement }}_kan?</div>
+                <div class="col-auto">
                     <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved==1) value=1 @disabled($available_check)>
-                    <label class="btn btn-outline-success btn-sm float-end" for="approved1">layak dilanjutkan</label>
+                    <label class="btn btn-outline-success btn-sm float-end" for="approved1">YA, {{ $judgement }}</label>
                 </div>
-                <div class="col">
+                <div class="col-auto">
                     <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved==0) value=0 @disabled($available_check)>
-                    <label class="btn btn-outline-danger btn-sm" for="approved2">tidak layak dilanjutkan</label>
+                    <label class="btn btn-outline-danger btn-sm" for="approved2">TIDAK {{ $judgement }}</label>
                 </div>
             </div>
         </div>
@@ -162,11 +178,11 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
     function letter(grade){
         if (grade<21) {
                 return "E";
-            } else if (grade<37) {
+            } else if (grade<29) {
                 return "D";
-            } else if (grade<45) {
+            } else if (grade<37) {
                 return "C-";
-            } else if (grade<53) {
+            } else if (grade<45) {
                 return "C";
             } else if (grade<53) {
                 return "C+";
