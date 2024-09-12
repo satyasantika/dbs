@@ -49,24 +49,26 @@
                                 <tr class="{{ is_null($exam_score->grade) ? 'table-warning' : 'table-success' }}">
                                     <td>
                                         <a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-outline-primary">E</a>
+                                    </td>
+                                    <td>
                                         <a target="_blank" href="{{'https://api.whatsapp.com/send/?phone=62'
                                             .$exam_score->lecture->phone.'&text=Yth.%20Penguji%20'
                                             .$examregistration->student->name.',%0A%0AMohon%20segera%20memberikan%20penilaian%20'
                                             .$examregistration->examtype->name.'%20pada%20'
                                             .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').'%20agar%20mahasiswa%20tersebut%20dapat%20segera%20mencetak%20lembar%20revisinya%0A%0Asilakan%20akses:%0A%0Ahttp://supportfkip.unsil.ac.id/dbsmatematika/%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)'}}"
                                             class="badge rounded-pill bg-success btn btn-sm">wa</a>
-                                    <td>
                                         {{ $exam_score->namadosen }}
                                         @if ($exam_score->dosen == $exam_score->ketua)
-                                            <span class="badge rounded-pill bg-primary">ketua</span>
+                                            <span class="badge rounded-pill bg-dark text-white">ketua</span>
                                         @endif
+                                        <a href="{{ route('examregistrations.examscores.edit',[$examregistration,$exam_score]) }}" class="badge rounded-pill bg-primary" style="text-decoration: none;">ganti penguji</a>
                                     </td>
                                     <td>{{ $exam_score->score1 }}</td>
                                     <td>{{ $exam_score->score2 }}</td>
                                     <td>{{ $exam_score->score3 }}</td>
                                     <td>{{ $exam_score->score4 }}</td>
                                     <td>{{ $exam_score->score5 }}</td>
-                                    <td class="text-center">{{ $exam_score->grade }}</td>
+                                    <td class="text-center"><span class="badge bg-dark text-white">{{ $exam_score->grade }}</span></td>
                                     <td class="text-center">{{ $exam_score->letter }}</td>
                                     <td class="text-center">{{ $exam_score->revision ? 'v' : 'x' }}</td>
                                     <td>{{ is_null($exam_score->revision_note) ? 'x' : Str::of($exam_score->revision_note)->limit(20) }}</td>

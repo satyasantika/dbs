@@ -68,11 +68,13 @@ class ExamRegistrationController extends Controller
                         $examregistration->examiner2_id,
                         $examregistration->examiner3_id,
                         ])->role('dosen')->select('initial','name','id')->get()->sort();
+        $exam_score_set = ExamScore::where('exam_registration_id',$examregistration->id)->exists();
         return view('setting.examination.examregistration-form', array_merge(
             $this->_dataSelection(),
             [
                 'examregistration'=> $examregistration,
                 'chiefs'=> $chiefs,
+                'exam_score_set'=> $exam_score_set,
             ],
         ));
     }
@@ -102,7 +104,6 @@ class ExamRegistrationController extends Controller
             'chief_id'=>$examregistration->chief_id,
             $tanggal_ujian=>$examregistration->exam_date,
         ]);
-
 
         return back()->with('success','data pendaftaran '.$name.' telah diperbarui');
     }

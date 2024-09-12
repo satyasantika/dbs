@@ -135,9 +135,9 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                 <div class="col">
                     {{-- Komentar --}}
                     <div class="row mb-3">
-                        <label for="revision_note" class="form-label">Catatan Revisi</label>
+                        <label for="revision_note" class="form-label">Catatan Revisi <br>(jika dibiarkan kosong, maka akan tercetak <span @class('text-primary')>belum diisi</span> pada keterangan lembar revisi mahasiswa)</label>
                         <div class="col-md-12">
-                            <textarea name="revision_note" rows="10" class="form-control" id="revision_note" placeholder="jika bagian ini kosong, maka dianggap tidak ada revisi" @disabled($available_check)>{{ $scoring->revision_note }}</textarea>
+                            <textarea name="revision_note" rows="10" class="form-control" id="revision_note" @disabled($available_check)>{{ $scoring->revision_note }}</textarea>
                         </div>
                     </div>
                 </div>

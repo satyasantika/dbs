@@ -137,7 +137,7 @@
                         <div class="row mb-3">
                             <label for="examiner1_id" class="col-md-4 col-form-label text-md-end">Penguji 1</label>
                             <div class="col-md-7">
-                                <select id="examiner1_id" class="form-control @error('examiner1_id') is-invalid @enderror" name="examiner1_id" required >
+                                <select id="examiner1_id" class="form-control @error('examiner1_id') is-invalid @enderror" name="examiner1_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
                                     <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->examiner1_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
@@ -149,7 +149,7 @@
                         <div class="row mb-3">
                             <label for="examiner2_id" class="col-md-4 col-form-label text-md-end">Penguji 2</label>
                             <div class="col-md-7">
-                                <select id="examiner2_id" class="form-control @error('examiner2_id') is-invalid @enderror" name="examiner2_id" required >
+                                <select id="examiner2_id" class="form-control @error('examiner2_id') is-invalid @enderror" name="examiner2_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
                                     <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->examiner2_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
@@ -161,7 +161,7 @@
                         <div class="row mb-3">
                             <label for="examiner3_id" class="col-md-4 col-form-label text-md-end">Penguji 3</label>
                             <div class="col-md-7">
-                                <select id="examiner3_id" class="form-control @error('examiner3_id') is-invalid @enderror" name="examiner3_id" required >
+                                <select id="examiner3_id" class="form-control @error('examiner3_id') is-invalid @enderror" name="examiner3_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
                                     <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->examiner3_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
@@ -173,7 +173,7 @@
                         <div class="row mb-3">
                             <label for="guide1_id" class="col-md-4 col-form-label text-md-end">Penguji 4 (P1)</label>
                             <div class="col-md-7">
-                                <select id="guide1_id" class="form-control @error('guide1_id') is-invalid @enderror" name="guide1_id" required >
+                                <select id="guide1_id" class="form-control @error('guide1_id') is-invalid @enderror" name="guide1_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
                                     <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->guide1_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
@@ -185,7 +185,7 @@
                         <div class="row mb-3">
                             <label for="guide2_id" class="col-md-4 col-form-label text-md-end">Penguji 5 (P2)</label>
                             <div class="col-md-7">
-                                <select id="guide2_id" class="form-control @error('guide2_id') is-invalid @enderror" name="guide2_id" required >
+                                <select id="guide2_id" class="form-control @error('guide2_id') is-invalid @enderror" name="guide2_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
                                     <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->guide2_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
