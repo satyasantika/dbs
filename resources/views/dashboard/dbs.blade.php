@@ -5,11 +5,17 @@
         <div class="card">
             <div class="card-header">Manajemen Ujian</div>
             <div class="card-body">
-                untuk menjadwalkan ujian, silakan klik tombol berikut:<br>
-                <a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary">Jadwal Ujian</a><br>
+                menu penjadwalan ujian:<br>
+                <a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary">Jadwal Ujian</a>
+                <br>
                 <hr>
-                untuk melihat para penguji yang belum menilai, silakan klik tombol berikut:<br>
+                menu penguji yang belum menilai:<br>
                 <a href="{{ route('get.examinerscoringyet') }}" class="btn btn-sm btn-primary">belum menilai</a>
+                <br>
+                <hr>
+                menu registrasi ujian belum diset ke penguji:<br>
+                <a href="{{ route('get.setscoringtoexamineryet') }}" class="btn btn-sm btn-primary">set jadwal ke penguji</a>
+                <br>
             </div>
         </div>
     </div>

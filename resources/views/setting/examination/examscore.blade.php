@@ -16,13 +16,24 @@
                     {{ $examregistration->examtype->name }} ({{ $examregistration->exam_date->isoFormat('dddd, D MMMM Y') }} {{ $examregistration->exam_time }})<br>
                     {{ $examregistration->title }}
 
-                    @if (!$empty_scores)
+                    @if (\App\Models\ExamScore::where('exam_registration_id',$examregistration->id)->doesntExist())
+                        <div class="alert alert-info mt-3">
+                            <form id="scoreset-form" action="{{ route('examregistrations.scoreset',$examregistration->id) }}" method="POST">
+                                @csrf
+                                @method('PUT')
+                                jadwal belum diset ke penguji, klik 
+                                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Yakin akan set ujian?');">
+                                    {{ __('Set Ujian') }}
+                                </button>
+                            </form>
+                        </div>
+                    @elseif (!$empty_scores)
                         <div class="alert alert-success mt-3">
                             nilai ujian ini sudah lengkap
                         </div>
                     @else
                         <div class="alert alert-danger">
-                            masih ada penguji yang belum menilai
+                            penilaian belum lengkap
                         </div>
                     @endif
                     <hr>

@@ -94,8 +94,8 @@ class ExamRegistrationsDataTable extends DataTable
             Column::make('penguji_1')->title('P1'),
             Column::make('penguji_2')->title('P2'),
             Column::make('penguji_3')->title('P3'),
-            Column::make('penguji_4')->title('P4'),
-            Column::make('penguji_5')->title('P5'),
+            Column::make('penguji_4')->title('G1'),
+            Column::make('penguji_5')->title('G2'),
             // Column::make('ketua'),
             // Column::make('updated_at'),
         ];

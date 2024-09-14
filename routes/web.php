@@ -32,7 +32,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/setting/selectionguidegroups/{guidegroup}/activation', [App\Http\Controllers\Setting\Selection\GuideGroupController::class, 'activation'])->name('selectionguidegroups.activation');
         Route::put('/setting/examregistrations/{examregistration}/scoreset', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'scoreSet'])->name('examregistrations.scoreset');
         Route::get('/setting/examregistrations/date/{id}', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'index2'])->name('examregistrations.date');
-        Route::get('/admin/scoringyets', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
+        Route::get('/admin/scoring-yet', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
+        Route::get('/admin/set-scoring-to-examiner-yet', [App\Http\Controllers\Examination\AdminController::class, 'getSetScoringToExaminerYet'])->name('get.setscoringtoexamineryet');
         Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
         Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');
         Route::resource('setting/rolepermissions', App\Http\Controllers\Setting\RolePermissionController::class)->only('edit', 'update');

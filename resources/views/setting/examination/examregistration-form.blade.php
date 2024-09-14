@@ -2,6 +2,8 @@
 
 @push('header')
     | {{ $examregistration->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
+    <a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary float-end">kembali</a>
+
     @if ($examregistration->id && \App\Models\ExamScore::where('exam_registration_id',$examregistration->id)->doesntExist())
         <form id="delete-form" action="{{ route('examregistrations.destroy',$examregistration->id) }}" method="POST">
             @csrf
