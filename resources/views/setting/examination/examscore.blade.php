@@ -21,7 +21,7 @@
                             <form id="scoreset-form" action="{{ route('examregistrations.scoreset',$examregistration->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                jadwal belum diset ke penguji, klik 
+                                jadwal belum diset ke penguji, klik
                                 <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Yakin akan set ujian?');">
                                     {{ __('Set Ujian') }}
                                 </button>
@@ -102,6 +102,10 @@
                             .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').')%20dan%20dapat%20dicetak%20pada%20sistem%20DBS%20berikut.%0A%0Ahttp://supportfkip.unsil.ac.id/dbsmatematika/%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)%0A%0ASilakan%20login%20menggunakan%0Ausername:%20NPM%0Apassword:%20tanggal%20lahir%20(format:%20YYYY-MM-DD)%0A%0ADemikian%20informasi%20ini%20Kami%20sampaikan.%20Atas%20perhatian%20Anda,%20Kami%20ucapkan%20terima%20kasih.%0A(ttd.)%20*Kajur%20Pendidikan%20Matematika*'}}"
                             class="btn btn-sm btn-success float-end">kabari</a>
                     @endif
+                    <hr>
+                        <a target="_blank" href="{{ route('report.thesis-exam-chief',$examregistration->id) }}" class="btn btn-sm btn-success">BA Hasil Ujian</a>
+                        <a target="_blank" href="{{ route('report.thesis-exam-by-lecture',$examregistration->id) }}" class="btn btn-sm btn-success">Penilaian by Penguji</a>
+                        <a target="_blank" href="{{ route('report.thesis-rev-by-lecture',$examregistration->id) }}" class="btn btn-sm btn-success">Revisi by Penguji</a>
 
                     </div>
                 </div>

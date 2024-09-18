@@ -22,6 +22,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/report/revision-table/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionTablePDF'])->name('report.revision-table');
     Route::get('/report/revision-sign/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionSignPDF'])->name('report.revision-sign');
     Route::get('/report/examination/{examregistration}', [App\Http\Controllers\ReportController::class, 'createExamByChiefPDF'])->name('report.exam-chief');
+    Route::get('/report/examination/thesis/{examregistration}/result', [App\Http\Controllers\ReportController::class, 'createThesisExamByChiefPDF'])->name('report.thesis-exam-chief');
+    Route::get('/report/examination/thesis/{examregistration}/grading', [App\Http\Controllers\ReportController::class, 'createThesisExamByLecturePDF'])->name('report.thesis-exam-by-lecture');
+    Route::get('/report/examination/thesis/{examregistration}/revision', [App\Http\Controllers\ReportController::class, 'createThesisRevisionByLecturePDF'])->name('report.thesis-rev-by-lecture');
     Route::get('/mypassword/change', [App\Http\Controllers\Auth\PasswordChangeController::class, 'showChangePasswordGet'])->name('mypassword.change');
     Route::post('/mypassword/change', [App\Http\Controllers\Auth\PasswordChangeController::class, 'changePasswordPost'])->name('mypassword.update');
     Route::post('/mypassword/reset/{id}', [App\Http\Controllers\Auth\PasswordChangeController::class, 'resetPasswordPost'])->name('mypassword.reset');
