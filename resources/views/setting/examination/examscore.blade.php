@@ -66,7 +66,10 @@
                                             .$exam_score->lecture->phone.'&text=Yth.%20Penguji%20'
                                             .$examregistration->student->name.',%0A%0AMohon%20segera%20memberikan%20penilaian%20'
                                             .$examregistration->examtype->name.'%20pada%20'
-                                            .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').'%20agar%20mahasiswa%20tersebut%20dapat%20segera%20mencetak%20lembar%20revisinya%0A%0Asilakan%20akses:%0A%0Ahttp://supportfkip.unsil.ac.id/dbsmatematika/%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)'}}"
+                                            .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').'%20agar%20mahasiswa%20tersebut%20dapat%20segera%20mencetak%20lembar%20revisinya%0A%0'
+                                            .'Asilakan%20akses:%0A%0A'
+                                            .route('examregistrations.examscores.edit',[$examregistration,$exam_score])
+                                            .'%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)'}}"
                                             class="badge rounded-pill bg-success btn btn-sm">wa</a>
                                         {{ $exam_score->namadosen }}
                                         @if ($exam_score->dosen == $exam_score->ketua)
@@ -99,7 +102,14 @@
                             .$examregistration->examtype->name.'*%0A%0ASaudara%20*'
                             .$examregistration->student->name.'*,%20Kami%20informasikan%20bahwa%20masing-masing%20dosen%20penguji%20telah%20menuliskan%20revisi%20'
                             .$examregistration->examtype->name.'%20('
-                            .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').')%20dan%20dapat%20dicetak%20pada%20sistem%20DBS%20berikut.%0A%0Ahttp://supportfkip.unsil.ac.id/dbsmatematika/%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)%0A%0ASilakan%20login%20menggunakan%0Ausername:%20NPM%0Apassword:%20tanggal%20lahir%20(format:%20YYYY-MM-DD)%0A%0ADemikian%20informasi%20ini%20Kami%20sampaikan.%20Atas%20perhatian%20Anda,%20Kami%20ucapkan%20terima%20kasih.%0A(ttd.)%20*Kajur%20Pendidikan%20Matematika*'}}"
+                            .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').')%20dan%20dapat%20dicetak%20pada%20sistem%20DBS%20berikut.%0A%0A'
+                            .route('exam.student.index')
+                            .'%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)%0A%0A'
+                            .'Silakan%20login%20menggunakan%0Ausername:%20NPM%0Apassword:%20tanggal%20lahir%20(format:%20YYYY-MM-DD)%0A%0A'
+                            .'Terakhir,%20harap%20laporkan%20hasil%20ujian%20Anda%20pada%20laman%20(siapkan%20lembar%20revisi%20yang%20sudah%20ditandatangani%20dan%20foto%20ujian):%0A'
+                            .'https://forms.gle/umUKgAcXLnhowgpw7'
+                            .'%0A%0ADemikian%20informasi%20ini%20Kami%20sampaikan.%20Atas%20perhatian%20Anda,%20Kami%20ucapkan%20terima%20kasih.%0A'
+                            .'(ttd.)%20*Kajur%20Pendidikan%20Matematika*'}}"
                             class="btn btn-sm btn-success float-end">kabari</a>
                     @endif
                     <hr>

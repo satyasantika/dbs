@@ -52,6 +52,7 @@
                     <tr style="vertical-align: top">
                         <td style="border: 1px solid black;border-collapse:collapse;padding:4px;"></td>
                         <td style="border: 1px solid black;border-collapse:collapse;padding:4px;height: 300px;">
+                            
                             @if ($examscore->revision_note)
                                 {{ $examscore->revision_note }}
                             @else
