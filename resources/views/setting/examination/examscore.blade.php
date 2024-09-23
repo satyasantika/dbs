@@ -66,9 +66,9 @@
                                             .$exam_score->lecture->phone.'&text=Yth.%20Penguji%20'
                                             .$examregistration->student->name.',%0A%0AMohon%20segera%20memberikan%20penilaian%20'
                                             .$examregistration->examtype->name.'%20pada%20'
-                                            .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').'%20agar%20mahasiswa%20tersebut%20dapat%20segera%20mencetak%20lembar%20revisinya%0A%0'
-                                            .'Asilakan%20akses:%0A%0A'
-                                            .route('examregistrations.examscores.edit',[$examregistration,$exam_score])
+                                            .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').'%20agar%20mahasiswa%20tersebut%20dapat%20segera%20mencetak%20lembar%20revisinya%0A%0A'
+                                            .'silakan%20akses:%0A%0A'
+                                            .route('scoring.edit',[$examregistration,$exam_score])
                                             .'%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)'}}"
                                             class="badge rounded-pill bg-success btn btn-sm">wa</a>
                                         {{ $exam_score->namadosen }}
