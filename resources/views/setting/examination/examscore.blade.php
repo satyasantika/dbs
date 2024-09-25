@@ -105,18 +105,19 @@
                             .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').')%20dan%20dapat%20dicetak%20pada%20sistem%20DBS%20berikut.%0A%0A'
                             .route('exam.student.index')
                             .'%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)%0A%0A'
-                            .'Silakan%20login%20menggunakan%0Ausername:%20NPM%0Apassword:%20tanggal%20lahir%20(format:%20YYYY-MM-DD)%0A%0A'
-                            .'Terakhir,%20harap%20laporkan%20hasil%20ujian%20Anda%20pada%20laman%20(siapkan%20lembar%20revisi%20yang%20sudah%20ditandatangani%20dan%20foto%20ujian):%0A'
-                            .'https://forms.gle/umUKgAcXLnhowgpw7'
+                            .'Silakan%20login%20menggunakan%0Ausername:%20NPM%0Apassword:%20tanggal%20lahir%20(format:%20YYYY-MM-DD)'
+                            .($examregistration->exam_type_id==3 ? '%0A%0ATerakhir,%20harap%20laporkan%20hasil%20ujian%20Anda%20pada%20laman%20(siapkan%20lembar%20revisi%20yang%20sudah%20ditandatangani%20dan%20foto%20ujian):%0A' : '')
+                            .($examregistration->exam_type_id==3 ? 'https://forms.gle/umUKgAcXLnhowgpw7' : '')
                             .'%0A%0ADemikian%20informasi%20ini%20Kami%20sampaikan.%20Atas%20perhatian%20Anda,%20Kami%20ucapkan%20terima%20kasih.%0A'
                             .'(ttd.)%20*Kajur%20Pendidikan%20Matematika*'}}"
                             class="btn btn-sm btn-success float-end">kabari</a>
                     @endif
+                    @if ($examregistration->exam_type_id==3)
                     <hr>
-                        <a target="_blank" href="{{ route('report.thesis-exam-chief',$examregistration->id) }}" class="btn btn-sm btn-success">BA Hasil Ujian</a>
-                        <a target="_blank" href="{{ route('report.thesis-exam-by-lecture',$examregistration->id) }}" class="btn btn-sm btn-success">Penilaian by Penguji</a>
-                        <a target="_blank" href="{{ route('report.thesis-rev-by-lecture',$examregistration->id) }}" class="btn btn-sm btn-success">Revisi by Penguji</a>
-
+                    <a target="_blank" href="{{ route('report.thesis-exam-chief',$examregistration->id) }}" class="btn btn-sm btn-success">BA Hasil Ujian</a>
+                    <a target="_blank" href="{{ route('report.thesis-exam-by-lecture',$examregistration->id) }}" class="btn btn-sm btn-success">Penilaian by Penguji</a>
+                    <a target="_blank" href="{{ route('report.thesis-rev-by-lecture',$examregistration->id) }}" class="btn btn-sm btn-success">Revisi by Penguji</a>
+                    @endif
                     </div>
                 </div>
             </div>
