@@ -23,7 +23,8 @@ class ExamRegistrationController extends Controller
 
     public function index(ExamRegistrationsDataTable $dataTable)
     {
-        return $dataTable->render('layouts.setting');
+        $title = 'Jadwal Ujian';
+        return $dataTable->render('layouts.setting',compact('title'));
     }
 
     public function create()

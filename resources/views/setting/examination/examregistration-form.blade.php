@@ -1,5 +1,7 @@
 @extends('layouts.general')
-
+@push('title')
+    Edit Ujian {{ $examregistration->student->name }}
+@endpush
 @push('header')
     | {{ $examregistration->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
     <a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary float-end">kembali</a>

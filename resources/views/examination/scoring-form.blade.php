@@ -1,5 +1,7 @@
 @extends('layouts.general')
-
+@push('title')
+    Menilai {{ $scoring->registration->student->name }}
+@endpush
 @push('header')
 <br>Penilaian {{ $scoring->registration->examtype->name }}
 @if (auth()->user()->hasRole('admin'))
@@ -68,16 +70,16 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                         @disabled($available_check)
                         >
                         <option value="">Nilai ?</option>
-                        <option value="{{ rand(85,100) }}" @selected(intval($scoring->$item_order)>=85 && intval($scoring->$item_order)<=100)>A</option>
-                        <option value="{{ rand(77,84) }}" @selected(intval($scoring->$item_order)>=77 && intval($scoring->$item_order)<=84)>A-</option>
-                        <option value="{{ rand(69,76) }}" @selected(intval($scoring->$item_order)>=69 && intval($scoring->$item_order)<=76)>B+</option>
-                        <option value="{{ rand(61,68) }}" @selected(intval($scoring->$item_order)>=61 && intval($scoring->$item_order)<=68)>B</option>
-                        <option value="{{ rand(53,60) }}" @selected(intval($scoring->$item_order)>=53 && intval($scoring->$item_order)<=60)>B-</option>
-                        <option value="{{ rand(45,52) }}" @selected(intval($scoring->$item_order)>=45 && intval($scoring->$item_order)<=52)>C+</option>
-                        <option value="{{ rand(37,44) }}" @selected(intval($scoring->$item_order)>=37 && intval($scoring->$item_order)<=44)>C</option>
-                        <option value="{{ rand(29,36) }}" @selected(intval($scoring->$item_order)>=29 && intval($scoring->$item_order)<=36)>C-</option>
-                        <option value="{{ rand(21,28) }}" @selected(intval($scoring->$item_order)>=21 && intval($scoring->$item_order)<=28)>D</option>
-                        <option value="{{ rand(0,20) }}" @selected(intval($scoring->$item_order)>=0 && intval($scoring->$item_order)<=20)>E</option>
+                        <option value="{{ rand(86,98) }}" @selected(intval($scoring->$item_order)>=85 && intval($scoring->$item_order)<=100)>A</option>
+                        <option value="{{ rand(78,82) }}" @selected(intval($scoring->$item_order)>=77 && intval($scoring->$item_order)<=84)>A-</option>
+                        <option value="{{ rand(70,74) }}" @selected(intval($scoring->$item_order)>=69 && intval($scoring->$item_order)<=76)>B+</option>
+                        <option value="{{ rand(62,66) }}" @selected(intval($scoring->$item_order)>=61 && intval($scoring->$item_order)<=68)>B</option>
+                        <option value="{{ rand(54,58) }}" @selected(intval($scoring->$item_order)>=53 && intval($scoring->$item_order)<=60)>B-</option>
+                        <option value="{{ rand(46,50) }}" @selected(intval($scoring->$item_order)>=45 && intval($scoring->$item_order)<=52)>C+</option>
+                        <option value="{{ rand(38,42) }}" @selected(intval($scoring->$item_order)>=37 && intval($scoring->$item_order)<=44)>C</option>
+                        <option value="{{ rand(30,34) }}" @selected(intval($scoring->$item_order)>=29 && intval($scoring->$item_order)<=36)>C-</option>
+                        <option value="{{ rand(22,26) }}" @selected(intval($scoring->$item_order)>=21 && intval($scoring->$item_order)<=28)>D</option>
+                        <option value="{{ rand(0,18) }}" @selected(intval($scoring->$item_order)>=0 && intval($scoring->$item_order)<=20)>E</option>
                     </select>
                 </div>
                 {{-- <div class="col-auto">
@@ -122,12 +124,12 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
             <div class="row">
                 <div class="col-auto text-end">Perlu direvisi?</div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "block" '>
-                    <label class="btn btn-outline-danger btn-sm float-end" for="revisi1">YA</label>
+                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision===0) value=0 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "none" ' @required(true)>
+                    <label class="btn btn-outline-success btn-sm" for="revisi2">TIDAK</label>
                 </div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "none" '>
-                    <label class="btn btn-outline-success btn-sm" for="revisi2">TIDAK</label>
+                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision===1) value=1 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "block" ' @required(true)>
+                    <label class="btn btn-outline-danger btn-sm float-end" for="revisi1">YA</label>
                 </div>
             </div>
             <hr>
@@ -148,11 +150,11 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
             <div class="row">
                 <div class="col-auto text-end">Layak di_{{ $judgement }}_kan?</div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved==1) value=1 @disabled($available_check)>
+                    <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved===1) value=1 @disabled($available_check) @required(true)>
                     <label class="btn btn-outline-success btn-sm float-end" for="approved1">YA, {{ $judgement }}</label>
                 </div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved==0) value=0 @disabled($available_check)>
+                    <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved===0) value=0 @disabled($available_check) @required(true)>
                     <label class="btn btn-outline-danger btn-sm" for="approved2">TIDAK {{ $judgement }}</label>
                 </div>
             </div>

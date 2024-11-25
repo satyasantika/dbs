@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Str;
 use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
 use App\Models\ViewExamScore;
@@ -18,27 +19,36 @@ class ReportController extends Controller
 
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.revision-table',compact('examregistration','examscores'));
+        $filename = 'hasil-revisi-';
+        $filename = $filename.$examregistration->examtype->code.'-';
+        $filename = Str::slug($filename.$examregistration->student->name).'.pdf';
         // return view('report.revision-table',compact('examregistration','examscores'));
 
-        return $pdf->stream('lembar-revisi.pdf');
+        return $pdf->stream($filename);
     }
 
     public function createRevisionSignPDF(ExamRegistration $examregistration)
     {
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.revision-sign',compact('examregistration','examscores'));
+        $filename = 'surat-keterangan-revisi-';
+        $filename = $filename.$examregistration->examtype->code.'-';
+        $filename = Str::slug($filename.$examregistration->student->name).'.pdf';
         // return view('report.revision-sign',compact('examregistration','examscores'));
 
-        return $pdf->stream('keterangan-revisi.pdf');
+        return $pdf->stream($filename);
     }
 
     public function createExamByChiefPDF(ExamRegistration $examregistration)
     {
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.exam-result',compact('examregistration','examscores'));
+        $filename = 'hasil-ujian-';
+        $filename = $filename.$examregistration->examtype->code.'-';
+        $filename = Str::slug($filename.$examregistration->student->name).'.pdf';
         // return view('report.exam-result',compact('examregistration','examscores'));
 
-        return $pdf->stream('hasil-ujian.pdf');
+        return $pdf->stream($filename);
     }
 
     public function createThesisExamByChiefPDF(ExamRegistration $examregistration)
@@ -48,9 +58,12 @@ class ReportController extends Controller
         $examinerscores = $this->_examinerData($examregistration->id);
         $last_seminar_score = ExamRegistration::where('user_id',$examregistration->user_id)->where('exam_type_id',2)->latest()->first()->grade;
         $pdf = PDF::loadView('report.thesis-exam-result',compact('examregistration','examscores','guidescores','examinerscores','last_seminar_score'));
+        $filename = 'berita-acara-ujian-';
+        $filename = $filename.$examregistration->examtype->code.'-';
+        $filename = Str::slug($filename.$examregistration->student->name).'.pdf';
         // return view('report.thesis-exam-result',compact('examregistration','examscores'));
 
-        return $pdf->stream('berita-acara-ujian.pdf');
+        return $pdf->stream($filename);
     }
 
     public function createThesisExamByLecturePDF(ExamRegistration $examregistration)
@@ -58,18 +71,24 @@ class ReportController extends Controller
         $examscores = $this->_examData($examregistration->id);
         $form_items = ExamFormItem::select('id','name','exam_type_id')->where('exam_type_id',3)->get();
         $pdf = PDF::loadView('report.thesis-exam-by-lecture',compact('examregistration','examscores','form_items'));
+        $filename = 'penilaian-ujian-';
+        $filename = $filename.$examregistration->examtype->code.'-';
+        $filename = Str::slug($filename.$examregistration->student->name).'.pdf';
         // return view('report.thesis-exam-result',compact('examregistration','examscores'));
 
-        return $pdf->stream('penilaian-ujian.pdf');
+        return $pdf->stream($filename);
     }
 
     public function createThesisRevisionByLecturePDF(ExamRegistration $examregistration)
     {
         $examscores = $this->_examData($examregistration->id);
         $pdf = PDF::loadView('report.thesis-rev-by-lecture',compact('examregistration','examscores'));
+        $filename = 'revisi-ujian-';
+        $filename = $filename.$examregistration->examtype->code.'-';
+        $filename = Str::slug($filename.$examregistration->student->name).'.pdf';
         // return view('report.thesis-exam-result',compact('examregistration','examscores'));
 
-        return $pdf->stream('revisi-ujian.pdf');
+        return $pdf->stream($filename);
     }
 
     private function _examData($examregistration_id) {

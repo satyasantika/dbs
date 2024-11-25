@@ -1,4 +1,9 @@
 @extends('report.master')
+
+@push('title')
+    Hasil Revisi {{ $examregistration->examtype->code }} {{ $examregistration->student->name }}
+@endpush
+
 @section('report')
 <div style="margin:auto;width:16cm;">
     <p class="text-center" >

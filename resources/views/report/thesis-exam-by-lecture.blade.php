@@ -1,4 +1,9 @@
 @extends('report.master-no-header')
+
+@push('title')
+    Penilaian {{ $examregistration->examtype->code }} {{ $examregistration->student->name }}
+@endpush
+
 @section('report')
 @foreach ($examscores as $examscore)
 <div class="page-break">

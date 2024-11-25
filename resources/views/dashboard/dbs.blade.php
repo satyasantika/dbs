@@ -1,4 +1,6 @@
-
+@push('title')
+    Dashboard DBS
+@endpush
 <h3>Selamat datang, {{ auth()->user()->name }}</h3>
 <div class="row">
     <div class="col-auto">

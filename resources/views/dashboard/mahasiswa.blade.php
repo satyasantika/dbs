@@ -1,3 +1,6 @@
+@push('title')
+    Dashboard Mahasiswa
+@endpush
 <h3>Selamat datang, {{ auth()->user()->name }}</h3>
 @can('join exam')
 <div class="row">

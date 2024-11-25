@@ -1,4 +1,9 @@
 @extends('report.master')
+
+@push('title')
+    BA {{ $examregistration->examtype->code }} {{ $examregistration->student->name }}
+@endpush
+
 @section('report')
 <div style="margin:auto;width:18cm;">
     <p class="text-center" @style('font-size:12pt;font-weight:bold;')>

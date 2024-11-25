@@ -1,5 +1,7 @@
 @extends('layouts.app')
-
+@push('title')
+    Ujian belum dinilai
+@endpush
 @section('content')
 <div class="container">
     <div class="row justify-content-center">

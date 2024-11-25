@@ -1,5 +1,7 @@
 @extends('layouts.setting-form')
-
+@push('title')
+    Ganti Penguji {{ $examregistration->student->name }}
+@endpush
 @push('header')
     Edit Penguji {{ $examregistration->student->name }} ({{ $examregistration->student->username }})
 @endpush

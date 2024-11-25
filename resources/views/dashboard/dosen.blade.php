@@ -1,4 +1,6 @@
-
+@push('title')
+    Dashboard Penguji
+@endpush
 <h3>Selamat datang, {{ auth()->user()->name }}</h3>
 @can('respon examination score')
 <div class="row">
