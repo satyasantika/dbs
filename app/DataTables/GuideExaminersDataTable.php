@@ -64,7 +64,7 @@ class GuideExaminersDataTable extends DataTable
                     // ->orderBy(1)
                     ->selectStyleSingle()
                     ->buttons([
-                        // Button::make('add'),
+                        Button::make('add'),
                         Button::make('excel'),
                         Button::make('reload')
                     ]);

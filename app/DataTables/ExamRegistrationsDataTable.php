@@ -69,7 +69,7 @@ class ExamRegistrationsDataTable extends DataTable
                     ->orderBy(4,'asc')
                     ->selectStyleSingle()
                     ->buttons([
-                        Button::make('add'),
+                        // Button::make('add'),
                         Button::make('print'),
                         Button::make('reload')
                     ]);

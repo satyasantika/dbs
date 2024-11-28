@@ -8,11 +8,12 @@ Histori Ujian {{ $student->name }}
         <div class="col-auto">
             <div class="card">
                 <div class="card-header">
-                    {{ __('Registrasi Ujian') }} {{ $student->nim }} {{ $student->mahasiswa }}
+                    {{ __('Histori Ujian') }}
                     <a href="{{ route('guideexaminers.index') }}" class="btn btn-sm btn-primary float-end">kembali</a>
                 </div>
 
                 <div class="card-body">
+                    <h3>Histori Ujian <br> {{ $student->name }} <br> ({{ $student->username }})</h3>
                     <a href="{{ route('registrations.student',$student->id) }}" class="btn btn-sm btn-success">+ jadwal ujian</a>
                     <table class="table table-striped table-hover">
                         <thead>
@@ -33,9 +34,9 @@ Histori Ujian {{ $student->name }}
                                     <td><a href="{{ route('examregistrations.edit',$examregistration->id) }}" class="btn btn-sm btn-primary">view</a></td>
                                     <td>{{ $examregistration->exam_date }}</td>
                                     <td>{{ $examregistration->kode_ujian }}</td>
-                                    <td class="{{ $examregistration->chief==$examregistration->examiner1_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_1 }}</td>
-                                    <td class="{{ $examregistration->chief==$examregistration->examiner2_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_2 }}</td>
-                                    <td class="{{ $examregistration->chief==$examregistration->examiner3_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_3 }}</td>
+                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner1_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_1 }}</td>
+                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner2_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_2 }}</td>
+                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner3_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_3 }}</td>
                                     <td class="bg-info">{{ $examregistration->penguji_4 }}</td>
                                     <td class="bg-info">{{ $examregistration->penguji_5 }}</td>
                                     <td></td>
