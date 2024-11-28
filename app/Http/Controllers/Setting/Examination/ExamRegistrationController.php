@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\GuideExaminer;
 use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
+use App\Models\ViewExamRegistration;
 use App\DataTables\ExamRegistrationsDataTable;
 
 class ExamRegistrationController extends Controller
@@ -59,7 +60,7 @@ class ExamRegistrationController extends Controller
             'chief_id'=>$guideexaminer->chief_id,
         ]);
         User::find($request->user_id)->givePermissionTo('join exam');
-        return to_route('examregistrations.index')->with('success','pendaftaran ujian '.$name.' telah ditambahkan');
+        return $this->showByStudent($request->user_id)->with('success','pendaftaran ujian '.$name.' telah ditambahkan');
     }
 
     public function edit(ExamRegistration $examregistration)
@@ -106,14 +107,14 @@ class ExamRegistrationController extends Controller
             $tanggal_ujian=>$examregistration->exam_date,
         ]);
 
-        return back()->with('success','data pendaftaran '.$name.' telah diperbarui');
+        return $this->showByStudent($examregistration->user_id)->with('success','data pendaftaran '.$name.' telah diperbarui');
     }
 
     public function destroy(ExamRegistration $examregistration)
     {
         $name = strtoupper($examregistration->name);
         $examregistration->delete();
-        return to_route('examregistrations.index')->with('warning','pendaftaran '.$name.' telah dihapus');
+        return $this->showByStudent($examregistration->user_id)->with('warning','pendaftaran '.$name.' telah dihapus');
     }
 
     public function scoreSet(ExamRegistration $examregistration)
@@ -144,6 +145,28 @@ class ExamRegistrationController extends Controller
             'examiner_order'=>5,
         ]);
         return redirect()->back()->with('success','data para penguji telah ditambahkan');
+    }
+
+    public function createByStudent($student_id)
+    {
+        $chiefs = User::role('dosen')->select('initial','name','id')->get()->sort();
+        $examregistration = new ExamRegistration();
+        return view('setting.examination.examregistration-form', array_merge(
+            [
+                'student' => User::find($student_id),
+                'examregistration' => $examregistration,
+                'exam_score_set' => false,
+                'chiefs'=>$chiefs,
+            ],
+            $this->_dataSelection(),
+        ));
+    }
+
+    public function showByStudent($student_id)
+    {
+        $student = User::find($student_id);
+        $examregistrations = ViewExamRegistration::where('user_id',$student_id)->orderBy('mahasiswa')->get();
+        return view('examination.examregistration',compact('examregistrations','student'));
     }
 
     private function _dataSelection()

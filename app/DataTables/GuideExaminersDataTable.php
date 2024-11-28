@@ -25,6 +25,7 @@ class GuideExaminersDataTable extends DataTable
             ->addColumn('action', function($row){
                 $action = ' ';
                 $action .= ' <a href="'.route('guideexaminers.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
+                $action .= ' <a href="'.route('registrations.show.student',$row->user_id).'" class="btn btn-success btn-sm action">U</a> ';
                 return $action;
             })
             ->editColumn('penguji_1', function($row) {
@@ -63,7 +64,7 @@ class GuideExaminersDataTable extends DataTable
                     // ->orderBy(1)
                     ->selectStyleSingle()
                     ->buttons([
-                        Button::make('add'),
+                        // Button::make('add'),
                         Button::make('excel'),
                         Button::make('reload')
                     ]);
@@ -82,13 +83,13 @@ class GuideExaminersDataTable extends DataTable
                   ->addClass('text-center'),
             Column::make('npm'),
             Column::make('mahasiswa'),
-            Column::make('ketua'),
+            // Column::make('ketua'),
             Column::make('penguji_1')->title('P1'),
             Column::make('penguji_2')->title('P2'),
             Column::make('penguji_3')->title('P3'),
             Column::make('penguji_4')->title('P4'),
             Column::make('penguji_5')->title('P5'),
-            Column::make('year_generation')->title('angkatan'),
+            // Column::make('year_generation')->title('angkatan'),
             Column::make('proposal_date')->title('proposal'),
             Column::make('seminar_date')->title('seminar'),
             Column::make('thesis_date')->title('thesis'),

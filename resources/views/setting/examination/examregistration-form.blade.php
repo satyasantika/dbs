@@ -1,10 +1,20 @@
 @extends('layouts.general')
 @push('title')
-    Edit Ujian {{ $examregistration->student->name }}
+    @if ($examregistration->id)
+        Edit Ujian {{ $examregistration->student->name }}
+    @else
+        Tambah Ujian {{ $student->name }}
+    @endif
 @endpush
 @push('header')
-    | {{ $examregistration->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
-    <a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary float-end">kembali</a>
+    |
+        @if ($examregistration->id)
+            Edit Ujian {{ $examregistration->student->name }}
+            <a href="{{ route('registrations.show.student',$examregistration->student->id) }}" class="btn btn-sm btn-primary float-end">kembali</a>
+            @else
+            Tambah Ujian {{ $student->name }}
+            <a href="{{ route('registrations.show.student',$student->id) }}" class="btn btn-sm btn-primary float-end">kembali</a>
+        @endif
 
     @if ($examregistration->id && \App\Models\ExamScore::where('exam_registration_id',$examregistration->id)->doesntExist())
         <form id="delete-form" action="{{ route('examregistrations.destroy',$examregistration->id) }}" method="POST">
@@ -27,17 +37,20 @@
     <div class="card-body">
         {{-- mahasiswa --}}
         <div class="row mb-3">
-            <label for="user_id" class="col-md-4 col-form-label text-md-end">Mahasiswa</label>
+
+            <label for="user_id" class="col-md-4 col-form-label text-md-end"></label>
             <div class="col-md-7">
-                <select id="user_id" class="form-control @error('user_id') is-invalid @enderror" name="user_id" required @disabled($examregistration->id)>
+                {{-- <select id="user_id" class="form-control @error('user_id') is-invalid @enderror" name="user_id" required @disabled($examregistration->id)>
                     <option value="">-- Pilih Mahasiswa --</option>
                     @foreach ($students as $student)
                     <option value="{{ $student->id }}" @selected($student->id == $examregistration->user_id)>{{ $student->name }} - {{ $student->username }}</option>
                     @endforeach
-                </select>
+                </select> --}}
             </div>
         </div>
-
+    @if (!$examregistration->id)
+    <input type="hidden" name="user_id" value="{{ $student->id }}">
+    @endif
 
     <div class="row mb-3">
         <div class="col-md-2"></div>
@@ -290,7 +303,11 @@
         <div class="row mt-3">
             <div class="col-md-8 offset-md-4">
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                <a href="{{ route('examregistrations.index') }}" class="btn btn-outline-secondary btn-sm">Close</a>
+                @if ($examregistration->id)
+                    <a href="{{ route('registrations.show.student',$examregistration->student->id) }}" class="btn btn-outline-secondary btn-sm">Close</a>
+                @else
+                    <a href="{{ route('registrations.show.student',$student->id) }}" class="btn btn-outline-secondary btn-sm">Close</a>
+                @endif
             </div>
         </div>
     </div>
@@ -306,5 +323,6 @@
         </button>
     </form>
 @endif
+<a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary float-end">semua jadwal</a>
 
 @endpush

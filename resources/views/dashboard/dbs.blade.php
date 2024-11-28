@@ -7,7 +7,11 @@
         <div class="card">
             <div class="card-header">Manajemen Ujian</div>
             <div class="card-body">
-                menu penjadwalan ujian:<br>
+                menu penjadwalan:<br>
+                <a href="{{ route('guideexaminers.index') }}" class="btn btn-sm btn-primary">Penjadwalan</a>
+                <br>
+                <hr>
+                seluruh jadwal ujian (terkini):<br>
                 <a href="{{ route('examregistrations.index') }}" class="btn btn-sm btn-primary">Jadwal Ujian</a>
                 <br>
                 <hr>

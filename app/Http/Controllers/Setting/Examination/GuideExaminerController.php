@@ -20,7 +20,8 @@ class GuideExaminerController extends Controller
 
     public function index(GuideExaminersDataTable $dataTable)
     {
-        return $dataTable->render('layouts.setting');
+        $title = 'Data Ujian';
+        return $dataTable->render('layouts.setting',compact('title'));
     }
 
     public function create()
