@@ -59,6 +59,21 @@ class ExamRegistrationController extends Controller
             'guide2_id'=>$guideexaminer->guide2_id,
             'chief_id'=>$guideexaminer->chief_id,
         ]);
+
+        if ($request->exam_type_id == 1) {
+            $tanggal_ujian = 'proposal_date';
+        }
+        if ($request->exam_type_id == 2) {
+            $tanggal_ujian = 'seminar_date';
+        }
+        if ($request->exam_type_id == 3) {
+            $tanggal_ujian = 'thesis_date';
+        }
+
+        GuideExaminer::where('user_id',$request->user_id)->update([
+            $tanggal_ujian=>$request->exam_date,
+        ]);
+
         User::find($request->user_id)->givePermissionTo('join exam');
         return $this->showByStudent($request->user_id)->with('success','pendaftaran ujian '.$name.' telah ditambahkan');
     }
