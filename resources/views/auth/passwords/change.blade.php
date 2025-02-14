@@ -25,7 +25,7 @@
                         @endforeach
                     @endif
 
-                    <form method="POST" action="{{ route('password.change') }}">
+                    <form method="POST" action="{{ route('mypassword.change') }}">
                         @csrf
 
                         <div class="row mb-3{{ $errors->has('current-password') ? ' has-error' : '' }}">
