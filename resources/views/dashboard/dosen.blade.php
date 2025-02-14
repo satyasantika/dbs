@@ -2,9 +2,10 @@
     Dashboard Penguji
 @endpush
 <h3>Selamat datang, {{ auth()->user()->name }}</h3>
+
+<div class="row mb-3">
 @can('respon examination score')
-<div class="row">
-    <div class="col-6">
+    <div class="col-md-6 mb-3">
         <div class="card">
             <div class="card-header">Penilaian Ujian</div>
             <div class="card-body">
@@ -13,8 +14,19 @@
             </div>
         </div>
     </div>
-</div>
 @endcan
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">Status Pembimbing dan Penguji</div>
+            <div class="card-body">
+                <a href="{{ route('information.guide') }}" class="btn btn-sm btn-primary mb-2">Daftar</a> Bimbingan saya<br>
+                <a href="{{ route('information.pass') }}" class="btn btn-sm btn-primary mb-2">Bukti</a> Membimbing / Menguji (untuk BKD)
+            </div>
+        </div>
+    </div>
+</div>
+
+
 @can('respon selection guide')
 <hr>
 <div class="row">

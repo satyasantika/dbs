@@ -76,6 +76,8 @@ Route::middleware('auth')->group(function () {
         Route::put('selection/respons/{guide}/decline', [App\Http\Controllers\Selection\GuideResponController::class,'decline'])->name('respons.decline');
         Route::put('selection/respons/{guide}/retract', [App\Http\Controllers\Selection\GuideResponController::class,'retract'])->name('respons.retract');
         Route::resource('selection/guides', App\Http\Controllers\Selection\GuideController::class)->except('show','index');
+        Route::get('information/guides', [App\Http\Controllers\Information\GuideInformationController::class,'index'])->name('information.guide');
+        Route::get('information/pass', [App\Http\Controllers\Information\GuideInformationController::class,'pass'])->name('information.pass');
     });
     Route::get('datatable/{id}', function(App\DataTables\ExamRegistrationsDataTable $dataTable, $id){
     return $dataTable->with('id', $id)
