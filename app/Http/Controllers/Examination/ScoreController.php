@@ -7,6 +7,7 @@ use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
 use App\Models\ViewExamScore;
 use App\Models\ExamRegistration;
+use App\DataTables\ScoringDataTable;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,10 +21,16 @@ class ScoreController extends Controller
         // $this->middleware('permission:delete scoring', ['only' => ['destroy']]);
     }
 
-    public function index()
+    // public function index()
+    // {
+    //     $exam_scores = ViewExamScore::where('user_id',auth()->id())->whereNull('grade')->orderBy('exam_date','desc')->get();
+    //     return view('examination.scoring',compact('exam_scores'));
+    // }
+
+    public function index(ScoringDataTable $dataTable)
     {
-        $exam_scores = ViewExamScore::where('user_id',auth()->id())->whereNull('grade')->orderBy('exam_date','desc')->get();
-        return view('examination.scoring',compact('exam_scores'));
+        $title = 'Penilaian Ujian';
+        return $dataTable->render('layouts.setting',compact('title'));
     }
 
     public function archieves()

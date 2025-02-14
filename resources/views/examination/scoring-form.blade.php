@@ -124,11 +124,11 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
             <div class="row">
                 <div class="col-auto text-end">Perlu direvisi?</div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision===0) value=0 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "none" ' @required(true)>
+                    <input type="radio" class="btn-check" name="revision" id="revisi2" autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "none" ' @required(true)>
                     <label class="btn btn-outline-success btn-sm" for="revisi2">TIDAK</label>
                 </div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision===1) value=1 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "block" ' @required(true)>
+                    <input type="radio" class="btn-check" name="revision" id="revisi1" autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($available_check) onClick='document.getElementById("revision_row").style.display = "block" ' @required(true)>
                     <label class="btn btn-outline-danger btn-sm float-end" for="revisi1">YA</label>
                 </div>
             </div>
@@ -150,11 +150,11 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
             <div class="row">
                 <div class="col-auto text-end">Layak di_{{ $judgement }}_kan?</div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved===1) value=1 @disabled($available_check) @required(true)>
+                    <input type="radio" class="btn-check" name="pass_approved" id="approved1" autocomplete="off" @checked($scoring->pass_approved==1) value=1 @disabled($available_check) @required(true)>
                     <label class="btn btn-outline-success btn-sm float-end" for="approved1">YA, {{ $judgement }}</label>
                 </div>
                 <div class="col-auto">
-                    <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved===0) value=0 @disabled($available_check) @required(true)>
+                    <input type="radio" class="btn-check" name="pass_approved" id="approved2" autocomplete="off" @checked($scoring->pass_approved==0) value=0 @disabled($available_check) @required(true)>
                     <label class="btn btn-outline-danger btn-sm" for="approved2">TIDAK {{ $judgement }}</label>
                 </div>
             </div>
