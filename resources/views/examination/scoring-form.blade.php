@@ -15,7 +15,13 @@
 @push('body')
 <strong>{{ $scoring->registration->student->username }}</strong><br>
 <strong>{{ $scoring->registration->student->name }}</strong><br>
-Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: <strong>{{ $scoring->registration->title }}</strong>
+Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: <strong>{{ $scoring->registration->title }}</strong><br>
+@if ($scoring->registration->exam_file)
+    <a href="{{ $scoring->registration->exam_file }}" target="_blank" class="btn btn-success btn-sm">file ujian</a>
+@else
+    <span class="btn btn-sm btn-outline-danger">File Ujian Belum ada</span>
+@endif
+
 <hr>
 <div class="text-end">
     Penilai: {{ $scoring->lecture->name }}
