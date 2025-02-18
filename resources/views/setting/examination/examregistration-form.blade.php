@@ -131,6 +131,14 @@
                                 <textarea name="exam_file" rows="2" class="form-control" id="exam_file" placeholder="">{{ $examregistration->exam_file }}</textarea>
                             </div>
                         </div>
+                        @if ($examregistration->id)
+                        <div class="row mb-3">
+                            <label for="exam_file" class="col-md-4 col-form-label text-md-end">Link File Ujian (terkini)</label>
+                            <div class="col-md-7">
+                                <a href="{{ $examregistration->exam_file }}" target="_blank" rel="noopener noreferrer">{{ $examregistration->exam_file }}</a>
+                            </div>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>
