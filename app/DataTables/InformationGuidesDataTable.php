@@ -54,7 +54,7 @@ class InformationGuidesDataTable extends DataTable
                     ->orderBy(1,'asc')
                     ->selectStyleSingle()
                     ->buttons([
-                        Button::make('add'),
+                        // Button::make('add'),
                         Button::make('excel'),
                         Button::make('reload')
                     ]);

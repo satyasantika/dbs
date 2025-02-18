@@ -15,6 +15,9 @@
             Tambah Ujian {{ $student->name }}
             <a href="{{ route('registrations.show.student',$student->id) }}" class="btn btn-sm btn-primary float-end">kembali</a>
         @endif
+@endpush
+
+@push('body')
 
     @if ($examregistration->id && \App\Models\ExamScore::where('exam_registration_id',$examregistration->id)->doesntExist())
         <form id="delete-form" action="{{ route('examregistrations.destroy',$examregistration->id) }}" method="POST">
@@ -25,9 +28,6 @@
             </button>
         </form>
     @endif
-@endpush
-
-@push('body')
 <form id="formAction" action="{{ $examregistration->id ? route('examregistrations.update',$examregistration->id) : route('examregistrations.store') }}" method="post">
     @csrf
     @if ($examregistration->id)
@@ -35,19 +35,6 @@
     @endif
 
     <div class="card-body">
-        {{-- mahasiswa --}}
-        <div class="row mb-3">
-
-            <label for="user_id" class="col-md-4 col-form-label text-md-end"></label>
-            <div class="col-md-7">
-                {{-- <select id="user_id" class="form-control @error('user_id') is-invalid @enderror" name="user_id" required @disabled($examregistration->id)>
-                    <option value="">-- Pilih Mahasiswa --</option>
-                    @foreach ($students as $student)
-                    <option value="{{ $student->id }}" @selected($student->id == $examregistration->user_id)>{{ $student->name }} - {{ $student->username }}</option>
-                    @endforeach
-                </select> --}}
-            </div>
-        </div>
     @if (!$examregistration->id)
     <input type="hidden" name="user_id" value="{{ $student->id }}">
     @endif
@@ -135,6 +122,13 @@
                                     min="2.00"
                                     max="4.00"
                                     step="0.01">
+                            </div>
+                        </div>
+                        {{-- Link file ujian --}}
+                        <div class="row mb-3">
+                            <label for="exam_file" class="col-md-4 col-form-label text-md-end">Link File Ujian</label>
+                            <div class="col-md-7">
+                                <textarea name="exam_file" rows="2" class="form-control" id="exam_file" placeholder="">{{ $examregistration->exam_file }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -284,10 +278,7 @@
                                     value="{{ $examregistration->online_password }}"
                                     name="online_password"
                                     class="form-control"
-                                    id="online_password"
-                                    min="0"
-                                    max="4"
-                                    step="0.01">
+                                    id="online_password">
                             </div>
                         </div>
                     </div>
@@ -312,6 +303,8 @@
         </div>
     </div>
 </form>
+
+<hr>
 
 {{-- tombol set ujian --}}
 @if ($examregistration->id && \App\Models\ExamScore::where('exam_registration_id',$examregistration->id)->doesntExist())

@@ -66,7 +66,7 @@ class InformationPassDataTable extends DataTable
                     ->orderBy(3,'desc')
                     ->selectStyleSingle()
                     ->buttons([
-                        Button::make('add'),
+                        // Button::make('add'),
                         Button::make('excel'),
                         Button::make('reload')
                     ]);

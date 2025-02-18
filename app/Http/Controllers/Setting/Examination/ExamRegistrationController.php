@@ -58,6 +58,7 @@ class ExamRegistrationController extends Controller
             'guide1_id'=>$guideexaminer->guide1_id,
             'guide2_id'=>$guideexaminer->guide2_id,
             'chief_id'=>$guideexaminer->chief_id,
+            'exam_file'=>$guideexaminer->exam_file,
         ]);
 
         if ($request->exam_type_id == 1) {
