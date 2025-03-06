@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Examination;
 
+use App\Models\User;
 use App\Models\ExamScore;
 use Illuminate\Http\Request;
 use App\Models\ViewExamScore;
@@ -38,4 +39,19 @@ class StudentController extends Controller
         // dd($chief);
         return view('examination.chief',compact('examinations','chief'));
     }
+
+    function setRevisionDate()
+    {
+        return view('examination.student.set-date');
+    }
+
+    public function showRevisionByDate(Request $request)
+    {
+        $user_id = User::where('username',$request->student_id)->first()->id;
+        // dd($user_id);
+        $examination = ViewExamRegistration::where('user_id',$user_id)->where('exam_date',$request->exam_date)->first();
+        // dd($examination);
+        return view('examination.student.result',compact('examination'));
+    }
+
 }

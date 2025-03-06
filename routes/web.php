@@ -85,6 +85,9 @@ Route::middleware('auth')->group(function () {
     });
 });
 
+Route::get('hasil-ujian', [App\Http\Controllers\Examination\StudentController::class,'setRevisionDate'])->name('exam.result');
+Route::post('print-hasil', [App\Http\Controllers\Examination\StudentController::class,'showRevisionByDate'])->name('set.exam.date');
+
 Auth::routes();
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
