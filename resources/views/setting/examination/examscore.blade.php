@@ -70,7 +70,7 @@
                                             .$examregistration->examtype->name.'%20pada%20'
                                             .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').'%20agar%20mahasiswa%20tersebut%20dapat%20segera%20mencetak%20lembar%20revisinya%0A%0A'
                                             .'silakan%20akses:%0A%0A'
-                                            .route('scoring.edit',[$examregistration,$exam_score])
+                                            .route('scoring.edit',['scoring'=>$exam_score])
                                             .'%0A%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)'}}"
                                             class="badge rounded-pill bg-success btn btn-sm">wa</a>
                                         {{ $exam_score->namadosen }}
@@ -106,6 +106,7 @@
                             .$examregistration->examtype->name.'%20('
                             .$examregistration->exam_date->isoFormat('dddd, D MMMM Y').')%20dan%20dapat%20dicetak%20pada%20sistem%20DBS%20berikut.%0A%0A'
                             .route('exam.result')
+                            .'%0A(jika%20eror%20saat%20buka%20link%20di%20handphone,%20pastikan%20awalannya%20http://%20bukan%20https://)'
                             .($examregistration->exam_type_id==3 ? '%0A%0ATerakhir,%20harap%20laporkan%20hasil%20ujian%20Anda%20pada%20laman%20(siapkan%20lembar%20revisi%20yang%20sudah%20ditandatangani%20dan%20foto%20ujian):%0A' : '')
                             .($examregistration->exam_type_id==3 ? 'https://forms.gle/umUKgAcXLnhowgpw7' : '')
                             .'%0A%0ADemikian%20informasi%20ini%20Kami%20sampaikan.%20Atas%20perhatian%20Anda,%20Kami%20ucapkan%20terima%20kasih.%0A'
