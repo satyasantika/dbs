@@ -29,16 +29,44 @@ class ExamRegistrationsDataTable extends DataTable
                 return $action;
             })
             ->editColumn('penguji_1', function($row) {
+                $keputusan='';
+                if(is_null($row->grade_1)){
+                    $keputusan='x-';
+                }
                 $ketua = $row->penguji_1 == $row->ketua ? "*" : "";
-                return $row->penguji_1.$ketua;
+                return $keputusan.$row->penguji_1.$ketua;
             })
             ->editColumn('penguji_2', function($row) {
+                $keputusan='';
+                if(is_null($row->grade_2)){
+                    $keputusan='x-';
+                }
                 $ketua = $row->penguji_2 == $row->ketua ? "*" : "";
-                return $row->penguji_2.$ketua;
+                return $keputusan.$row->penguji_2.$ketua;
             })
             ->editColumn('penguji_3', function($row) {
+                $keputusan='';
+                if(is_null($row->grade_3)){
+                    $keputusan='x-';
+                }
                 $ketua = $row->penguji_3 == $row->ketua ? "*" : "";
-                return $row->penguji_3.$ketua;
+                return $keputusan.$row->penguji_3.$ketua;
+            })
+            ->editColumn('penguji_4', function($row) {
+                $keputusan='';
+                if(is_null($row->grade_4)){
+                    $keputusan='x-';
+                }
+                $ketua = $row->penguji_4 == $row->ketua ? "*" : "";
+                return $keputusan.$row->penguji_4.$ketua;
+            })
+            ->editColumn('penguji_5', function($row) {
+                $keputusan='';
+                if(is_null($row->grade_5)){
+                    $keputusan='x-';
+                }
+                $ketua = $row->penguji_5 == $row->ketua ? "*" : "";
+                return $keputusan.$row->penguji_5.$ketua;
             })
             ->editColumn('updated_at', function($row) {
                 return $row->updated_at->format('Y-m-d H:i:s');
