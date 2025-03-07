@@ -26,6 +26,10 @@ class ScoringDataTable extends DataTable
             ->addColumn('action', function($row){
                 $action = ' ';
                 $action .= ' <a href="'.route('scoring.edit',$row->id).'" class="btn btn-success btn-sm action">nilai</a>';
+                if (!is_null($row->registration->exam_file))
+                {
+                    $action .= ' <a href="'.$row->registration->exam_file.'" class="btn btn-primary btn-sm action">FILE</a>';
+                }
                 return $action;
             })
             ->AddColumn('dinilai', function($row){
@@ -92,12 +96,11 @@ class ScoringDataTable extends DataTable
             Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
-                  ->width(60)
-                  ->addClass('text-center'),
+                  ->width(90),
             Column::make('dinilai'),
             Column::make('mahasiswa'),
             Column::make('ujian'),
-            Column::make('exam_date')->title('tanggal'),
+            Column::make('exam_date')->title('tanggal')->width(65),
             Column::make('revision')->title('rev?')->addClass('text-center'),
             Column::make('revision_note')->title('catatan'),
             Column::make('pass_approved')->title('lanjut?')->addClass('text-center'),

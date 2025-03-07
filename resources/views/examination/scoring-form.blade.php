@@ -29,8 +29,16 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
 {{-- jika tanggal ujian sudah lewat satu hari atau semua penguji sudah menilai, maka penilaian diblok --}}
 {{-- dikecualikan bagi user yang dapat memaksa edit penilaian --}}
 @php
-    $available_check = ($examregistration->exam_date < Carbon\Carbon::now() && $examregistration->pass_exam) && !Auth::user()->can('force edit score');
+    $tanggal_sekarang = Carbon\Carbon::now()->isoFormat('Y-MM-DD');
+    $waktu_sekarang = Carbon\Carbon::now()->isoFormat('HH:mm:ss');
+    $waktu_bandingan = $tanggal_sekarang.' '.$waktu_sekarang;
+    $waktu_ujian = $examregistration->exam_date->isoFormat('Y-MM-DD').' '.$examregistration->exam_time;
+    $available_check = ($examregistration->exam_date < $tanggal_sekarang && $examregistration->pass_exam) && !Auth::user()->can('force edit score');
 @endphp
+{{-- penguji tidak dapat menilai sebelum jam ujian dimulai --}}
+@if ($waktu_bandingan < $waktu_ujian)
+    <span class="text-danger h1"> ujian belum dimulai</span>
+@else
 <form id="formAction" action="{{ route('scoring.update',$scoring->id) }}" method="post">
     @csrf
     @method('PUT')
@@ -176,6 +184,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
         </div>
     </form>
 </form>
+@endif
 @endpush
 
 @push('scripts')
