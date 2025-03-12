@@ -17,10 +17,10 @@ Route::get('/', function () {
     return to_route('home');
     // return view('welcome');
 });
+Route::get('/report/revision-table/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionTablePDF'])->name('report.revision-table');
+Route::get('/report/revision-sign/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionSignPDF'])->name('report.revision-sign');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/report/revision-table/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionTablePDF'])->name('report.revision-table');
-    Route::get('/report/revision-sign/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionSignPDF'])->name('report.revision-sign');
     Route::get('/report/examination/{examregistration}', [App\Http\Controllers\ReportController::class, 'createExamByChiefPDF'])->name('report.exam-chief');
     Route::get('/report/examination/thesis/{examregistration}/result', [App\Http\Controllers\ReportController::class, 'createThesisExamByChiefPDF'])->name('report.thesis-exam-chief');
     Route::get('/report/examination/thesis/{examregistration}/grading', [App\Http\Controllers\ReportController::class, 'createThesisExamByLecturePDF'])->name('report.thesis-exam-by-lecture');
