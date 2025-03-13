@@ -9,4 +9,9 @@ class ViewGuideExaminer extends Model
 {
     use HasFactory;
     protected $table = 'view_guide_examiners';
+
+    public function student()
+    {
+        return $this->belongsTo(User::class,'user_id');
+    }
 }
