@@ -22,23 +22,17 @@ class InformationPassRecapDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->addColumn('action', function($row){
-                $action = ' ';
-                $action .= ' <a href="'.route('guideexaminers.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
-                $action .= ' <a href="'.route('registrations.show.student',$row->user_id).'" class="btn btn-success btn-sm action">U</a> ';
-                return $action;
-            })
-            ->editColumn('penguji_1', function($row) {
-                $ketua = $row->penguji_1 == $row->ketua ? "*" : "";
-                return $row->penguji_1.$ketua;
-            })
-            ->editColumn('penguji_2', function($row) {
-                $ketua = $row->penguji_2 == $row->ketua ? "*" : "";
-                return $row->penguji_2.$ketua;
-            })
-            ->editColumn('penguji_3', function($row) {
-                $ketua = $row->penguji_3 == $row->ketua ? "*" : "";
-                return $row->penguji_3.$ketua;
+            ->addColumn('masa_studi', function($row){
+                $angkatan = substr($row->npm,0,2);
+                $tahun_masuk = '20'.$angkatan.'-09-01';
+                $time = \Carbon\Carbon::parse($tahun_masuk)->diff($row->thesis_date);
+                $dibaca = $time->y.' tahun '.$time->m.' bulan';
+                if (is_null($row->thesis_date)) {
+                    return 'belum lulus';
+                } else {
+                    return $dibaca;
+                }
+
             })
             ->setRowId('id');
     }
@@ -92,20 +86,31 @@ class InformationPassRecapDataTable extends DataTable
      */
     public function getColumns(): array
     {
-        return [
-            Column::computed('action')
-                  ->exportable(false)
-                  ->printable(false)
-                  ->width(60)
-                  ->addClass('text-center'),
-            Column::make('npm'),
-            Column::make('mahasiswa'),
-            Column::make('penguji_4')->title('P1'),
-            Column::make('penguji_5')->title('P2'),
-            Column::make('proposal_date')->title('SemPro'),
-            Column::make('seminar_date')->title('SemHas'),
-            Column::make('thesis_date')->title('Sidang'),
-        ];
+        if ($this->context == "Mahasiswa Lulus" || $this->context == "Total Mahasiswa") {
+            return [
+                Column::make('npm'),
+                Column::make('mahasiswa'),
+                Column::make('penguji_4')->title('P1'),
+                Column::make('penguji_5')->title('P2'),
+                Column::make('proposal_date')->title('SemPro'),
+                Column::make('seminar_date')->title('SemHas'),
+                Column::make('thesis_date')->title('Sidang'),
+                Column::computed('masa_studi'),
+            ];
+        }
+        else
+        {
+            return [
+                Column::make('npm'),
+                Column::make('mahasiswa'),
+                Column::make('penguji_4')->title('P1'),
+                Column::make('penguji_5')->title('P2'),
+                Column::make('proposal_date')->title('SemPro'),
+                Column::make('seminar_date')->title('SemHas'),
+                Column::make('thesis_date')->title('Sidang'),
+            ];
+
+        }
     }
 
     /**
