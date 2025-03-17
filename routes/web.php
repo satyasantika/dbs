@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return to_route('home');
-    // return view('welcome');
+    // return to_route('home');
+    return view('welcome');
 });
 Route::get('/report/revision-table/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionTablePDF'])->name('report.revision-table');
 Route::get('/report/revision-sign/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionSignPDF'])->name('report.revision-sign');

@@ -4,14 +4,13 @@
     $waktu_sekarang = Carbon\Carbon::now()->isoFormat('HH:mm:ss');
     $waktu_selesai = Carbon\Carbon::now()->subHour()->isoFormat('HH:mm:ss');
     $peserta = \App\Models\ViewExamRegistration::where('exam_date',$tanggal_sekarang)->where('exam_time', '>=', $waktu_selesai);
-    // dd($peserta->exists());
 @endphp
 @if ($peserta->exists())
 <div class="row justify-content-center mb-3">
     <div class="col-md-8">
         <div class="card">
             <div class="card-header">
-                Ujian Hari ini ({{ $hari_ini }})
+                Jadwal Ujian Hari ini ({{ $hari_ini }}) - Sedang dan akan berlangsung
             </div>
 
             <div class="card-body">

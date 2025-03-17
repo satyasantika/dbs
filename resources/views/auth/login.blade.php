@@ -69,7 +69,5 @@
             </div>
         </div>
     </div>
-    @include('informations.exam-recap')
-    @include('informations.exam-now')
 </div>
 @endsection
