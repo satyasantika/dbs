@@ -2,7 +2,7 @@
 
 @section('content')
 <div class="container">
-    <div class="row justify-content-center">
+    <div class="row justify-content-center mb-3">
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">{{ __('Login ').config('app.name', 'Laravel') }}</div>
@@ -69,5 +69,7 @@
             </div>
         </div>
     </div>
+    @include('informations.exam-recap')
+    @include('informations.exam-now')
 </div>
 @endsection

@@ -12,4 +12,14 @@ class ViewExamRegistration extends Model
     protected $casts = [
         'pass_exam' => 'boolean',
     ];
+    
+    public function guide1()
+    {
+        return $this->belongsTo(User::class,'guide1_id');
+    }
+
+    public function guide2()
+    {
+        return $this->belongsTo(User::class,'guide2_id');
+    }
 }
