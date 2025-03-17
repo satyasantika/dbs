@@ -8,8 +8,13 @@
         <div class="col">
             <div class="card">
                 <div class="card-header">
+                    @if (isset($route))
+                    List {{ $context }} Angkatan {{ $generation }}
+                    <a href="{{ route($route) }}" class="btn btn-primary btn-sm float-end">kembali</a>
+                    @else
                     {{ ucFirst(request()->segment(1)) }} > {{ ucFirst(request()->segment(2)) }}
                     <a href="{{ route('home') }}" class="btn btn-primary btn-sm float-end">kembali</a>
+                    @endif
                 </div>
                 <div class="card-body">
                     @if (session('success'))

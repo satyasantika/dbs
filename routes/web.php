@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     // return to_route('home');
     return view('welcome');
-});
+})->name('welcome');
 Route::get('/report/revision-table/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionTablePDF'])->name('report.revision-table');
 Route::get('/report/revision-sign/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionSignPDF'])->name('report.revision-sign');
 
@@ -80,11 +80,12 @@ Route::middleware('auth')->group(function () {
         Route::get('information/pass', [App\Http\Controllers\Information\GuideInformationController::class,'pass'])->name('information.pass');
     });
     Route::get('datatable/{id}', function(App\DataTables\ExamRegistrationsDataTable $dataTable, $id){
-    return $dataTable->with('id', $id)
-            ->render('layouts.setting');
+        return $dataTable->with('id', $id)
+        ->render('layouts.setting');
     });
 });
 
+Route::get('information/recap-list/{generation}/{context}', [App\Http\Controllers\Information\GuideInformationController::class,'recap'])->name('information.recap');
 Route::get('hasil-ujian', [App\Http\Controllers\Examination\StudentController::class,'setRevisionDate'])->name('exam.result');
 Route::post('print-hasil', [App\Http\Controllers\Examination\StudentController::class,'showRevisionByDate'])->name('set.exam.date');
 

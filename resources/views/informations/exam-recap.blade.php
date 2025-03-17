@@ -25,12 +25,36 @@
                         @foreach ($angkatans as $angkatan)
                         <tr>
                         <th scope="row">{{ $angkatan }}</th>
-                        <td class="text-end">{{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->count() }}</td>
-                        <td class="text-end">{{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNotNull('thesis_date')->count() }}</td>
-                        <td class="text-end">{{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNull('thesis_date')->count() }}</td>
-                        <td class="text-end">{{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->count() }}</td>
-                        <td class="text-end">{{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNotNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->count() }}</td>
-                        <td class="text-end">{{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNotNull('proposal_date')->whereNotNull('seminar_date')->whereNull('thesis_date')->count() }}</td>
+                        <td class="text-end">
+                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Total Mahasiswa']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->count() }}
+                            </a>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Lulus']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNotNull('thesis_date')->count() }}
+                            </a>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Belum Lulus']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNull('thesis_date')->count() }}
+                            </a>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Belum Sempro']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->count() }}
+                            </a>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Akan Semhas']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNotNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->count() }}
+                            </a>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Akan Sidang']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)->whereNotNull('proposal_date')->whereNotNull('seminar_date')->whereNull('thesis_date')->count() }}
+                            </a>
+                        </td>
                         </tr>
                         @endforeach
                     </tbody>

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\DataTables\InformationPassDataTable;
 use App\DataTables\InformationGuidesDataTable;
+use App\DataTables\InformationPassRecapDataTable;
 
 class GuideInformationController extends Controller
 {
@@ -19,5 +20,15 @@ class GuideInformationController extends Controller
     {
         $title = 'Lulusan Pembimbing Penguji';
         return $dataTable->render('layouts.setting',compact('title'));
+    }
+
+    public function recap(InformationPassRecapDataTable $dataTable, $generation, $context)
+    {
+        $title = 'List '.$context;
+        $route = 'welcome';
+        return $dataTable->with([
+            'generation'=>$generation,
+            'context'=>$context
+            ])->render('layouts.setting',compact('title','route','context','generation'));
     }
 }
