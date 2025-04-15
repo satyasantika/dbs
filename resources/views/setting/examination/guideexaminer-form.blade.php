@@ -2,7 +2,7 @@
 
 @push('header')
     {{ $guideexaminer->id ? 'Edit' : 'Tambah' }} {{ ucFirst(request()->segment(2)) }}
-    @if ($guideexaminer->id)
+    @if ($guideexaminer->id && is_null($guideexaminer->proposal_date) && is_null($guideexaminer->seminar_date) && is_null($guideexaminer->thesis_date))
         <form id="delete-form" action="{{ route('guideexaminers.destroy',$guideexaminer->id) }}" method="POST">
             @csrf
             @method('DELETE')
@@ -138,13 +138,18 @@
             </div>
         </div>
         @endif
+        @if (!is_null($guideexaminer->thesis_date))
         {{-- dokumen skripsi --}}
         <div class="row mb-3">
             <label for="doc" class="col-md-4 col-form-label text-md-end">Dokumen Hasil Ujian</label>
             <div class="col-md-8">
                 <textarea type="date" placeholder="" name="doc" class="form-control" id="doc" rows="5" >{{ $guideexaminer->doc }}</textarea>
+                @if ($guideexaminer->doc)
+                <a href="{{ $guideexaminer->doc }}" target="_blank" rel="noopener noreferrer">lihat file</a>
+                @endif
             </div>
         </div>
+        @endif
 
         {{-- submit Button --}}
         <div class="row mb-0">
