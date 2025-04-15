@@ -25,12 +25,8 @@
         <div class="row mb-3">
             <label for="user_id" class="col-md-4 col-form-label text-md-end">Mahasiswa</label>
             <div class="col-md-8">
-                <select id="user_id" class="form-control @error('user_id') is-invalid @enderror" name="user_id" required @disabled($guideexaminer->id)>
-                    <option value="">-- Pilih Mahasiswa --</option>
-                    @foreach ($students as $student)
-                    <option value="{{ $student->id }}" @selected($student->id == $guideexaminer->user_id)>{{ $student->name }}</option>
-                    @endforeach
-                </select>
+                <input id="user_id" class="form-control @error('user_id') is-invalid @enderror" name="user_id" value="{{ $guideexaminer->student->name }}" required @disabled($guideexaminer->id)>
+                </input>
             </div>
         </div>
         {{-- tahun --}}
