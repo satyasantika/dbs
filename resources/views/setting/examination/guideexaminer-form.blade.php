@@ -142,6 +142,13 @@
             </div>
         </div>
         @endif
+        {{-- dokumen skripsi --}}
+        <div class="row mb-3">
+            <label for="doc" class="col-md-4 col-form-label text-md-end">Dokumen Hasil Ujian</label>
+            <div class="col-md-8">
+                <textarea type="date" placeholder="" name="doc" class="form-control" id="doc" rows="5" >{{ $guideexaminer->doc }}</textarea>
+            </div>
+        </div>
 
         {{-- submit Button --}}
         <div class="row mb-0">
