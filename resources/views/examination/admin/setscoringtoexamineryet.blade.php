@@ -20,7 +20,7 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table small-font table-sm" id="profile-table" role="grid">
+                        <table class="table small-font table-sm table-striped" id="profile-table" role="grid">
                             <thead>
                                 <tr>
                                     <th></th>
