@@ -18,7 +18,7 @@ class AdminController extends Controller
     public function getSetScoringToExaminerYet()
     {
         $exam_registration_id_on_exam_scores = ViewExamScore::select('exam_registration_id')->groupBy('exam_registration_id')->get()->pluck('exam_registration_id');
-        $exam_registrations = ViewExamRegistration::whereNotIn('id',$exam_registration_id_on_exam_scores)->get();
+        $exam_registrations = ViewExamRegistration::whereNotIn('id',$exam_registration_id_on_exam_scores)->orderBy('exam_date')->orderBy('exam_time')->get();
         return view('examination.admin.setscoringtoexamineryet',compact('exam_registrations'));
     }
 }
