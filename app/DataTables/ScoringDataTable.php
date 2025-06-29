@@ -25,36 +25,47 @@ class ScoringDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
                 $action = ' ';
-                $action .= ' <a href="'.route('scoring.edit',$row->id).'" class="btn btn-success btn-sm action">nilai</a>';
+                $action .= ' <a href="'.route('scoring.edit',$row->id).'" class="btn btn-primary btn-sm action">NILAI</a>';
                 if (!is_null($row->registration->exam_file))
                 {
-                    $action .= ' <a href="'.$row->registration->exam_file.'" class="btn btn-primary btn-sm action">FILE</a>';
+                    $action .= ' <a href="'.$row->registration->exam_file.'" target="_blank" class="btn btn-outline-dark btn-sm action">File</a>';
                 }
                 return $action;
             })
-            ->AddColumn('dinilai', function($row){
-                $cek_guide1 = ($row->guide1_id == auth()->id());
-                $cek_guide2 = ($row->guide2_id == auth()->id());
-                if ( is_null($row->letter) ) {
-                    return 'belum';
-                }else {
-                    return 'sudah';
+            ->editColumn('mahasiswa', function($row) {
+                if ($row->ujian == 'sempro') {
+                    $warna = 'bg-light text-success';
+                } elseif ($row->ujian == 'semhas') {
+                    $warna = 'bg-light text-primary';
+                } else {
+                    $warna = 'bg-light text-danger';
                 }
+                $student = '<span class="badge '.$warna.'">'.$row->ujian.'</span>';
+                if ( is_null($row->letter) ) {
+                    $nilai =  '<span class="badge bg-light text-danger"><i class="bi bi-x-circle"></i> belum dinilai</span>';
+                }else {
+                    $nilai =  ' <span class="badge bg-primary">'.$row->letter.'</span>';
+                }
+                return $student.' '.$nilai.'<br>'.$row->mahasiswa;
             })
-            ->editColumn('revision', function($row) {
-                $decision = $row->revision ? "V" : "X";
-                $revision = is_null($row->revision) ? "belum ditentukan" : $decision ;
-                return $revision;
+            ->editColumn('waktu', function($row){
+                $timestamp = strtotime($row->waktu);
+                $waktu = '<span class="badge bg-light text-dark">'.date('d-m-Y', $timestamp).'</span>';
+                $waktu .= ' <span class="badge bg-dark text-white">'.date('H:i', $timestamp).'</span>';
+                return $waktu;
             })
             ->editColumn('revision_note', function($row) {
-                $revision_note = Str::limit($row->revision_note,50);
+                $decision = $row->pass_approved ? '<span class="badge bg-warning text-dark"><i class="bi bi-check-circle"></i> perlu revisi:</span>' : '<span class="badge bg-primary"><i class="bi bi-x-circle"></i> tanpa revisi</span>';
+                $revision = is_null($row->pass_approved) ? '<span class="badge bg-secondary text-dark"><i class="bi bi-hourglass-split text-secondary"></i></span>' : $decision ;
+                $revision_note = $revision.'<br>'.Str::limit($row->revision_note,50);
                 return $revision_note;
             })
             ->editColumn('pass_approved', function($row) {
-                $decision = $row->pass_approved ? "V" : "X";
-                $pass_approved = is_null($row->pass_approved) ? "belum ditentukan" : $decision ;
+                $decision = $row->pass_approved ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i></span>' : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i></span>';
+                $pass_approved = is_null($row->pass_approved) ? '<span class="badge bg-secondary text-dark"><i class="bi bi-hourglass-split text-secondary"></i></span>' : $decision ;
                 return $pass_approved;
             })
+            ->rawColumns(['dinilai', 'action', 'mahasiswa', 'waktu', 'revision_note', 'pass_approved'])
             ->setRowId('id');
     }
 
@@ -63,7 +74,8 @@ class ScoringDataTable extends DataTable
      */
     public function query(ViewExamScore $model): QueryBuilder
     {
-        return $model->where('user_id',auth()->id())
+        return $model->selectRaw("*, CONCAT(exam_date, ' ', exam_time) as waktu")
+                    ->where('user_id',auth()->id())
                     ->newQuery();
     }
 
@@ -77,8 +89,7 @@ class ScoringDataTable extends DataTable
                     ->columns($this->getColumns())
                     ->minifiedAjax()
                     //->dom('Bfrtip')
-                    ->orderBy(1)
-                    ->orderBy(4,'desc')
+                    ->orderBy(2,'desc')
                     ->selectStyleSingle()
                     ->buttons([
                         // Button::make('add'),
@@ -96,12 +107,9 @@ class ScoringDataTable extends DataTable
             Column::computed('action')
                   ->exportable(false)
                   ->printable(false)
-                  ->width(90),
-            Column::make('dinilai'),
+                  ->width(100),
             Column::make('mahasiswa'),
-            Column::make('ujian'),
-            Column::make('exam_date')->title('tanggal')->width(65),
-            Column::make('revision')->title('rev?')->addClass('text-center'),
+            Column::make('waktu'),
             Column::make('revision_note')->title('catatan'),
             Column::make('pass_approved')->title('lanjut?')->addClass('text-center'),
         ];
