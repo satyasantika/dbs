@@ -63,9 +63,6 @@ class ScoringDataTable extends DataTable
                 $revision_note .= ' '.$nilai.' '.$pass_approved;
                 return $revision_note;
             })
-            // ->editColumn('pass_approved', function($row) {
-            //     return $pass_approved;
-            // })
             ->rawColumns(['dinilai', 'action', 'mahasiswa', 'waktu', 'revision_note', 'pass_approved'])
             ->setRowId('id');
     }
