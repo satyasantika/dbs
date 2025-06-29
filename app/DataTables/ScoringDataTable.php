@@ -25,7 +25,7 @@ class ScoringDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
                 $action = ' ';
-                $action .= ' <a href="'.route('scoring.edit',$row->id).'" class="btn btn-primary btn-sm action">NILAI</a>';
+                $action .= ' <a href="'.route('scoring.edit',$row->id).'" class="btn btn-primary btn-sm action">Nilai</a>';
                 if (!is_null($row->registration->exam_file))
                 {
                     $action .= ' <a href="'.$row->registration->exam_file.'" target="_blank" class="btn btn-outline-dark btn-sm action">File</a>';
@@ -41,14 +41,7 @@ class ScoringDataTable extends DataTable
                     $warna = 'bg-primary';
                 }
                 $student = '<span class="badge '.$warna.'">'.$row->ujian.'</span>';
-                if ( is_null($row->letter) ) {
-                    $nilai =  '<span class="badge bg-light text-danger"><i class="bi bi-x-circle"></i> belum dinilai</span>';
-                }else {
-                    $nilai =  ' <span class="badge bg-primary">nilai: '.$row->letter.'</span>';
-                }
-                $decision_pass = $row->pass_approved ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> lanjutkan</span>' : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> gagal</span>';
-                $pass_approved = is_null($row->pass_approved) ? '<span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> lanjut/mengulang?</span>' : $decision_pass ;
-                return $student.' '.$nilai.' '.$pass_approved.'<br>'.$row->mahasiswa;
+                return $student.$row->mahasiswa;
             })
             ->editColumn('waktu', function($row){
                 $timestamp = strtotime($row->waktu);
@@ -60,6 +53,14 @@ class ScoringDataTable extends DataTable
                 $decision_rev = $row->pass_approved ? '<span class="badge bg-warning text-dark"><i class="bi bi-check-circle"></i> perlu revisi:</span>' : '<span class="badge bg-success"><i class="bi bi-x-circle"></i> tanpa revisi</span>';
                 $revision = is_null($row->pass_approved) ? '<span class="badge bg-danger"><i class="bi bi-clock"></i> revisikah?</span>' : $decision_rev ;
                 $revision_note = $revision.Str::limit($row->revision_note,50);
+                if ( is_null($row->letter) ) {
+                    $nilai =  '<span class="badge bg-light text-danger"><i class="bi bi-x-circle"></i> belum dinilai</span>';
+                }else {
+                    $nilai =  ' <span class="badge bg-primary">nilai: '.$row->letter.'</span>';
+                }
+                $decision_pass = $row->pass_approved ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> lanjutkan</span>' : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> gagal</span>';
+                $pass_approved = is_null($row->pass_approved) ? '<span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> lanjut/mengulang?</span>' : $decision_pass ;
+                $revision_note .= ' '.$nilai.' '.$pass_approved;
                 return $revision_note;
             })
             // ->editColumn('pass_approved', function($row) {
