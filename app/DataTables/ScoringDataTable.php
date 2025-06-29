@@ -38,15 +38,17 @@ class ScoringDataTable extends DataTable
                 } elseif ($row->ujian == 'semhas') {
                     $warna = 'bg-light text-primary';
                 } else {
-                    $warna = 'bg-light text-danger';
+                    $warna = 'bg-primary';
                 }
                 $student = '<span class="badge '.$warna.'">'.$row->ujian.'</span>';
                 if ( is_null($row->letter) ) {
                     $nilai =  '<span class="badge bg-light text-danger"><i class="bi bi-x-circle"></i> belum dinilai</span>';
                 }else {
-                    $nilai =  ' <span class="badge bg-primary">'.$row->letter.'</span>';
+                    $nilai =  ' <span class="badge bg-primary">nilai: '.$row->letter.'</span>';
                 }
-                return $student.' '.$nilai.'<br>'.$row->mahasiswa;
+                $decision_pass = $row->pass_approved ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> lanjutkan</span>' : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> gagal</span>';
+                $pass_approved = is_null($row->pass_approved) ? '<span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> lanjut/mengulang?</span>' : $decision_pass ;
+                return $student.' '.$nilai.' '.$pass_approved.'<br>'.$row->mahasiswa;
             })
             ->editColumn('waktu', function($row){
                 $timestamp = strtotime($row->waktu);
@@ -55,16 +57,14 @@ class ScoringDataTable extends DataTable
                 return $waktu;
             })
             ->editColumn('revision_note', function($row) {
-                $decision = $row->pass_approved ? '<span class="badge bg-warning text-dark"><i class="bi bi-check-circle"></i> perlu revisi:</span>' : '<span class="badge bg-primary"><i class="bi bi-x-circle"></i> tanpa revisi</span>';
-                $revision = is_null($row->pass_approved) ? '<span class="badge bg-secondary text-dark"><i class="bi bi-hourglass-split text-secondary"></i></span>' : $decision ;
-                $revision_note = $revision.'<br>'.Str::limit($row->revision_note,50);
+                $decision_rev = $row->pass_approved ? '<span class="badge bg-warning text-dark"><i class="bi bi-check-circle"></i> perlu revisi:</span>' : '<span class="badge bg-success"><i class="bi bi-x-circle"></i> tanpa revisi</span>';
+                $revision = is_null($row->pass_approved) ? '<span class="badge bg-danger"><i class="bi bi-clock"></i> revisikah?</span>' : $decision_rev ;
+                $revision_note = $revision.Str::limit($row->revision_note,50);
                 return $revision_note;
             })
-            ->editColumn('pass_approved', function($row) {
-                $decision = $row->pass_approved ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i></span>' : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i></span>';
-                $pass_approved = is_null($row->pass_approved) ? '<span class="badge bg-secondary text-dark"><i class="bi bi-hourglass-split text-secondary"></i></span>' : $decision ;
-                return $pass_approved;
-            })
+            // ->editColumn('pass_approved', function($row) {
+            //     return $pass_approved;
+            // })
             ->rawColumns(['dinilai', 'action', 'mahasiswa', 'waktu', 'revision_note', 'pass_approved'])
             ->setRowId('id');
     }
@@ -109,9 +109,9 @@ class ScoringDataTable extends DataTable
                   ->printable(false)
                   ->width(100),
             Column::make('mahasiswa'),
-            Column::make('waktu'),
+            Column::make('waktu')->searchable(false),
             Column::make('revision_note')->title('catatan'),
-            Column::make('pass_approved')->title('lanjut?')->addClass('text-center'),
+            // Column::make('pass_approved')->title('lanjut?')->addClass('text-center'),
         ];
     }
 
