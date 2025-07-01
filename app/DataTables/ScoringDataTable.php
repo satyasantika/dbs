@@ -50,17 +50,26 @@ class ScoringDataTable extends DataTable
                 return $waktu;
             })
             ->editColumn('revision_note', function($row) {
-                $decision_rev = $row->pass_approved ? '<span class="badge bg-warning text-dark"><i class="bi bi-check-circle"></i> perlu revisi:</span>' : '<span class="badge bg-success"><i class="bi bi-x-circle"></i> tanpa revisi</span>';
-                $revision = is_null($row->pass_approved) ? '<span class="badge bg-danger"><i class="bi bi-clock"></i> revisikah?</span>' : $decision_rev ;
-                $revision_note = $revision.Str::limit($row->revision_note,50);
+
+                $icon_direvisi = '<span class="badge bg-warning text-dark"><i class="bi bi-quote"></i> ada revisi</span>';
+                $icon_belum_direvisi = '<span class="badge bg-success"><i class="bi bi-shield-check"></i> tanpa revisi</span>';
+                $decision_rev = $row->revision ? $icon_direvisi : $icon_belum_direvisi ;
+
+                $note = $decision_rev.' '.Str::limit($row->revision_note,50);
                 if ( is_null($row->letter) ) {
                     $nilai =  '<span class="badge bg-light text-danger"><i class="bi bi-x-circle"></i> belum dinilai</span>';
                 }else {
-                    $nilai =  ' <span class="badge bg-primary">nilai: '.$row->letter.'</span>';
+                    $nilai =  ' <span class="badge bg-primary">grade: '.$row->letter.'</span>';
                 }
-                $decision_pass = $row->pass_approved ? '<span class="badge bg-success"><i class="bi bi-check-circle"></i> lanjutkan</span>' : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> gagal</span>';
-                $pass_approved = is_null($row->pass_approved) ? '<span class="badge bg-warning text-dark"><i class="bi bi-clock"></i> lanjut/mengulang?</span>' : $decision_pass ;
-                $revision_note .= ' '.$nilai.' '.$pass_approved;
+                $icon_lanjut = '<span class="badge bg-success">pass <i class="bi bi-check-circle"></i></span>';
+
+                $keputusan_lanjut = $row->pass_approved ? $icon_lanjut : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> gagal</span>';
+                $note .= ' '.$nilai.' '.$keputusan_lanjut;
+
+                $icon_belum_dinilai = '<span class="badge bg-danger"><i class="bi bi-question-diamond-fill"></i> belum dinilai</span>' ;
+
+                $revision_note = is_null($row->revision) ? $icon_belum_dinilai : $note ;
+
                 return $revision_note;
             })
             ->rawColumns(['dinilai', 'action', 'mahasiswa', 'waktu', 'revision_note', 'pass_approved'])
