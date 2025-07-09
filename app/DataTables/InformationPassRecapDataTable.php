@@ -3,14 +3,15 @@
 namespace App\DataTables;
 
 use App\Models\ViewGuideExaminer;
-use Illuminate\Database\Eloquent\Builder as QueryBuilder;
-use Yajra\DataTables\EloquentDataTable;
-use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use App\Models\ViewExamRegistration;
+use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
+use Yajra\DataTables\Html\Builder as HtmlBuilder;
+use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 
 class InformationPassRecapDataTable extends DataTable
 {
@@ -42,23 +43,31 @@ class InformationPassRecapDataTable extends DataTable
      */
     public function query(ViewGuideExaminer $model): QueryBuilder
     {
+        $daftar_sidang = ViewExamRegistration::where('year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',3)->pluck('user_id');
+        $daftar_sempro = ViewExamRegistration::where('year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',1)->pluck('user_id');
+        $daftar_semhas = ViewExamRegistration::where('year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',2)->pluck('user_id');
+        // dd($daftar_sidang);
         if ($this->context == "Total Mahasiswa") {
             return $model->where('year_generation',$this->generation)->newQuery();
         }
         if ($this->context == "Mahasiswa Lulus") {
-            return $model->where('year_generation',$this->generation)->whereNotNull('thesis_date')->newQuery();
+            return $model->where('year_generation',$this->generation)->whereNotNull('thesis_date')->whereNotIn('user_id',$daftar_sidang)->newQuery();
         }
         if ($this->context == "Mahasiswa Belum Lulus") {
-            return $model->where('year_generation',$this->generation)->whereNull('thesis_date')->newQuery();
+            $reg = $model->whereIn('user_id',$daftar_sidang)->newQuery();
+            return $model->where('year_generation',$this->generation)->whereNull('thesis_date')->union($reg)->newQuery();
         }
         if ($this->context == "Mahasiswa Belum Sempro") {
-            return $model->where('year_generation',$this->generation)->whereNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->newQuery();
+            $reg = $model->whereIn('user_id',$daftar_sempro)->newQuery();
+            return $model->where('year_generation',$this->generation)->whereNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->union($reg)->newQuery();
         }
         if ($this->context == "Mahasiswa Akan Semhas") {
-            return $model->where('year_generation',$this->generation)->whereNotNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->newQuery();
+            $reg = $model->whereIn('user_id',$daftar_semhas)->newQuery();
+            return $model->where('year_generation',$this->generation)->whereNotNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->whereNotIn('user_id',$daftar_sempro)->union($reg)->newQuery();
         }
         if ($this->context == "Mahasiswa Akan Sidang") {
-            return $model->where('year_generation',$this->generation)->whereNotNull('proposal_date')->whereNotNull('seminar_date')->whereNull('thesis_date')->newQuery();
+            $reg = $model->whereIn('user_id',$daftar_sidang)->newQuery();
+            return $model->where('year_generation',$this->generation)->whereNotNull('proposal_date')->whereNotNull('seminar_date')->whereNull('thesis_date')->whereNotIn('user_id',$daftar_semhas)->union($reg)->newQuery();
         }
     }
 
@@ -96,6 +105,23 @@ class InformationPassRecapDataTable extends DataTable
                 Column::make('seminar_date')->title('SemHas'),
                 Column::make('thesis_date')->title('Sidang'),
                 Column::computed('masa_studi'),
+            ];
+        } elseif ($this->context == "Mahasiswa Belum Sempro") {
+            return [
+                Column::make('npm'),
+                Column::make('mahasiswa'),
+                Column::make('penguji_4')->title('P1'),
+                Column::make('penguji_5')->title('P2'),
+                Column::make('proposal_date')->title('SemPro'),
+            ];
+        } elseif ($this->context == "Mahasiswa Akan Semhas") {
+            return [
+                Column::make('npm'),
+                Column::make('mahasiswa'),
+                Column::make('penguji_4')->title('P1'),
+                Column::make('penguji_5')->title('P2'),
+                Column::make('proposal_date')->title('SemPro'),
+                Column::make('proposal_date')->title('SemPro'),
             ];
         }
         else
