@@ -113,15 +113,7 @@ class InformationPassRecapDataTable extends DataTable
                 Column::make('penguji_4')->title('P1'),
                 Column::make('penguji_5')->title('P2'),
                 Column::make('proposal_date')->title('SemPro'),
-            ];
-        } elseif ($this->context == "Mahasiswa Akan Semhas") {
-            return [
-                Column::make('npm'),
-                Column::make('mahasiswa'),
-                Column::make('penguji_4')->title('P1'),
-                Column::make('penguji_5')->title('P2'),
-                Column::make('proposal_date')->title('SemPro'),
-                Column::make('proposal_date')->title('SemPro'),
+                Column::make('seminar_date')->title('SemHas'),
             ];
         }
         else
