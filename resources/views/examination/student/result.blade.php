@@ -27,7 +27,7 @@
                                     <td>{{ $examination->ujian }}</td>
                                     <td>{{ $examination->exam_date }}</td>
                                     <td>
-                                        @if ($examination->pass_exam)
+                                        @if ($belum_menilai)
                                         <a target="_blank" href="{{ route('report.revision-table',$examination->id) }}" class="btn btn-sm btn-outline-primary mr-2">Lembar Revisi</a>
                                         <a target="_blank" href="{{ route('report.revision-sign',$examination->id) }}" class="btn btn-sm btn-outline-primary">Keterangan Revisi</a>
                                         @else

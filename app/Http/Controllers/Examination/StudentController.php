@@ -48,10 +48,9 @@ class StudentController extends Controller
     public function showRevisionByDate(Request $request)
     {
         $user_id = User::where('username',$request->student_id)->first()->id;
-        // dd($user_id);
         $examination = ViewExamRegistration::where('user_id',$user_id)->where('exam_date',$request->exam_date)->first();
-        // dd($examination);
-        return view('examination.student.result',compact('examination'));
+        $belum_menilai = ViewExamScore::where('exam_registration_id',$examination->id)->whereNull('pass_approved')->doesntExist();
+        return view('examination.student.result',compact('examination','belum_menilai'));
     }
 
 }
