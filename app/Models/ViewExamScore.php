@@ -20,6 +20,11 @@ class ViewExamScore extends Model
         return $this->belongsTo(ExamRegistration::class,'exam_registration_id');
     }
 
+    public function viewregistration()
+    {
+        return $this->belongsTo(ViewExamRegistration::class,'exam_registration_id');
+    }
+
     public function lecture()
     {
         return $this->belongsTo(User::class,'user_id');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Examination;
 
 use App\Models\ExamScore;
 use Illuminate\Http\Request;
+use App\Models\ViewExamScore;
 use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
 use App\Models\ViewExamRegistration;
@@ -26,13 +27,13 @@ class ChiefController extends Controller
         return view('examination.chief',compact('examinations'));
     }
 
-    public function show(ExamRegistration $chief)
+    public function show(ViewExamRegistration $chief)
     {
         if ( $chief->chief_id != Auth::id() ) {
             return to_route('scoring.index');
         }
 
-        $examinations = ExamScore::where('exam_registration_id',$chief->id)->get();
+        $examinations = ViewExamScore::where('exam_registration_id',$chief->id)->get();
         return view('examination.chief',compact('examinations','chief'));
     }
 

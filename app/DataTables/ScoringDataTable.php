@@ -41,7 +41,8 @@ class ScoringDataTable extends DataTable
                     $warna = 'bg-primary';
                 }
                 $student = '<span class="badge '.$warna.'">'.$row->ujian.'</span>';
-                return $student.$row->mahasiswa;
+                $chief = $row->user_id != $row->registration->chief_id ? ' ' : ' <a class="btn btn-sm btn-outline-secondary" href="'.route('chief.show',$row->registration->id).'">halaman ketua</a>';
+                return $student.$row->mahasiswa.$chief;
             })
             ->editColumn('waktu', function($row){
                 $timestamp = strtotime($row->waktu);
@@ -55,7 +56,6 @@ class ScoringDataTable extends DataTable
                 $icon_belum_direvisi = '<span class="badge bg-success"><i class="bi bi-shield-check"></i> tanpa revisi</span>';
                 $decision_rev = $row->revision ? $icon_direvisi : $icon_belum_direvisi ;
 
-                $note = $decision_rev.' '.Str::limit($row->revision_note,50);
                 if ( is_null($row->letter) ) {
                     $nilai =  '<span class="badge bg-light text-danger"><i class="bi bi-x-circle"></i> belum dinilai</span>';
                 }else {
@@ -64,7 +64,8 @@ class ScoringDataTable extends DataTable
                 $icon_lanjut = '<span class="badge bg-success">pass <i class="bi bi-check-circle"></i></span>';
 
                 $keputusan_lanjut = $row->pass_approved ? $icon_lanjut : '<span class="badge bg-danger"><i class="bi bi-x-circle"></i> gagal</span>';
-                $note .= ' '.$nilai.' '.$keputusan_lanjut;
+                $note = $nilai.' '.$keputusan_lanjut;
+                $note .= ' '.$decision_rev.' '.Str::limit($row->revision_note,50);
 
                 $icon_belum_dinilai = '<span class="badge bg-danger"><i class="bi bi-question-diamond-fill"></i> belum dinilai</span>' ;
 
