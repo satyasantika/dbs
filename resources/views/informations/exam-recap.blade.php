@@ -1,5 +1,5 @@
 @php
-    $angkatans = \App\Models\ViewGuideExaminer::where('year_generation','>=',2018)->distinct()->orderBy('year_generation')->pluck('year_generation');
+    $angkatans = \App\Models\ViewGuideExaminer::where('year_generation','>=',2019)->distinct()->orderBy('year_generation')->pluck('year_generation');
 @endphp
 <div class="row justify-content-center mb-3">
     <div class="col-md-8">
