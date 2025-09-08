@@ -12,7 +12,8 @@ class AdminController extends Controller
     public function getExaminerScoringYet()
     {
         $exam_scores = ViewExamScore::whereNull('pass_approved')->orderBy('exam_date')->orderBy('exam_time')->get();
-        return view('examination.admin.scoringyet',compact('exam_scores'));
+        $exam_registrations = ViewExamRegistration::whereIn('id',$exam_scores->pluck('exam_registration_id'))->get()->keyBy('id');
+        return view('examination.admin.scoringyet',compact('exam_registrations'));
     }
 
     public function getSetScoringToExaminerYet()
