@@ -87,7 +87,8 @@
                                     <td class="text-center"><span class="badge bg-dark text-white">{{ $exam_score->grade }}</span></td>
                                     <td class="text-center">{{ $exam_score->letter }}</td>
                                     <td class="text-center">{{ $exam_score->revision ? 'v' : 'x' }}</td>
-                                    <td>{{ is_null($exam_score->revision_note) ? 'x' : Str::of($exam_score->revision_note)->limit(20) }}</td>
+                                    <td>{{ is_null($exam_score->revision_note) ? 'x' : $exam_score->revision_note }}</td>
+                                    {{-- <td>{{ is_null($exam_score->revision_note) ? 'x' : Str::of($exam_score->revision_note)->limit(20) }}</td> --}}
                                     <td class="text-center">{{ $exam_score->pass_approved ? 'v' : 'x' }}</td>
                                 </tr>
                                 @empty
