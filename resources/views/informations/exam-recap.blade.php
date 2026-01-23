@@ -25,15 +25,15 @@
                         @foreach ($angkatans as $angkatan)
                         @php
                             $daftar_sempro = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('pass_exam',0)
+                                ->where('exam_date','>=', Carbon\Carbon::now()->isoFormat('Y-MM-DD'))
                                 ->where('exam_type_id',1)
                                 ->pluck('user_id');
                             $daftar_semhas = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('pass_exam',0)
+                                ->where('exam_date','>=', Carbon\Carbon::now()->isoFormat('Y-MM-DD'))
                                 ->where('exam_type_id',2)
                                 ->pluck('user_id');
                             $daftar_sidang = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('pass_exam',0)
+                                ->where('exam_date','>=', Carbon\Carbon::now()->isoFormat('Y-MM-DD'))
                                 ->where('exam_type_id',3)
                                 ->pluck('user_id');
 
