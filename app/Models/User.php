@@ -8,14 +8,16 @@ use App\Models\SelectionGuide;
 use App\Models\SelectionStage;
 use App\Models\ExamRegistration;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
+use Lab404\Impersonate\Models\Impersonate;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles, Impersonate;
 
     protected $fillable = [
         'name',
@@ -39,6 +41,11 @@ class User extends Authenticatable
         'password' => 'hashed',
         'birth_date' => 'date',
     ];
+
+    public function canImpersonate(): bool
+    {
+        return Auth::user()->hasRole('admin');
+    }
 
     public function selectionstudents(): hasMany
     {

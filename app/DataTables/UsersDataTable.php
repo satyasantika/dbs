@@ -24,7 +24,9 @@ class UsersDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addColumn('action', function($row){
                 $action = '<div class="row">';
-                $action .= ' <div class="col-auto"><a href="'.route('userroles.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">R</a>';
+                $action .= ' <div class="col-auto">';
+                $action .= ' <a href="'.route('impersonate',$row->id).'" class="btn btn-outline-primary btn-sm action">I</a>';
+                $action .= ' <a href="'.route('userroles.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">R</a>';
                 $action .= ' <a href="'.route('userpermissions.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">P</a>';
                 $action .= ' <a href="'.route('users.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a></div>';
                 $action .= ' <div class="col-auto"><form id="activation-form" action='.route('users.activation',$row->id).' method="POST"> <button type="submit" class="btn btn-'.($row->hasPermissionTo('active') ? 'outline-success' : 'outline-danger').' btn-sm"><input type="hidden" name="_token" value='.csrf_token().'><input type="hidden" name="_method" value="PUT">'. ($row->hasPermissionTo('active') ? 'A':'nA').' </button> </form></div>';

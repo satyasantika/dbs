@@ -77,6 +77,9 @@
                                 </a>
 
                                 <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    @impersonating($guard = null)
+                                        <a class="dropdown-item" href="{{ route('impersonate.leave') }}">Back to Admin</a>
+                                    @endImpersonating
                                     <a class="dropdown-item" href="{{ route('profiles.index') }}">Profil</a>
                                     <a class="dropdown-item" href="{{ route('mypassword.change') }}">Ubah Password</a>
                                     <a class="dropdown-item" href="{{ route('logout') }}"
