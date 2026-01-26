@@ -20,7 +20,7 @@
                         <th scope="col">#</th>
                         <th scope="col">Waktu</th>
                         <th scope="col">Mahasiswa</th>
-                        <th scope="col">Judul</th>
+                        <th scope="col">Penguji</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -32,8 +32,12 @@
                             <br>{{ Carbon\Carbon::parse($ujian->exam_date)->isoFormat('D MMMM Y') }}
                             <br>{{ Carbon\Carbon::createFromTimeString($ujian->exam_time)->isoFormat('HH:mm') }}
                         </td>
-                        <td>{{ $ujian->mahasiswa }}
-                            <br><span class="badge bg-{{ $ujian->examiner1_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
+                        <td>
+                            {{ $ujian->mahasiswa }}
+                            <br>Judul: <strong>{{ $ujian->title }}</strong>
+                        </td>
+                        <td>
+                            <span class="badge bg-{{ $ujian->examiner1_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
                                 Penguji 1: {{ $ujian->examiner1->name }}
                             </span>
                             <br><span class="badge bg-{{ $ujian->examiner2_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
@@ -49,7 +53,6 @@
                                 Penguji 5: {{ $ujian->guide2->name }}
                             </span>
                         </td>
-                        <td>{{ $ujian->title }}</td>
                         </tr>
                         @endforeach
                     </tbody>
