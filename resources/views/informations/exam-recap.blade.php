@@ -25,15 +25,15 @@
                         @foreach ($angkatans as $angkatan)
                         @php
                             $daftar_sempro = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now()->isoFormat('Y-MM-DD'))
+                                ->where('exam_date','>=', Carbon\Carbon::now())
                                 ->where('exam_type_id',1)
                                 ->pluck('user_id');
                             $daftar_semhas = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now()->isoFormat('Y-MM-DD'))
+                                ->where('exam_date','>=', Carbon\Carbon::now())
                                 ->where('exam_type_id',2)
                                 ->pluck('user_id');
                             $daftar_sidang = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now()->isoFormat('Y-MM-DD'))
+                                ->where('exam_date','>=', Carbon\Carbon::now())
                                 ->where('exam_type_id',3)
                                 ->pluck('user_id');
 
@@ -54,7 +54,7 @@
                                 ->whereNotIn('user_id',$belum_daftar_sempro->pluck('user_id'))
                                 ->get();
                             $sudah_daftar_semhas = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('pass_exam',0)
+                                ->where('exam_date','>=', Carbon\Carbon::now())
                                 ->where('exam_type_id',2)
                                 ->count();
 
@@ -66,7 +66,7 @@
                                 ->whereNotIn('user_id',$belum_daftar_semhas->pluck('user_id'))
                                 ->get();
                             $sudah_daftar_sidang = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('pass_exam',0)
+                                ->where('exam_date','>=', Carbon\Carbon::now())
                                 ->where('exam_type_id',3)
                                 ->count();
 
@@ -76,11 +76,8 @@
                             $total = \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)
                                 ->count();
                         @endphp
-                        <tr
-                        >
-                        <th scope="ro
-                        w">{{ $angkatan }}</th
-                        >
+                        <tr>
+                        <th scope="row">{{ $angkatan }}</th>
                         <td class="text-end">
                             <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Total Mahasiswa']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
                                 {{ $total }}
