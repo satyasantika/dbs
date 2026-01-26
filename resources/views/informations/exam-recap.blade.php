@@ -43,7 +43,7 @@
                                 ->whereNull('thesis_date')
                                 ->get();
                             $sudah_daftar_sempro = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('pass_exam',0)
+                                ->where('exam_date','>=', Carbon\Carbon::now())
                                 ->where('exam_type_id',1)
                                 ->count();
 
