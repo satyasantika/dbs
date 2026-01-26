@@ -39,6 +39,18 @@
                         </td>
                         <td>
                             {{ $ujian->mahasiswa }}
+                            @php
+                                $bg = 'white';
+                                if ($ujian->exam_type_id==1) {
+                                    $bg = 'success';
+                                } elseif ($ujian->exam_type_id==2) {
+                                    $bg = 'primary';
+                                } elseif ($ujian->exam_type_id==3) {
+                                    $bg = 'danger';
+                                }
+
+                            @endphp
+                            <br><span class="badge bg-{{ $bg }}">{{ $ujian->ujian }}</span>
                             <br>Judul: <strong>{{ $ujian->title }}</strong>
                         </td>
                         <td>
