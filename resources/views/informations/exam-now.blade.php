@@ -30,7 +30,12 @@
                         <td>
                             {{ Carbon\Carbon::parse($ujian->exam_date)->isoFormat('dddd') }}
                             <br>{{ Carbon\Carbon::parse($ujian->exam_date)->isoFormat('D MMMM Y') }}
-                            <br>{{ Carbon\Carbon::createFromTimeString($ujian->exam_time)->isoFormat('HH:mm') }}
+                            <br><span class="badge bg-dark text-white">
+                                {{ Carbon\Carbon::createFromTimeString($ujian->exam_time)->isoFormat('HH:mm') }}
+                                -
+                                {{ Carbon\Carbon::createFromTimeString($ujian->exam_time)->addMinutes(60)->isoFormat('HH:mm') }}
+                                </span>
+                            <br>Ruang {{ $ujian->room }}
                         </td>
                         <td>
                             {{ $ujian->mahasiswa }}
