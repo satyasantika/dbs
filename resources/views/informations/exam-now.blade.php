@@ -3,7 +3,15 @@
     $tanggal_sekarang = Carbon\Carbon::now()->isoFormat('Y-MM-DD');
     $waktu_sekarang = Carbon\Carbon::now()->isoFormat('HH:mm:ss');
     $waktu_selesai = Carbon\Carbon::now()->subHour()->isoFormat('HH:mm:ss');
-    $peserta = \App\Models\ViewExamRegistration::where('exam_date', '>=',$tanggal_sekarang)->where('exam_time', '>=', $waktu_selesai);
+    $peserta = \App\Models\ViewExamRegistration::query()
+        ->where(function ($q) use ($tanggal_sekarang, $waktu_selesai) {
+            $q->where('exam_date', '>', $tanggal_sekarang)
+            ->orWhere(function ($q2) use ($tanggal_sekarang, $waktu_selesai) {
+                $q2->where('exam_date', '=', $tanggal_sekarang)
+                    ->where('exam_time', '>=', $waktu_selesai);
+            });
+        })
+    ;
 @endphp
 @if ($peserta->exists())
 <div class="row justify-content-center mb-3">
