@@ -1,19 +1,4 @@
-@php
-    $hari_ini = Carbon\Carbon::now()->isoFormat('dddd, D MMMM Y');
-    $tanggal_sekarang = Carbon\Carbon::now()->isoFormat('Y-MM-DD');
-    $waktu_sekarang = Carbon\Carbon::now()->isoFormat('HH:mm:ss');
-    $waktu_selesai = Carbon\Carbon::now()->subHour()->isoFormat('HH:mm:ss');
-    $peserta = \App\Models\ViewExamRegistration::query()
-        ->where(function ($q) use ($tanggal_sekarang, $waktu_selesai) {
-            $q->where('exam_date', '>', $tanggal_sekarang)
-            ->orWhere(function ($q2) use ($tanggal_sekarang, $waktu_selesai) {
-                $q2->where('exam_date', '=', $tanggal_sekarang)
-                    ->where('exam_time', '>=', $waktu_selesai);
-            });
-        })
-    ;
-@endphp
-@if ($peserta->exists())
+@if ($peserta->count() > 0)
 <div class="row justify-content-center mb-3">
     <div class="col-md-8">
         <div class="card">
@@ -32,7 +17,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($peserta->orderBy('exam_time')->get() as $index => $ujian)
+                        @foreach ($peserta as $index => $ujian)
                         <tr>
                         <th scope="row">{{ $index+1 }}</th>
                         <td>
@@ -46,7 +31,7 @@
                             <br>Ruang {{ $ujian->room }}
                         </td>
                         <td>
-                            {{ $ujian->mahasiswa }}
+                            {{ $ujian->student->name ?? '-' }}
                             @php
                                 $bg = 'white';
                                 if ($ujian->exam_type_id==1) {
@@ -56,26 +41,25 @@
                                 } elseif ($ujian->exam_type_id==3) {
                                     $bg = 'danger';
                                 }
-
                             @endphp
-                            <br><span class="badge bg-{{ $bg }}">{{ $ujian->ujian }}</span>
+                            <br><span class="badge bg-{{ $bg }}">{{ $ujian->examtype->name ?? '-' }}</span>
                             <br>Judul: <strong>{{ $ujian->title }}</strong>
                         </td>
                         <td>
                             <span class="badge bg-{{ $ujian->examiner1_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
-                                Penguji 1: {{ $ujian->examiner1->name }}
+                                Penguji 1: {{ $ujian->examiner1->name ?? '-' }}
                             </span>
                             <br><span class="badge bg-{{ $ujian->examiner2_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
-                                Penguji 2: {{ $ujian->examiner2->name }}
+                                Penguji 2: {{ $ujian->examiner2->name ?? '-' }}
                             </span>
                             <br><span class="badge bg-{{ $ujian->examiner3_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
-                                Penguji 3: {{ $ujian->examiner3->name }}
+                                Penguji 3: {{ $ujian->examiner3->name ?? '-' }}
                             </span>
                             <br><span class="badge bg-{{ $ujian->guide1_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
-                                Penguji 4: {{ $ujian->guide1->name }}
+                                Penguji 4: {{ $ujian->guide1->name ?? '-' }}
                             </span>
                             <br><span class="badge bg-{{ $ujian->guide2_id==$ujian->chief_id ? 'primary' : 'secondary' }}">
-                                Penguji 5: {{ $ujian->guide2->name }}
+                                Penguji 5: {{ $ujian->guide2->name ?? '-' }}
                             </span>
                         </td>
                         </tr>

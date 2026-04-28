@@ -1,6 +1,3 @@
-@php
-    $angkatans = \App\Models\ViewGuideExaminer::where('year_generation','>=',2019)->distinct()->orderBy('year_generation')->pluck('year_generation');
-@endphp
 <div class="row justify-content-center mb-3">
     <div class="col-md-8">
         <div class="card">
@@ -22,93 +19,40 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($angkatans as $angkatan)
-                        @php
-                            $daftar_sempro = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now())
-                                ->where('exam_type_id',1)
-                                ->pluck('user_id');
-                            $daftar_semhas = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now())
-                                ->where('exam_type_id',2)
-                                ->pluck('user_id');
-                            $daftar_sidang = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now())
-                                ->where('exam_type_id',3)
-                                ->pluck('user_id');
-
-                            $belum_daftar_sempro = \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)
-                                ->whereNull('proposal_date')
-                                ->whereNull('seminar_date')
-                                ->whereNull('thesis_date')
-                                ->get();
-                            $sudah_daftar_sempro = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now())
-                                ->where('exam_type_id',1)
-                                ->count();
-
-                            $belum_daftar_semhas = \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)
-                                ->whereNull('seminar_date')
-                                ->whereNull('thesis_date')
-                                ->whereNotIn('user_id',$daftar_sempro)
-                                ->whereNotIn('user_id',$belum_daftar_sempro->pluck('user_id'))
-                                ->get();
-                            $sudah_daftar_semhas = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now())
-                                ->where('exam_type_id',2)
-                                ->count();
-
-                            $belum_daftar_sidang = \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)
-                                ->whereNull('thesis_date')
-                                ->whereNotIn('user_id',$daftar_semhas)
-                                ->whereNotIn('user_id',$daftar_sempro)
-                                ->whereNotIn('user_id',$belum_daftar_sempro->pluck('user_id'))
-                                ->whereNotIn('user_id',$belum_daftar_semhas->pluck('user_id'))
-                                ->get();
-                            $sudah_daftar_sidang = \App\Models\ViewExamRegistration::where('year_generation',$angkatan)
-                                ->where('exam_date','>=', Carbon\Carbon::now())
-                                ->where('exam_type_id',3)
-                                ->count();
-
-                            $sudah_lulus = \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)
-                                ->whereNotNull('thesis_date')
-                                ->count();
-                            $total = \App\Models\ViewGuideExaminer::where('year_generation',$angkatan)
-                                ->count();
-                        @endphp
+                        @foreach ($rekap as $row)
                         <tr>
-                        <th scope="row">{{ $angkatan }}</th>
+                        <th scope="row">{{ $row['angkatan'] }}</th>
                         <td class="text-end">
-                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Total Mahasiswa']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
-                                {{ $total }}
+                            <a href="{{ route('information.recap',['generation'=>$row['angkatan'],'context'=>'Total Mahasiswa']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ $row['total'] }}
                             </a>
                         </td>
                         <td class="text-end">
-                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Lulus']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
-                                {{ $sudah_lulus - $sudah_daftar_sidang }}
+                            <a href="{{ route('information.recap',['generation'=>$row['angkatan'],'context'=>'Mahasiswa Lulus']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ $row['lulus'] }}
                             </a>
                         </td>
                         <td class="text-end">
-                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Belum Lulus']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
-                                {{ $total - $sudah_lulus + $sudah_daftar_sidang }}
+                            <a href="{{ route('information.recap',['generation'=>$row['angkatan'],'context'=>'Mahasiswa Belum Lulus']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ $row['belum_lulus'] }}
                             </a>
                         </td>
                         <td class="text-end">
-                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Belum Sempro']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
-                                {{ $belum_daftar_sempro->count() + $sudah_daftar_sempro }} |
-                                <span class="text-success">{{ $sudah_daftar_sempro }} reg</span>
+                            <a href="{{ route('information.recap',['generation'=>$row['angkatan'],'context'=>'Mahasiswa Belum Sempro']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ $row['belum_sempro'] }} |
+                                <span class="text-success">{{ $row['belum_sempro_reg'] }} reg</span>
                             </a>
                         </td>
                         <td class="text-end">
-                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Akan Semhas']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
-                                {{ $belum_daftar_semhas->count() + $sudah_daftar_semhas }} |
-                                <span class="text-success">{{ $sudah_daftar_semhas }} reg</span>
+                            <a href="{{ route('information.recap',['generation'=>$row['angkatan'],'context'=>'Mahasiswa Akan Semhas']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ $row['akan_semhas'] }} |
+                                <span class="text-success">{{ $row['akan_semhas_reg'] }} reg</span>
                             </a>
                         </td>
                         <td class="text-end">
-                            <a href="{{ route('information.recap',['generation'=>$angkatan,'context'=>'Mahasiswa Akan Sidang']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
-                                {{ $belum_daftar_sidang->count() + $sudah_daftar_sidang }} |
-                                <span class="text-success">{{ $sudah_daftar_sidang }} reg</span>
+                            <a href="{{ route('information.recap',['generation'=>$row['angkatan'],'context'=>'Mahasiswa Akan Sidang']) }}" rel="noopener noreferrer" class="text-primary" style="text-decoration: none">
+                                {{ $row['akan_sidang'] }} |
+                                <span class="text-success">{{ $row['akan_sidang_reg'] }} reg</span>
                             </a>
                         </td>
                         </tr>
