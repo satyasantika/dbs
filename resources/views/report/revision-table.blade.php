@@ -56,7 +56,7 @@
                 @forelse ($examscores as $key => $exam_score)
                 <tr>
                     <td style="border: 1px solid black;border-collapse:collapse;vertical-align:top;padding:5px;" class="text-center">{{ $key + 1 }}.</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;vertical-align:top;padding:5px;">{{ $exam_score->namadosen }}<br>
+                    <td style="border: 1px solid black;border-collapse:collapse;vertical-align:top;padding:5px;">{{ $exam_score->lecture->name ?? '-' }}<br>
                         NIDN {{ $exam_score->lecture->username }}<br>
                     </td>
                     <td style="border: 1px solid black;border-collapse:collapse;vertical-align:top;padding:5px;">

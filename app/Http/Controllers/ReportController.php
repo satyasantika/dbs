@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Str;
 use App\Models\ExamFormItem;
-use Illuminate\Http\Request;
-use App\Models\ViewExamScore;
+use App\Models\ExamScore;
 use App\Models\ExamRegistration;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 
@@ -92,14 +91,14 @@ class ReportController extends Controller
     }
 
     private function _examData($examregistration_id) {
-        return ViewExamScore::where('exam_registration_id',$examregistration_id)->orderBy('examiner_order')->get();
+        return ExamScore::where('exam_registration_id',$examregistration_id)->orderBy('examiner_order')->get();
     }
 
     private function _guideData($examregistration_id) {
-        return ViewExamScore::where('exam_registration_id',$examregistration_id)->whereIn('examiner_order',[4,5])->orderBy('examiner_order')->get();
+        return ExamScore::where('exam_registration_id',$examregistration_id)->whereIn('examiner_order',[4,5])->orderBy('examiner_order')->get();
     }
 
     private function _examinerData($examregistration_id) {
-        return ViewExamScore::where('exam_registration_id',$examregistration_id)->whereIn('examiner_order',[1,2,3])->orderBy('examiner_order')->get();
+        return ExamScore::where('exam_registration_id',$examregistration_id)->whereIn('examiner_order',[1,2,3])->orderBy('examiner_order')->get();
     }
 }

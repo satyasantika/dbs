@@ -50,15 +50,15 @@
                                             </form>
                                     </td>
                                     <td>
-                                        {{ $exam_registration->mahasiswa }}
+                                        {{ $exam_registration->student->name ?? '-' }}
                                     </td>
-                                    <td>{{ $exam_registration->ujian }}</td>
+                                    <td>{{ $exam_registration->examtype->name ?? '-' }}</td>
                                     <td>{{ $exam_registration->exam_date }} {{ $exam_registration->exam_time }}</td>
-                                    <td>{{ $exam_registration->penguji_4 }}{{ $exam_registration->penguji_4==$exam_registration->ketua ? '*' : '' }}</td>
-                                    <td>{{ $exam_registration->penguji_5 }}{{ $exam_registration->penguji_5==$exam_registration->ketua ? '*' : '' }}</td>
-                                    <td>{{ $exam_registration->penguji_1 }}{{ $exam_registration->penguji_1==$exam_registration->ketua ? '*' : '' }}</td>
-                                    <td>{{ $exam_registration->penguji_2 }}{{ $exam_registration->penguji_2==$exam_registration->ketua ? '*' : '' }}</td>
-                                    <td>{{ $exam_registration->penguji_3 }}{{ $exam_registration->penguji_3==$exam_registration->ketua ? '*' : '' }}</td>
+                                    <td>{{ $exam_registration->guide1->name ?? '-' }}{{ $exam_registration->guide1_id==$exam_registration->chief_id ? '*' : '' }}</td>
+                                    <td>{{ $exam_registration->guide2->name ?? '-' }}{{ $exam_registration->guide2_id==$exam_registration->chief_id ? '*' : '' }}</td>
+                                    <td>{{ $exam_registration->examiner1->name ?? '-' }}{{ $exam_registration->examiner1_id==$exam_registration->chief_id ? '*' : '' }}</td>
+                                    <td>{{ $exam_registration->examiner2->name ?? '-' }}{{ $exam_registration->examiner2_id==$exam_registration->chief_id ? '*' : '' }}</td>
+                                    <td>{{ $exam_registration->examiner3->name ?? '-' }}{{ $exam_registration->examiner3_id==$exam_registration->chief_id ? '*' : '' }}</td>
 
                                     {{-- <td><a href="{{ route('examregistrations.edit',$exam_registration) }}" class="badge bg-primary btn btn-sm">E</a></td> --}}
                                 </tr>

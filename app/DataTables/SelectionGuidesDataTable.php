@@ -2,14 +2,14 @@
 
 namespace App\DataTables;
 
-use App\Models\ViewSelectionGuide;
+use App\Models\SelectionGuide;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class SelectionGuidesDataTable extends DataTable
@@ -22,6 +22,27 @@ class SelectionGuidesDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('mahasiswa', function ($query, $keyword) {
+                $query->where('stu.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('group_id', function ($query, $keyword) {
+                $query->where('gg.group', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('pasangan', function ($query, $keyword) {
+                $query->where('selection_guides.pair_order', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('pembimbing', function ($query, $keyword) {
+                $query->where('selection_guides.guide_order', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('dosen', function ($query, $keyword) {
+                $query->where('lec.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('status', function ($query, $keyword) {
+                $query->whereRaw("CASE WHEN selection_guides.approved = 1 THEN 'disetujui' WHEN selection_guides.approved = 0 THEN 'ditolak' ELSE 'proses' END LIKE ?", ["%{$keyword}%"]);
+            })
+            ->filterColumn('keterangan', function ($query, $keyword) {
+                $query->where('selection_guides.information', 'like', "%{$keyword}%");
+            })
             ->addColumn('action', function($row){
                 $action = '';
                 $action .= ' <a href="'.route('selectionguides.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
@@ -36,9 +57,23 @@ class SelectionGuidesDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(ViewSelectionGuide $model): QueryBuilder
+    public function query(SelectionGuide $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()
+            ->select([
+                'selection_guides.*',
+                DB::raw('stu.name AS mahasiswa'),
+                DB::raw('gg.`group` AS group_id'),
+                DB::raw('selection_guides.pair_order AS pasangan'),
+                DB::raw('selection_guides.guide_order AS pembimbing'),
+                DB::raw('lec.name AS dosen'),
+                DB::raw('selection_guides.information AS keterangan'),
+                DB::raw("CASE WHEN selection_guides.approved = 1 THEN 'disetujui' WHEN selection_guides.approved = 0 THEN 'ditolak' ELSE 'proses' END AS status"),
+            ])
+            ->join('selection_stages AS ss', 'selection_guides.selection_stage_id', '=', 'ss.id')
+            ->join('users AS stu', 'ss.user_id', '=', 'stu.id')
+            ->leftJoin('guide_groups AS gg', 'selection_guides.guide_group_id', '=', 'gg.id')
+            ->leftJoin('users AS lec', 'selection_guides.user_id', '=', 'lec.id');
     }
 
     /**

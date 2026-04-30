@@ -1,7 +1,7 @@
 @extends('layouts.general')
 @push('title')
     @if ($examregistration->id)
-        Edit Ujian {{ $examregistration->student->name }}
+        Edit Ujian {{ $examregistration->student?->name }}
     @else
         Tambah Ujian {{ $student->name }}
     @endif
@@ -9,7 +9,7 @@
 @push('header')
     |
         @if ($examregistration->id)
-            Edit Ujian {{ $examregistration->student->name }}
+            Edit Ujian {{ $examregistration->student?->name }}
             <a href="{{ route('registrations.show.student',$examregistration->student->id) }}" class="btn btn-sm btn-primary float-end">kembali</a>
             @else
             Tambah Ujian {{ $student->name }}
@@ -23,7 +23,7 @@
         <form id="delete-form" action="{{ route('examregistrations.destroy',$examregistration->id) }}" method="POST">
             @csrf
             @method('DELETE')
-            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $examregistration->name }}?');">
+            <button type="submit" class="btn btn-outline-danger btn-sm float-end" onclick="return confirm('Yakin akan menghapus {{ $examregistration->student->name ?? '' }}?');">
                 {{ __('delete') }}
             </button>
         </form>
@@ -59,35 +59,41 @@
                                 <select id="exam_type_id" class="form-control @error('exam_type_id') is-invalid @enderror" name="exam_type_id" required>
                                     <option value="">-- Pilih Ujian --</option>
                                     @foreach ($exam_types as $exam_type)
-                                    <option value="{{ $exam_type->id }}" @selected($exam_type->id == $examregistration->exam_type_id)>{{ $exam_type->name }}</option>
+                                    <option value="{{ $exam_type->id }}" @selected($exam_type->id == old('exam_type_id', $examregistration->exam_type_id))>{{ $exam_type->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('exam_type_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- ujian ke- --}}
                         <div class="row mb-3">
                             <label for="registration_order" class="col-md-4 col-form-label text-md-end">Ujian Ke-</label>
                             <div class="col-md-2">
-                                <select id="registration_order" class="form-control @error('registration_order') is-invalid @enderror" name="registration_order" required >
+                                <select id="registration_order" class="form-control @error('registration_order') is-invalid @enderror" name="registration_order" required>
                                     <option value="">pilih ...</option>
-                                    @foreach ([1,2,3] as $registration_order)
-                                    <option value="{{ $registration_order }}" @selected($examregistration->registration_order == $registration_order)>{{ $registration_order }}</option>
+                                    @foreach ([1,2,3] as $order)
+                                    <option value="{{ $order }}" @selected(old('registration_order', $examregistration->registration_order) == $order)>{{ $order }}</option>
                                     @endforeach
                                 </select>
+                                @error('registration_order') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- Exam Date --}}
                         <div class="row mb-3">
                             <label for="exam_date" class="col-md-4 col-form-label text-md-end">Tanggal Ujian</label>
                             <div class="col-md-7">
-                                <input type="date" placeholder="exam_date" value="{{ $examregistration->exam_date ? $examregistration->exam_date->format('Y-m-d') : "" }}" name="exam_date" class="form-control" id="exam_date">
+                                <input type="date" name="exam_date" class="form-control @error('exam_date') is-invalid @enderror" id="exam_date"
+                                    value="{{ old('exam_date', $examregistration->exam_date?->format('Y-m-d')) }}">
+                                @error('exam_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- Exam Time --}}
                         <div class="row mb-3">
                             <label for="exam_time" class="col-md-4 col-form-label text-md-end">Pukul Ujian</label>
                             <div class="col-md-7">
-                                <input type="time" placeholder="exam_time" value="{{ $examregistration->exam_time }}" name="exam_time" class="form-control" id="exam_time">
+                                <input type="time" name="exam_time" class="form-control @error('exam_time') is-invalid @enderror" id="exam_time"
+                                    value="{{ old('exam_time', $examregistration->exam_time) }}">
+                                @error('exam_time') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- room --}}
@@ -96,39 +102,35 @@
                             <div class="col-md-7">
                                 <select id="room" class="form-control @error('room') is-invalid @enderror" name="room">
                                     <option value="">-- Pilih Ruang Ujian --</option>
-                                    @foreach ([1,2,3,4] as $room)
-                                    <option value="{{ $room }}" @selected($examregistration->room == $room)>Ruang Sidang {{ $room }}</option>
+                                    @foreach ([1,2,3,4] as $r)
+                                    <option value="{{ $r }}" @selected(old('room', $examregistration->room) == $r)>Ruang Sidang {{ $r }}</option>
                                     @endforeach
                                 </select>
+                                @error('room') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- judul penelitian --}}
                         <div class="row mb-3">
                             <label for="title" class="col-md-4 col-form-label text-md-end">Judul Penelitian</label>
                             <div class="col-md-7">
-                                <textarea name="title" rows="5" class="form-control" id="title" placeholder="">{{ $examregistration->title }}</textarea>
+                                <textarea name="title" rows="5" class="form-control @error('title') is-invalid @enderror" id="title">{{ old('title', $examregistration->title) }}</textarea>
+                                @error('title') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- ipk --}}
                         <div class="row mb-3">
                             <label for="ipk" class="col-md-4 col-form-label text-md-end">IPK</label>
                             <div class="col-md-2">
-                                <input
-                                    type="number"
-                                    value="{{ $examregistration->ipk }}"
-                                    name="ipk"
-                                    class="form-control"
-                                    id="ipk"
-                                    min="2.00"
-                                    max="4.00"
-                                    step="0.01">
+                                <input type="number" name="ipk" class="form-control @error('ipk') is-invalid @enderror" id="ipk"
+                                    value="{{ old('ipk', $examregistration->ipk) }}" min="2.00" max="4.00" step="0.01">
+                                @error('ipk') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- Link file ujian --}}
                         <div class="row mb-3">
                             <label for="exam_file" class="col-md-4 col-form-label text-md-end">Link File Ujian</label>
                             <div class="col-md-7">
-                                <textarea name="exam_file" rows="2" class="form-control" id="exam_file" placeholder="">{{ $examregistration->exam_file }}</textarea>
+                                <textarea name="exam_file" rows="2" class="form-control" id="exam_file">{{ old('exam_file', $examregistration->exam_file) }}</textarea>
                             </div>
                         </div>
                         @if ($examregistration->id)
@@ -159,9 +161,10 @@
                                 <select id="examiner1_id" class="form-control @error('examiner1_id') is-invalid @enderror" name="examiner1_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
-                                    <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->examiner1_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
+                                    <option value="{{ $lecture->id }}" @selected($lecture->id == old('examiner1_id', $examregistration->examiner1_id))>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('examiner1_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- penguji 2 --}}
@@ -171,9 +174,10 @@
                                 <select id="examiner2_id" class="form-control @error('examiner2_id') is-invalid @enderror" name="examiner2_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
-                                    <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->examiner2_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
+                                    <option value="{{ $lecture->id }}" @selected($lecture->id == old('examiner2_id', $examregistration->examiner2_id))>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('examiner2_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- penguji 3 --}}
@@ -183,9 +187,10 @@
                                 <select id="examiner3_id" class="form-control @error('examiner3_id') is-invalid @enderror" name="examiner3_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
-                                    <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->examiner3_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
+                                    <option value="{{ $lecture->id }}" @selected($lecture->id == old('examiner3_id', $examregistration->examiner3_id))>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('examiner3_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- penguji 4 --}}
@@ -195,9 +200,10 @@
                                 <select id="guide1_id" class="form-control @error('guide1_id') is-invalid @enderror" name="guide1_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
-                                    <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->guide1_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
+                                    <option value="{{ $lecture->id }}" @selected($lecture->id == old('guide1_id', $examregistration->guide1_id))>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('guide1_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- penguji 5 --}}
@@ -207,21 +213,23 @@
                                 <select id="guide2_id" class="form-control @error('guide2_id') is-invalid @enderror" name="guide2_id" required @disabled($exam_score_set)>
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($lectures as $lecture)
-                                    <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->guide2_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
+                                    <option value="{{ $lecture->id }}" @selected($lecture->id == old('guide2_id', $examregistration->guide2_id))>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('guide2_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                         {{-- ketua penguji --}}
                         <div class="row mb-3">
                             <label for="chief_id" class="col-md-4 col-form-label text-md-end">Ketua Penguji</label>
                             <div class="col-md-7">
-                                <select id="chief_id" class="form-control @error('chief_id') is-invalid @enderror" name="chief_id" >
+                                <select id="chief_id" class="form-control @error('chief_id') is-invalid @enderror" name="chief_id">
                                     <option value="">-- Pilih Dosen --</option>
                                     @foreach ($chiefs as $lecture)
-                                    <option value="{{ $lecture->id }}" @selected($lecture->id == $examregistration->chief_id)>{{ $lecture->initial }} - {{ $lecture->name }}</option>
+                                    <option value="{{ $lecture->id }}" @selected($lecture->id == old('chief_id', $examregistration->chief_id))>{{ $lecture->initial }} - {{ $lecture->name }}</option>
                                     @endforeach
                                 </select>
+                                @error('chief_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
                     </div>
@@ -240,7 +248,7 @@
                         <div class="row mb-3">
                             <label for="schedule_link" class="col-md-4 col-form-label text-md-end">Link Jadwal</label>
                             <div class="col-md-7">
-                                <textarea name="schedule_link" rows="3" class="form-control" id="schedule_link" placeholder="">{{ $examregistration->schedule_link }}</textarea>
+                                <textarea name="schedule_link" rows="3" class="form-control" id="schedule_link" placeholder="">{{ old('schedule_link', $examregistration->schedule_link) }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -259,7 +267,7 @@
                         <div class="row mb-3">
                             <label for="online_link" class="col-md-4 col-form-label text-md-end">Link Ujian</label>
                             <div class="col-md-7">
-                                <textarea name="online_link" rows="5" class="form-control" id="online_link" placeholder="">{{ $examregistration->online_link }}</textarea>
+                                <textarea name="online_link" rows="5" class="form-control" id="online_link" placeholder="">{{ old('online_link', $examregistration->online_link) }}</textarea>
                             </div>
                         </div>
                         {{-- online_user --}}
@@ -268,7 +276,7 @@
                             <div class="col-md-2">
                                 <input
                                     type="number"
-                                    value="{{ $examregistration->online_user }}"
+                                    value="{{ old('online_user', $examregistration->online_user) }}"
                                     name="online_user"
                                     class="form-control"
                                     id="online_user"
@@ -283,7 +291,7 @@
                             <div class="col-md-7">
                                 <input
                                     type="text"
-                                    value="{{ $examregistration->online_password }}"
+                                    value="{{ old('online_password', $examregistration->online_password) }}"
                                     name="online_password"
                                     class="form-control"
                                     id="online_password">

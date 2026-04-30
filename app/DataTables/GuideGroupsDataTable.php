@@ -2,14 +2,14 @@
 
 namespace App\DataTables;
 
-use App\Models\ViewGuideGroup;
+use App\Models\GuideGroup;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class GuideGroupsDataTable extends DataTable
@@ -22,6 +22,9 @@ class GuideGroupsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('dosen', function ($query, $keyword) {
+                $query->where('u.name', 'like', "%{$keyword}%");
+            })
             ->addColumn('action', function($row){
                 $action = ' ';
                 $action .= ' <a href="'.route('selectionguidegroups.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
@@ -36,9 +39,15 @@ class GuideGroupsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(ViewGuideGroup $model): QueryBuilder
+    public function query(GuideGroup $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()
+            ->select([
+                'guide_groups.*',
+                DB::raw('u.name AS dosen'),
+            ])
+            ->join('guide_allocations AS ga', 'guide_groups.guide_allocation_id', '=', 'ga.id')
+            ->join('users AS u', 'ga.user_id', '=', 'u.id');
     }
 
     /**

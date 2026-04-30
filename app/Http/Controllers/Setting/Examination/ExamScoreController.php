@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Setting\Examination;
 
 use App\Models\User;
 use App\Models\ExamScore;
-use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
-use App\Models\ViewExamScore;
 use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
 
@@ -22,11 +20,11 @@ class ExamScoreController extends Controller
 
     public function index(ExamRegistration $examregistration)
     {
-        $empty_scores = ViewExamScore::where([
+        $empty_scores = ExamScore::where([
             'exam_registration_id'=>$examregistration->id,
             'grade'=>NULL,
             ])->exists();
-        $exam_scores = ViewExamScore::where('exam_registration_id',$examregistration->id)->orderBy('examiner_order')->get();
+        $exam_scores = ExamScore::where('exam_registration_id',$examregistration->id)->orderBy('examiner_order')->get();
         return view('setting.examination.examscore',compact('exam_scores','examregistration','empty_scores'));
     }
 

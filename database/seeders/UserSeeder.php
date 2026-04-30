@@ -51,25 +51,25 @@ class UserSeeder extends Seeder
         }
         fclose($csvData);
 
-        User::create([
-            'username'  => 'dosen1',
-            'name'      => 'Dosen 01',
-            'email'     => 'dosen01@unsil.ac.id',
-            'password'  => bcrypt('1234'),
-        ])->assignRole('dosen');
-        User::create([
-            'username'  => 'dosen2',
-            'name'      => 'Dosen 02',
-            'email'     => 'dosen02@unsil.ac.id',
-            'password'  => bcrypt('1234'),
-        ])->assignRole('dosen');
+        // User::create([
+        //     'username'  => 'dosen1',
+        //     'name'      => 'Dosen 01',
+        //     'email'     => 'dosen01@unsil.ac.id',
+        //     'password'  => bcrypt('1234'),
+        // ])->assignRole('dosen');
+        // User::create([
+        //     'username'  => 'dosen2',
+        //     'name'      => 'Dosen 02',
+        //     'email'     => 'dosen02@unsil.ac.id',
+        //     'password'  => bcrypt('1234'),
+        // ])->assignRole('dosen');
 
-        User::create([
-            'username'  => 'mahasiswa',
-            'name'      => 'Mahasiswa 01',
-            'email'     => 'mahasiswa@student.unsil.ac.id',
-            'password'  => bcrypt('1234'),
-        ])->assignRole('mahasiswa');
+        // User::create([
+        //     'username'  => 'mahasiswa',
+        //     'name'      => 'Mahasiswa 01',
+        //     'email'     => 'mahasiswa@student.unsil.ac.id',
+        //     'password'  => bcrypt('1234'),
+        // ])->assignRole('mahasiswa');
 
         User::create([
             'username'  => 'dbs',

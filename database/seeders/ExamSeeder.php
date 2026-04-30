@@ -15,10 +15,14 @@ class ExamSeeder extends Seeder
     public function run(): void
     {
         // Tipe Ujian
-        $exam_types = ['Proposal', 'Hasil Penelitian','Skripsi'];
+        $exam_types = [
+            ['name'=>'Ujian Proposal','code'=>'sempro'],
+            ['name'=>'Ujian Hasil Penelitian','code'=>'semhas'],
+            ['name'=>'Ujian Skripsi','code'=>'skripsi']
+            ];
 
         foreach ($exam_types as $type_key => $type) {
-            ExamType::create(['name'=>'Ujian '.$type]);
+            ExamType::create($type);
             $form_items = ['Orisinalitas ','Tata tulis ','Kemampuan menjelaskan ','Penguasaan materi ','Bobot ilmiah '];
 
             foreach ($form_items as $item_key => $item) {

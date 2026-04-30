@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Examination;
 use App\Models\ExamScore;
 use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
-use App\Models\ViewExamScore;
 use App\Models\ExamRegistration;
 use App\DataTables\ScoringDataTable;
 use App\Http\Controllers\Controller;
@@ -23,7 +22,7 @@ class ScoreController extends Controller
 
     // public function index()
     // {
-    //     $exam_scores = ViewExamScore::where('user_id',auth()->id())->whereNull('grade')->orderBy('exam_date','desc')->get();
+    //     $exam_scores = ExamScore::where('user_id',auth()->id())->whereNull('grade')->orderBy('exam_date','desc')->get();
     //     return view('examination.scoring',compact('exam_scores'));
     // }
 
@@ -35,7 +34,12 @@ class ScoreController extends Controller
 
     public function archieves()
     {
-        $exam_dates = ViewExamScore::distinct('exam_date')->where('user_id',auth()->id())->whereNotNull('grade')->orderBy('exam_date','desc')->pluck('exam_date');
+        $exam_dates = ExamRegistration::join('exam_scores AS es', 'exam_registrations.id', '=', 'es.exam_registration_id')
+            ->where('es.user_id', auth()->id())
+            ->whereNotNull('es.grade')
+            ->orderBy('exam_registrations.exam_date', 'desc')
+            ->distinct()
+            ->pluck('exam_registrations.exam_date');
         return view('examination.scoring-archieves',compact('exam_dates'));
     }
 

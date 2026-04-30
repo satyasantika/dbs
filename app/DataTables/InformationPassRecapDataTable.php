@@ -2,13 +2,13 @@
 
 namespace App\DataTables;
 
-use App\Models\ViewGuideExaminer;
+use App\Models\GuideExaminer;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use App\Models\ViewExamRegistration;
+use App\Models\ExamRegistration;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
@@ -23,6 +23,18 @@ class InformationPassRecapDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('npm', function ($query, $keyword) {
+                $query->where('u.username', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('mahasiswa', function ($query, $keyword) {
+                $query->where('u.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_4', function ($query, $keyword) {
+                $query->where('g1.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_5', function ($query, $keyword) {
+                $query->where('g2.name', 'like', "%{$keyword}%");
+            })
             ->addColumn('masa_studi', function($row){
                 $angkatan = substr($row->npm,0,2);
                 $tahun_masuk = '20'.$angkatan.'-09-01';
@@ -41,34 +53,70 @@ class InformationPassRecapDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(ViewGuideExaminer $model): QueryBuilder
+    public function query(GuideExaminer $model): QueryBuilder
     {
-        $daftar_sidang = ViewExamRegistration::where('year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',3)->pluck('user_id');
-        $daftar_sempro = ViewExamRegistration::where('year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',1)->pluck('user_id');
-        $daftar_semhas = ViewExamRegistration::where('year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',2)->pluck('user_id');
-        // dd($daftar_sidang);
+        $baseQuery = $this->baseGuideExaminerQuery($model);
+        $daftar_sidang = ExamRegistration::join('guide_examiners as ge', 'exam_registrations.user_id', '=', 'ge.user_id')->where('ge.year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',3)->pluck('exam_registrations.user_id');
+        $daftar_sempro = ExamRegistration::join('guide_examiners as ge', 'exam_registrations.user_id', '=', 'ge.user_id')->where('ge.year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',1)->pluck('exam_registrations.user_id');
+        $daftar_semhas = ExamRegistration::join('guide_examiners as ge', 'exam_registrations.user_id', '=', 'ge.user_id')->where('ge.year_generation',$this->generation)->where('pass_exam',0)->where('exam_type_id',2)->pluck('exam_registrations.user_id');
+
         if ($this->context == "Total Mahasiswa") {
-            return $model->where('year_generation',$this->generation)->newQuery();
+            return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation);
         }
         if ($this->context == "Mahasiswa Lulus") {
-            return $model->where('year_generation',$this->generation)->whereNotNull('thesis_date')->whereNotIn('user_id',$daftar_sidang)->newQuery();
+            return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation)->whereNotNull('guide_examiners.thesis_date')->whereNotIn('guide_examiners.user_id', $daftar_sidang);
         }
         if ($this->context == "Mahasiswa Belum Lulus") {
-            $reg = $model->whereIn('user_id',$daftar_sidang)->newQuery();
-            return $model->where('year_generation',$this->generation)->whereNull('thesis_date')->union($reg)->newQuery();
+            $reg = (clone $baseQuery)->whereIn('guide_examiners.user_id', $daftar_sidang);
+            return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation)->whereNull('guide_examiners.thesis_date')->union($reg);
         }
         if ($this->context == "Mahasiswa Belum Sempro") {
-            $reg = $model->whereIn('user_id',$daftar_sempro)->newQuery();
-            return $model->where('year_generation',$this->generation)->whereNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->union($reg)->newQuery();
+            $reg = (clone $baseQuery)->whereIn('guide_examiners.user_id', $daftar_sempro);
+            return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation)->whereNull('guide_examiners.proposal_date')->whereNull('guide_examiners.seminar_date')->whereNull('guide_examiners.thesis_date')->union($reg);
         }
         if ($this->context == "Mahasiswa Akan Semhas") {
-            $reg = $model->whereIn('user_id',$daftar_semhas)->newQuery();
-            return $model->where('year_generation',$this->generation)->whereNotNull('proposal_date')->whereNull('seminar_date')->whereNull('thesis_date')->whereNotIn('user_id',$daftar_sempro)->union($reg)->newQuery();
+            $reg = (clone $baseQuery)->whereIn('guide_examiners.user_id', $daftar_semhas);
+            return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation)->whereNotNull('guide_examiners.proposal_date')->whereNull('guide_examiners.seminar_date')->whereNull('guide_examiners.thesis_date')->whereNotIn('guide_examiners.user_id', $daftar_sempro)->union($reg);
         }
         if ($this->context == "Mahasiswa Akan Sidang") {
-            $reg = $model->whereIn('user_id',$daftar_sidang)->newQuery();
-            return $model->where('year_generation',$this->generation)->whereNotNull('proposal_date')->whereNotNull('seminar_date')->whereNull('thesis_date')->whereNotIn('user_id',$daftar_semhas)->union($reg)->newQuery();
+            $reg = (clone $baseQuery)->whereIn('guide_examiners.user_id', $daftar_sidang);
+            return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation)->whereNotNull('guide_examiners.proposal_date')->whereNotNull('guide_examiners.seminar_date')->whereNull('guide_examiners.thesis_date')->whereNotIn('guide_examiners.user_id', $daftar_semhas)->union($reg);
         }
+
+        return (clone $baseQuery)->where('guide_examiners.year_generation', $this->generation);
+    }
+
+    private function baseGuideExaminerQuery(GuideExaminer $model): QueryBuilder
+    {
+        return $model->newQuery()
+            ->select([
+                'guide_examiners.id',
+                'guide_examiners.user_id',
+                'guide_examiners.year_generation',
+                'guide_examiners.examiner1_id',
+                'guide_examiners.examiner2_id',
+                'guide_examiners.examiner3_id',
+                'guide_examiners.guide1_id',
+                'guide_examiners.guide2_id',
+                'guide_examiners.proposal_date',
+                'guide_examiners.seminar_date',
+                'guide_examiners.thesis_date',
+                DB::raw('u.username AS npm'),
+                DB::raw('u.name AS mahasiswa'),
+                DB::raw("COALESCE(e1.name, '') AS penguji_1"),
+                DB::raw("COALESCE(e2.name, '') AS penguji_2"),
+                DB::raw("COALESCE(e3.name, '') AS penguji_3"),
+                DB::raw("COALESCE(g1.name, '') AS penguji_4"),
+                DB::raw("COALESCE(g2.name, '') AS penguji_5"),
+                DB::raw('e1.name AS ketua'),
+                DB::raw('NULL AS doc'),
+            ])
+            ->join('users AS u', 'guide_examiners.user_id', '=', 'u.id')
+            ->leftJoin('users AS e1', 'guide_examiners.examiner1_id', '=', 'e1.id')
+            ->leftJoin('users AS e2', 'guide_examiners.examiner2_id', '=', 'e2.id')
+            ->leftJoin('users AS e3', 'guide_examiners.examiner3_id', '=', 'e3.id')
+            ->leftJoin('users AS g1', 'guide_examiners.guide1_id', '=', 'g1.id')
+            ->leftJoin('users AS g2', 'guide_examiners.guide2_id', '=', 'g2.id');
     }
 
     /**

@@ -39,14 +39,14 @@
                                         {{-- <a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-primary">nilai</a> --}}
                                         {{-- @endif --}}
                                     <td>
-                                        {{ $exam_score->mahasiswa }}
-                                        @if ($exam_score->dosen == $exam_score->ketua)
+                                        {{ $exam_score->registration->student->name ?? '-' }}
+                                        @if ($exam_score->user_id == $exam_score->registration->chief_id)
                                         <br>
                                         <a href="{{ route('chief.show',$exam_score->exam_registration_id) }}" class="btn btn-outline-primary btn-sm float-end">>> Halaman ketua penguji</a>
                                         @endif
                                     </td>
-                                    <td>{{ $exam_score->ujian }}</td>
-                                    <td>{{ $exam_score->exam_date }}</td>
+                                    <td>{{ $exam_score->registration->examtype->name ?? '-' }}</td>
+                                    <td>{{ $exam_score->registration->exam_date ?? '-' }}</td>
                                     <td class="text-center">{{ $exam_score->grade }}</td>
                                     <td class="text-center">{{ $exam_score->letter }}</td>
                                     <td class="text-center">{{ $exam_score->revision ? 'ya' : 'tidak' }}</td>

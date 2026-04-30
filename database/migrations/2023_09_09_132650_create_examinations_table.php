@@ -41,20 +41,24 @@ return new class extends Migration
             $table->bigInteger('examiner3_id')->nullable()->unsigned();
             $table->bigInteger('guide1_id')->nullable()->unsigned();
             $table->bigInteger('guide2_id')->nullable()->unsigned();
-            $table->bigInteger('chief')->nullable()->unsigned(); // ketua penguji?
+            $table->bigInteger('chief_id')->nullable()->unsigned(); // ketua penguji?
             $table->date('exam_date')->nullable();
             $table->time('exam_time')->nullable();
             $table->text('title')->nullable();
             $table->double('ipk')->nullable();
             $table->string('room')->nullable();
+            $table->text('exam_file')->nullable();
             $table->string('online_link')->nullable();
             $table->string('online_user')->nullable();
             $table->string('online_password')->nullable();
             $table->string('schedule_link')->nullable();
+            $table->double('grade')->nullable();
+            $table->string('letter')->nullable();
             $table->boolean('pass_exam')->default(0);
+            $table->dateTime('sent_at')->nullable(); // Add this line
             $table->timestamps();
         });
-        
+
         // DOSEN
         Schema::create('exam_scores', function (Blueprint $table) {
             $table->id();
@@ -66,6 +70,8 @@ return new class extends Migration
             $table->integer('score03')->nullable();
             $table->integer('score04')->nullable();
             $table->integer('score05')->nullable();
+            $table->double('grade')->nullable();
+            $table->string('letter')->nullable();
             $table->boolean('revision')->nullable(); // perlu revisi?
             $table->text('revision_note')->nullable();
             $table->boolean('pass_approved')->nullable(); // disetujui or layak or lulus?

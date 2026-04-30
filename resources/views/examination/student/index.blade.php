@@ -31,7 +31,7 @@
                                 <tr>
                                     <td>
                                         <a href="{{ route('exam.student.get-revision',$examination->id) }}" class="btn btn-sm btn-primary">rincian</a>
-                                    <td>{{ $examination->ujian }}</td>
+                                    <td>{{ $examination->examtype->name ?? '-' }}</td>
                                     <td>{{ $examination->exam_date }}</td>
                                     <td>
                                         @if ($examination->pass_exam)

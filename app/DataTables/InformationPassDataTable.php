@@ -2,14 +2,14 @@
 
 namespace App\DataTables;
 
-use App\Models\ViewGuideExaminer;
+use App\Models\GuideExaminer;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class InformationPassDataTable extends DataTable
@@ -22,6 +22,12 @@ class InformationPassDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('npm', function ($query, $keyword) {
+                $query->where('u.username', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('mahasiswa', function ($query, $keyword) {
+                $query->where('u.name', 'like', "%{$keyword}%");
+            })
             ->addColumn('action', function($row){
                 $action = ' ';
                 $action .= ' <a href="'.$row->doc.'" target="_blank" class="btn btn-outline-primary btn-sm action">Bukti</a>';
@@ -43,15 +49,45 @@ class InformationPassDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(ViewGuideExaminer $model): QueryBuilder
+    public function query(GuideExaminer $model): QueryBuilder
     {
-        return $model->whereRaw('(guide1_id='.auth()->id().
-                            ' OR guide2_id='.auth()->id().
-                            ' OR examiner1_id='.auth()->id().
-                            ' OR examiner2_id='.auth()->id().
-                            ' OR examiner3_id='.auth()->id().
-                            ') AND thesis_date IS NOT NULL')
-                    ->newQuery();
+        return $model->newQuery()
+            ->select([
+                'guide_examiners.id',
+                'guide_examiners.user_id',
+                'guide_examiners.year_generation',
+                'guide_examiners.examiner1_id',
+                'guide_examiners.examiner2_id',
+                'guide_examiners.examiner3_id',
+                'guide_examiners.guide1_id',
+                'guide_examiners.guide2_id',
+                'guide_examiners.proposal_date',
+                'guide_examiners.seminar_date',
+                'guide_examiners.thesis_date',
+                DB::raw('u.username AS npm'),
+                DB::raw('u.name AS mahasiswa'),
+                DB::raw("COALESCE(e1.name, '') AS penguji_1"),
+                DB::raw("COALESCE(e2.name, '') AS penguji_2"),
+                DB::raw("COALESCE(e3.name, '') AS penguji_3"),
+                DB::raw("COALESCE(g1.name, '') AS penguji_4"),
+                DB::raw("COALESCE(g2.name, '') AS penguji_5"),
+                DB::raw('e1.name AS ketua'),
+                DB::raw('NULL AS doc'),
+            ])
+            ->join('users AS u', 'guide_examiners.user_id', '=', 'u.id')
+            ->leftJoin('users AS e1', 'guide_examiners.examiner1_id', '=', 'e1.id')
+            ->leftJoin('users AS e2', 'guide_examiners.examiner2_id', '=', 'e2.id')
+            ->leftJoin('users AS e3', 'guide_examiners.examiner3_id', '=', 'e3.id')
+            ->leftJoin('users AS g1', 'guide_examiners.guide1_id', '=', 'g1.id')
+            ->leftJoin('users AS g2', 'guide_examiners.guide2_id', '=', 'g2.id')
+            ->where(function ($q) {
+                $q->where('guide_examiners.guide1_id', auth()->id())
+                  ->orWhere('guide_examiners.guide2_id', auth()->id())
+                  ->orWhere('guide_examiners.examiner1_id', auth()->id())
+                  ->orWhere('guide_examiners.examiner2_id', auth()->id())
+                  ->orWhere('guide_examiners.examiner3_id', auth()->id());
+            })
+            ->whereNotNull('guide_examiners.thesis_date');
     }
 
     /**

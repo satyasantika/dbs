@@ -21,7 +21,7 @@ class GuideExaminerController extends Controller
     public function index(GuideExaminersDataTable $dataTable)
     {
         $title = 'Data Ujian';
-        return $dataTable->render('layouts.setting',compact('title'));
+        return $dataTable->render('layouts.setting', compact('title'));
     }
 
     public function create()
@@ -29,57 +29,73 @@ class GuideExaminerController extends Controller
         $guideexaminer = new GuideExaminer();
         return view('setting.examination.guideexaminer-form', array_merge(
             $this->_dataSelection(),
-            [
-                'guideexaminer'=> $guideexaminer,
-            ],
+            ['guideexaminer' => $guideexaminer],
         ));
     }
 
     public function store(Request $request)
     {
-        $name = strtoupper($request->name);
-        GuideExaminer::create($request->all());
-        return to_route('guideexaminers.index')->with('success','Penguji '.$name.' telah ditambahkan');
+        $validated = $request->validate([
+            'user_id'         => 'required|integer|exists:users,id',
+            'year_generation' => 'required|integer',
+            'examiner1_id'    => 'required|integer|exists:users,id',
+            'examiner2_id'    => 'required|integer|exists:users,id',
+            'examiner3_id'    => 'required|integer|exists:users,id',
+            'guide1_id'       => 'required|integer|exists:users,id',
+            'guide2_id'       => 'required|integer|exists:users,id',
+            'proposal_date'   => 'nullable|date',
+            'seminar_date'    => 'nullable|date',
+            'thesis_date'     => 'nullable|date',
+        ]);
+
+        $guideexaminer = GuideExaminer::create($validated);
+        $guideexaminer->load('student');
+        $name = strtoupper($guideexaminer->student->name ?? '');
+
+        return to_route('guideexaminers.index')->with('success', 'Data ' . $name . ' telah ditambahkan');
     }
 
     public function edit(GuideExaminer $guideexaminer)
     {
-        $chiefs = User::whereIn('id',[
-                        $guideexaminer->examiner1_id,
-                        $guideexaminer->examiner2_id,
-                        $guideexaminer->examiner3_id,
-                        ])->role('dosen')->select('initial','name','id')->get()->sort();
         return view('setting.examination.guideexaminer-form', array_merge(
             $this->_dataSelection(),
-            [
-                'guideexaminer'=> $guideexaminer,
-                'chiefs'=> $chiefs,
-            ],
+            ['guideexaminer' => $guideexaminer],
         ));
     }
 
     public function update(Request $request, GuideExaminer $guideexaminer)
     {
-        $name = strtoupper($guideexaminer->name);
-        $data = $request->all();
-        $guideexaminer->fill($data)->save();
+        $validated = $request->validate([
+            'examiner1_id'  => 'required|integer|exists:users,id',
+            'examiner2_id'  => 'required|integer|exists:users,id',
+            'examiner3_id'  => 'required|integer|exists:users,id',
+            'guide1_id'     => 'required|integer|exists:users,id',
+            'guide2_id'     => 'required|integer|exists:users,id',
+            'proposal_date' => 'nullable|date',
+            'seminar_date'  => 'nullable|date',
+            'thesis_date'   => 'nullable|date',
+        ]);
 
-        return to_route('guideexaminers.index')->with('success','Penguji '.$name.' telah diperbarui');
+        $guideexaminer->update($validated);
+        $name = strtoupper($guideexaminer->student->name ?? '');
+
+        return to_route('guideexaminers.index')->with('success', 'Data ' . $name . ' telah diperbarui');
     }
 
     public function destroy(GuideExaminer $guideexaminer)
     {
-        $name = strtoupper($guideexaminer->name);
+        $name = strtoupper($guideexaminer->student->name ?? '');
         $guideexaminer->delete();
-        return to_route('guideexaminers.index')->with('warning','Penguji '.$name.' telah dihapus');
+
+        return to_route('guideexaminers.index')->with('warning', 'Data ' . $name . ' telah dihapus');
     }
 
     private function _dataSelection()
     {
         $available_students = GuideExaminer::pluck('user_id');
         return [
-            'students' =>  User::role(['mahasiswa'])->select('name','id')->whereNotIn('id',$available_students)->get()->sort(),
-            'lectures' =>  User::role('dosen')->select('initial','name','id')->get()->sort(),
+            'students' => User::role(['mahasiswa'])->select('name', 'id')->whereNotIn('id', $available_students)->get()->sort(),
+            'lectures' => User::role('dosen')->select('initial', 'name', 'id')->get()->sort(),
         ];
     }
 }

@@ -2,14 +2,14 @@
 
 namespace App\DataTables;
 
-use App\Models\ViewSelectionStage;
+use App\Models\SelectionStage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class SelectionStagesDataTable extends DataTable
@@ -22,6 +22,27 @@ class SelectionStagesDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('tahap', function ($query, $keyword) {
+                $query->where('selection_stages.stage_order', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('npm', function ($query, $keyword) {
+                $query->where('stu.username', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('mahasiswa', function ($query, $keyword) {
+                $query->where('stu.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('pembimbing_1', function ($query, $keyword) {
+                $query->where('g1.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('pembimbing_2', function ($query, $keyword) {
+                $query->where('g2.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('grup1_id', function ($query, $keyword) {
+                $query->whereRaw('(SELECT sg.guide_group_id FROM selection_guides sg WHERE sg.selection_stage_id = selection_stages.id AND sg.guide_order = 1 ORDER BY sg.id DESC LIMIT 1) LIKE ?', ["%{$keyword}%"]);
+            })
+            ->filterColumn('grup2_id', function ($query, $keyword) {
+                $query->whereRaw('(SELECT sg.guide_group_id FROM selection_guides sg WHERE sg.selection_stage_id = selection_stages.id AND sg.guide_order = 2 ORDER BY sg.id DESC LIMIT 1) LIKE ?', ["%{$keyword}%"]);
+            })
             ->addColumn('action', function($row){
                 $action = '';
                 $action .= ' <a href="'.route('selectionstages.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
@@ -36,9 +57,22 @@ class SelectionStagesDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(ViewSelectionStage $model): QueryBuilder
+    public function query(SelectionStage $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()
+            ->select([
+                'selection_stages.*',
+                DB::raw('selection_stages.stage_order AS tahap'),
+                DB::raw('stu.username AS npm'),
+                DB::raw('stu.name AS mahasiswa'),
+                DB::raw("COALESCE(g1.name, '') AS pembimbing_1"),
+                DB::raw("COALESCE(g2.name, '') AS pembimbing_2"),
+                DB::raw('(SELECT sg.guide_group_id FROM selection_guides sg WHERE sg.selection_stage_id = selection_stages.id AND sg.guide_order = 1 ORDER BY sg.id DESC LIMIT 1) AS grup1_id'),
+                DB::raw('(SELECT sg.guide_group_id FROM selection_guides sg WHERE sg.selection_stage_id = selection_stages.id AND sg.guide_order = 2 ORDER BY sg.id DESC LIMIT 1) AS grup2_id'),
+            ])
+            ->join('users AS stu', 'selection_stages.user_id', '=', 'stu.id')
+            ->leftJoin('users AS g1', 'selection_stages.guide1_id', '=', 'g1.id')
+            ->leftJoin('users AS g2', 'selection_stages.guide2_id', '=', 'g2.id');
     }
 
     /**

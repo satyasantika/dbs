@@ -40,18 +40,18 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                @forelse (App\Models\ViewExamScore::where('user_id',auth()->id())->where('exam_date',$date)->whereNotNull('grade')->orderBy('exam_date','desc')->get(); as $exam_score)
+                                                @forelse (App\Models\ExamScore::with(['registration.student','registration.examtype','lecture'])->where('user_id',auth()->id())->whereNotNull('grade')->whereHas('registration', function ($q) use ($date) { $q->whereDate('exam_date', $date); })->orderBy('created_at','desc')->get(); as $exam_score)
                                                 <tr>
                                                     <td>
                                                         <a href="{{ route('scoring.edit',$exam_score->id) }}" class="btn btn-sm btn-success">nilai</a>
                                                     </td>
                                                     <td>
-                                                        {{ $exam_score->mahasiswa }}
-                                                        @if ($exam_score->dosen == $exam_score->ketua)
+                                                        {{ $exam_score->registration->student->name ?? '-' }}
+                                                        @if ($exam_score->user_id == $exam_score->registration->chief_id)
                                                         <br>
                                                         <a href="{{ route('chief.show',$exam_score->exam_registration_id) }}" class="btn btn-outline-primary btn-sm float-end">>> Halaman ketua penguji</a>
                                                         @endif
-                                                        <br><span class="badge bg-primary">{{ $exam_score->ujian }}</span>
+                                                        <br><span class="badge bg-primary">{{ $exam_score->registration->examtype->name ?? '-' }}</span>
                                                     </td>
                                                     <td class="text-center">{{ $exam_score->grade }}</td>
                                                     <td class="text-center">{{ $exam_score->letter }}</td>

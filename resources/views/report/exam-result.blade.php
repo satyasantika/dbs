@@ -68,7 +68,7 @@
                 @forelse ($examscores as $key => $exam_score)
                 <tr style="vertical-align: top">
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $key + 1 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $exam_score->namadosen }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $exam_score->lecture->name ?? '-' }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score1 }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score2 }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score3 }}</td>

@@ -30,15 +30,15 @@ Histori Ujian {{ $student->name }}
                         </thead>
                         <tbody>
                             @forelse ($examregistrations as $examregistration)
-                                <tr class="table-{{ $examregistration->dilaporkan ? 'success' : '' }}">
+                                <tr class="table-{{ $examregistration->pass_exam ? 'success' : '' }}">
                                     <td><a href="{{ route('examregistrations.edit',$examregistration->id) }}" class="btn btn-sm btn-primary">view</a></td>
-                                    <td>{{ $examregistration->exam_date }}</td>
-                                    <td>{{ $examregistration->kode_ujian }}</td>
-                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner1_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_1 }}</td>
-                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner2_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_2 }}</td>
-                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner3_id ? 'bg-warning' : '' }}">{{ $examregistration->penguji_3 }}</td>
-                                    <td class="bg-info">{{ $examregistration->penguji_4 }}</td>
-                                    <td class="bg-info">{{ $examregistration->penguji_5 }}</td>
+                                    <td>{{ \Carbon\Carbon::parse($examregistration->exam_date)->isoFormat('Y-MM-DD') }} {{ \Carbon\Carbon::parse($examregistration->exam_time)->isoFormat('HH:mm') }}</td>
+                                    <td>{{ $examregistration->examtype->code ?? '-' }}</td>
+                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner1_id ? 'bg-warning' : '' }}">{{ $examregistration->examiner1->name ?? '-' }}</td>
+                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner2_id ? 'bg-warning' : '' }}">{{ $examregistration->examiner2->name ?? '-' }}</td>
+                                    <td class="{{ $examregistration->chief_id==$examregistration->examiner3_id ? 'bg-warning' : '' }}">{{ $examregistration->examiner3->name ?? '-' }}</td>
+                                    <td class="bg-info">{{ $examregistration->guide1->name ?? '-' }}</td>
+                                    <td class="bg-info">{{ $examregistration->guide2->name ?? '-' }}</td>
                                     <td></td>
                                 </tr>
                             @empty

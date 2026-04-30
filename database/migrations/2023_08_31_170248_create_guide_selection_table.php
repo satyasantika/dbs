@@ -49,10 +49,11 @@ return new class extends Migration
             $table->bigInteger('examiner3_id')->nullable()->unsigned();
             $table->bigInteger('guide1_id')->nullable()->unsigned();
             $table->bigInteger('guide2_id')->nullable()->unsigned();
+            $table->bigInteger('chief_id')->nullable()->unsigned();
             $table->date('proposal_date')->nullable();
             $table->date('seminar_date')->nullable();
             $table->date('thesis_date')->nullable();
-            // $table->timestamps();
+            $table->text('doc')->nullable();
         });
 
         // MAHASISWA > DOSEN

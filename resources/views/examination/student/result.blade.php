@@ -6,7 +6,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    Hasil Ujian @if(!is_null($examination)) {{ $examination->mahasiswa }} @endif
+                    Hasil Ujian @if(!is_null($examination)) {{ $examination->student->name }} @endif
                     <a href="{{ route('exam.result') }}" class="btn btn-primary btn-sm float-end">kembali</a>
                 </div>
 
@@ -24,7 +24,7 @@
                             <tbody>
                                 @if(!is_null($examination))
                                 <tr>
-                                    <td>{{ $examination->ujian }}</td>
+                                    <td>{{ $examination->examtype->name ?? '-' }}</td>
                                     <td>{{ $examination->exam_date }}</td>
                                     <td>
                                         @if ($belum_menilai)

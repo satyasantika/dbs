@@ -29,7 +29,7 @@
                                 @forelse ($exam_scores as $key => $exam_score)
                                 <tr>
                                     <td>{{ $key + 1 }}</td>
-                                    <td>{{ $exam_score->namadosen }}</td>
+                                    <td>{{ $exam_score->lecture->name ?? '-' }}</td>
                                     <td>
                                         @if ($exam_score->revision)
                                             {{ !is_null($exam_score->revision_note) ? $exam_score->revision_note : 'belum ditulis' }}

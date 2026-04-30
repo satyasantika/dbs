@@ -3,13 +3,9 @@
 namespace App\Http\Controllers\Examination;
 
 use App\Models\ExamScore;
-use Illuminate\Http\Request;
-use App\Models\ViewExamScore;
 use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
-use App\Models\ViewExamRegistration;
 use Illuminate\Support\Facades\Auth;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ChiefController extends Controller
 {
@@ -23,17 +19,17 @@ class ChiefController extends Controller
 
     public function index()
     {
-        $examinations = ViewExamRegistration::where('chief',auth()->id())->get();
+        $examinations = ExamRegistration::where('exam_registrations.chief', auth()->id())->get();
         return view('examination.chief',compact('examinations'));
     }
 
-    public function show(ViewExamRegistration $chief)
+    public function show(ExamRegistration $chief)
     {
         if ( $chief->chief_id != Auth::id() ) {
             return to_route('scoring.index');
         }
 
-        $examinations = ViewExamScore::where('exam_registration_id',$chief->id)->get();
+        $examinations = ExamScore::where('exam_registration_id',$chief->id)->get();
         return view('examination.chief',compact('examinations','chief'));
     }
 

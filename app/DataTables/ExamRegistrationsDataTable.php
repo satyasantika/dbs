@@ -3,13 +3,12 @@
 namespace App\DataTables;
 
 use Carbon\Carbon;
-use App\Models\ViewExamScore;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use App\Models\ViewExamRegistration;
+use App\Models\ExamRegistration;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
@@ -24,6 +23,27 @@ class ExamRegistrationsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('kode_ujian', function ($query, $keyword) {
+                $query->where('et.code', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('mahasiswa', function ($query, $keyword) {
+                $query->where('u.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_1', function ($query, $keyword) {
+                $query->where('e1.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_2', function ($query, $keyword) {
+                $query->where('e2.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_3', function ($query, $keyword) {
+                $query->where('e3.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_4', function ($query, $keyword) {
+                $query->where('g1.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('penguji_5', function ($query, $keyword) {
+                $query->where('g2.name', 'like', "%{$keyword}%");
+            })
             ->addColumn('action', function($row){
                 $action = ' ';
                 $action .= ' <a href="'.route('examregistrations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
@@ -71,8 +91,8 @@ class ExamRegistrationsDataTable extends DataTable
                 $sudah = '<span class="text-success"><i class="bi bi-check-circle"></i> '.$row->penguji_5.$ketua.'</span>';
                 return is_null($row->grade_5) ? $belum : $sudah;
             })
-            ->editColumn('updated_at', function($row) {
-                return $row->updated_at->format('Y-m-d H:i:s');
+            ->editColumn('exam_date', function($row) {
+                return is_null($row->exam_date)? '': \Carbon\Carbon::parse($row->exam_date)->isoFormat('Y-MM-DD');
             })
             ->rawColumns(['action', 'kode_ujian', 'penguji_1', 'penguji_2', 'penguji_3', 'penguji_4', 'penguji_5'])
             ->setRowId('id');
@@ -81,9 +101,50 @@ class ExamRegistrationsDataTable extends DataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(ViewExamRegistration $model): QueryBuilder
+    public function query(ExamRegistration $model): QueryBuilder
     {
-        return $model->where('exam_date','like', $this->user_id.'%')->newQuery();
+        return $model->newQuery()
+            ->select([
+                'exam_registrations.id',
+                'exam_registrations.exam_type_id',
+                'exam_registrations.registration_order',
+                'exam_registrations.user_id',
+                'exam_registrations.examiner1_id',
+                'exam_registrations.examiner2_id',
+                'exam_registrations.examiner3_id',
+                'exam_registrations.guide1_id',
+                'exam_registrations.guide2_id',
+                'exam_registrations.chief_id',
+                'exam_registrations.exam_date',
+                'exam_registrations.exam_time',
+                'exam_registrations.title',
+                'exam_registrations.ipk',
+                'exam_registrations.room',
+                'exam_registrations.pass_exam',
+                'exam_registrations.updated_at',
+                DB::raw('u.name AS mahasiswa'),
+                DB::raw('et.code AS kode_ujian'),
+                DB::raw("COALESCE(e1.name, '') AS penguji_1"),
+                DB::raw("COALESCE(e2.name, '') AS penguji_2"),
+                DB::raw("COALESCE(e3.name, '') AS penguji_3"),
+                DB::raw("COALESCE(g1.name, '') AS penguji_4"),
+                DB::raw("COALESCE(g2.name, '') AS penguji_5"),
+                DB::raw('ch.name AS ketua'),
+                DB::raw('(SELECT id FROM exam_scores WHERE exam_registration_id = exam_registrations.id AND examiner_order = 1 LIMIT 1) AS grade_1'),
+                DB::raw('(SELECT id FROM exam_scores WHERE exam_registration_id = exam_registrations.id AND examiner_order = 2 LIMIT 1) AS grade_2'),
+                DB::raw('(SELECT id FROM exam_scores WHERE exam_registration_id = exam_registrations.id AND examiner_order = 3 LIMIT 1) AS grade_3'),
+                DB::raw('(SELECT id FROM exam_scores WHERE exam_registration_id = exam_registrations.id AND examiner_order = 4 LIMIT 1) AS grade_4'),
+                DB::raw('(SELECT id FROM exam_scores WHERE exam_registration_id = exam_registrations.id AND examiner_order = 5 LIMIT 1) AS grade_5'),
+            ])
+            ->join('users AS u', 'exam_registrations.user_id', '=', 'u.id')
+            ->join('exam_types AS et', 'exam_registrations.exam_type_id', '=', 'et.id')
+            ->leftJoin('users AS e1', 'exam_registrations.examiner1_id', '=', 'e1.id')
+            ->leftJoin('users AS e2', 'exam_registrations.examiner2_id', '=', 'e2.id')
+            ->leftJoin('users AS e3', 'exam_registrations.examiner3_id', '=', 'e3.id')
+            ->leftJoin('users AS g1', 'exam_registrations.guide1_id', '=', 'g1.id')
+            ->leftJoin('users AS g2', 'exam_registrations.guide2_id', '=', 'g2.id')
+            ->leftJoin('users AS ch', 'exam_registrations.chief_id', '=', 'ch.id')
+            ->where('exam_registrations.exam_date', 'like', $this->user_id . '%');
     }
 
     /**

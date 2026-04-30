@@ -59,7 +59,7 @@
                 @foreach ($guidescores as $key => $guide_score)
                 <tr style="vertical-align: top">
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $key + 1 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $guide_score->namadosen }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $guide_score->lecture->name ?? '-' }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $key==0 ? 'A = ' : 'B = ' }}{{ $guide_score->grade }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:10px;line-height:1.8"></td>
                 </tr>
@@ -70,7 +70,7 @@
                 @foreach ($examinerscores as $key => $examiner_score)
                 <tr style="vertical-align: top">
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $key + 1 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $examiner_score->namadosen }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $examiner_score->lecture->name ?? '-' }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">
                         @if($key==0)C = @elseif($key==1)D = @else E = @endif{{ $examiner_score->grade }}
                     </td>

@@ -54,7 +54,7 @@
                 <tr>
                     <td style="width: 70px">Penguji {{ $key + 1 }} &nbsp;</td>
                     <td>:</td>
-                    <td style="width: 300px">{{ $exam_score->namadosen }}</td>
+                    <td style="width: 300px">{{ $exam_score->lecture->name ?? '-' }}</td>
                     <td>………………………</td>
                 </tr>
                 <tr>

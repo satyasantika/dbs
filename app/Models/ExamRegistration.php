@@ -4,7 +4,6 @@ namespace App\Models;
 
 use App\Models\User;
 use App\Models\ExamType;
-use App\Models\ExamExaminer;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -17,6 +16,12 @@ class ExamRegistration extends Model
         'exam_date' => 'date',
         'pass_exam' => 'boolean',
     ];
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        return $this->where('exam_registrations.' . ($field ?? $this->getRouteKeyName()), $value)
+                    ->firstOrFail();
+    }
 
     public function examtype()
     {
