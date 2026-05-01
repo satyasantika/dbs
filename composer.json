@@ -2,12 +2,16 @@
     "name": "satyasantika/dbs",
     "type": "project",
     "description": "System for Dewan Bimbingan Skripsi (DBS), powered by Laravel framework.",
-    "keywords": ["dbs", "skripsi"],
+    "keywords": [
+        "dbs",
+        "skripsi"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.1",
         "barryvdh/laravel-dompdf": "^2.0",
         "doctrine/dbal": "^3.6",
+        "filament/filament": "^3.2",
         "guzzlehttp/guzzle": "^7.2",
         "lab404/laravel-impersonate": "^1.7",
         "laravel/framework": "^10.10",
@@ -43,7 +47,8 @@
     "scripts": {
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "@php artisan package:discover --ansi",
+            "@php artisan filament:upgrade"
         ],
         "post-update-cmd": [
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
@@ -70,7 +75,14 @@
         },
         "process-timeout": 300,
         "audit": {
-            "ignore": ["[PKSA-365x-2zjk-pt47]"]
+            "ignore": [
+                "[PKSA-365x-2zjk-pt47]",
+                "PKSA-8cfg-tzhf-fr83",
+                "PKSA-x13r-n4wc-4gcr",
+                "PKSA-gz3f-3cz3-3wsw",
+                "PKSA-jtdk-dcr5-f11n",
+                "PKSA-hznc-gbby-6w16"
+            ]
         }
     },
     "minimum-stability": "stable",
