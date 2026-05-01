@@ -11,6 +11,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\HtmlString;
 
 class ExamRegistrationResource extends Resource
 {
@@ -53,67 +54,156 @@ class ExamRegistrationResource extends Resource
                             ->maxLength(100),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Pembimbing & Penguji')
+                Forms\Components\Section::make('Pembimbing')
                     ->schema([
                         Forms\Components\Select::make('guide1_id')
                             ->label('Pembimbing 1')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
                             ->searchable()->nullable(),
                         Forms\Components\Select::make('guide2_id')
                             ->label('Pembimbing 2')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable(),
-                        Forms\Components\Select::make('examiner1_id')
-                            ->label('Penguji 1')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable(),
-                        Forms\Components\Select::make('examiner2_id')
-                            ->label('Penguji 2')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable(),
-                        Forms\Components\Select::make('examiner3_id')
-                            ->label('Penguji 3')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable(),
-                        Forms\Components\Select::make('chief_id')
-                            ->label('Ketua Penguji')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
                             ->searchable()->nullable(),
                     ])->columns(2),
+
+                Forms\Components\Section::make('Penguji')
+                    ->description('Tombol ↑/↓ untuk menyusun ulang urutan. Tombol "Set Ketua" untuk menetapkan Ketua Penguji.')
+                    ->schema([
+                        Forms\Components\Hidden::make('chief_id'),
+
+                        Forms\Components\Select::make('examiner1_id')
+                            ->label(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner1_id')
+                                ? new HtmlString('Penguji 1 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
+                                : 'Penguji 1')
+                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
+                            ->searchable()->nullable()
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('set_chief_1')
+                                    ->label('Set Ketua')
+                                    ->icon('heroicon-m-star')
+                                    ->color('warning')
+                                    ->hidden(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner1_id'))
+                                    ->action(fn (Forms\Set $set, Forms\Get $get) => $set('chief_id', $get('examiner1_id'))),
+                                Forms\Components\Actions\Action::make('swap_down_1')
+                                    ->label('↓')->tooltip('Tukar dengan Penguji 2')
+                                    ->icon('heroicon-m-arrow-down')->color('gray')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        [$a, $b] = [$get('examiner1_id'), $get('examiner2_id')];
+                                        $set('examiner1_id', $b);
+                                        $set('examiner2_id', $a);
+                                    }),
+                            ]),
+
+                        Forms\Components\Select::make('examiner2_id')
+                            ->label(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner2_id')
+                                ? new HtmlString('Penguji 2 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
+                                : 'Penguji 2')
+                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
+                            ->searchable()->nullable()
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('set_chief_2')
+                                    ->label('Set Ketua')
+                                    ->icon('heroicon-m-star')
+                                    ->color('warning')
+                                    ->hidden(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner2_id'))
+                                    ->action(fn (Forms\Set $set, Forms\Get $get) => $set('chief_id', $get('examiner2_id'))),
+                                Forms\Components\Actions\Action::make('swap_up_2')
+                                    ->label('↑')->tooltip('Tukar dengan Penguji 1')
+                                    ->icon('heroicon-m-arrow-up')->color('gray')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        [$a, $b] = [$get('examiner1_id'), $get('examiner2_id')];
+                                        $set('examiner1_id', $b);
+                                        $set('examiner2_id', $a);
+                                    }),
+                                Forms\Components\Actions\Action::make('swap_down_2')
+                                    ->label('↓')->tooltip('Tukar dengan Penguji 3')
+                                    ->icon('heroicon-m-arrow-down')->color('gray')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        [$a, $b] = [$get('examiner2_id'), $get('examiner3_id')];
+                                        $set('examiner2_id', $b);
+                                        $set('examiner3_id', $a);
+                                    }),
+                            ]),
+
+                        Forms\Components\Select::make('examiner3_id')
+                            ->label(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner3_id')
+                                ? new HtmlString('Penguji 3 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
+                                : 'Penguji 3')
+                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
+                            ->searchable()->nullable()
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('set_chief_3')
+                                    ->label('Set Ketua')
+                                    ->icon('heroicon-m-star')
+                                    ->color('warning')
+                                    ->hidden(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner3_id'))
+                                    ->action(fn (Forms\Set $set, Forms\Get $get) => $set('chief_id', $get('examiner3_id'))),
+                                Forms\Components\Actions\Action::make('swap_up_3')
+                                    ->label('↑')->tooltip('Tukar dengan Penguji 2')
+                                    ->icon('heroicon-m-arrow-up')->color('gray')
+                                    ->action(function (Forms\Set $set, Forms\Get $get) {
+                                        [$a, $b] = [$get('examiner2_id'), $get('examiner3_id')];
+                                        $set('examiner2_id', $b);
+                                        $set('examiner3_id', $a);
+                                    }),
+                            ]),
+                    ])->columns(1),
 
                 Forms\Components\Section::make('Detail Skripsi')
                     ->schema([
                         Forms\Components\Textarea::make('title')
                             ->label('Judul Skripsi')
+                            ->rows(3)
                             ->columnSpanFull(),
                         Forms\Components\TextInput::make('ipk')
                             ->label('IPK')
                             ->numeric()
                             ->step(0.01),
-                        Forms\Components\TextInput::make('online_link')
+                        Forms\Components\Textarea::make('online_link')
                             ->label('Link Online')
-                            ->url()
-                            ->maxLength(500),
+                            ->rows(2)
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('online_user')
                             ->label('User Meeting')
                             ->maxLength(100),
                         Forms\Components\TextInput::make('online_password')
                             ->label('Password Meeting')
                             ->maxLength(100),
-                    ])->columns(2)->collapsed(),
+                    ])->columns(2),
 
                 Forms\Components\Section::make('Hasil Ujian')
                     ->schema([
-                        Forms\Components\TextInput::make('grade')
+                        Forms\Components\Placeholder::make('grade_display')
                             ->label('Nilai Akhir')
-                            ->numeric()
-                            ->step(0.01),
-                        Forms\Components\TextInput::make('letter')
+                            ->content(fn (?ExamRegistration $record): string => $record?->grade !== null
+                                ? number_format((float) $record->grade, 2)
+                                : '—'),
+                        Forms\Components\Placeholder::make('letter_display')
                             ->label('Huruf Mutu')
-                            ->maxLength(5),
-                        Forms\Components\Toggle::make('pass_exam')
-                            ->label('Lulus'),
-                    ])->columns(3)->collapsed(),
+                            ->content(fn (?ExamRegistration $record): string => $record?->letter ?? '—'),
+                        Forms\Components\Placeholder::make('pass_display')
+                            ->label('Status Kelulusan')
+                            ->content(fn (?ExamRegistration $record): HtmlString|string => match (true) {
+                                is_null($record?->pass_exam) => '—',
+                                (bool) $record->pass_exam    => new HtmlString('<span class="font-semibold text-success-600">✓ Lulus</span>'),
+                                default                      => new HtmlString('<span class="font-semibold text-danger-600">✗ Belum Lulus</span>'),
+                            }),
+                        Forms\Components\Placeholder::make('sent_display')
+                            ->label('Pesan Hasil ke Mahasiswa')
+                            ->content(function (?ExamRegistration $record): HtmlString|string {
+                                if (!$record) return '—';
+                                if ($record->sent_at) {
+                                    $tgl = $record->sent_at->locale('id')->isoFormat('D MMMM Y, [pukul] HH.mm');
+                                    return new HtmlString('<span class="text-success-700 font-medium">✓ Dikabari pada ' . e($tgl) . '</span>');
+                                }
+                                $pending = \App\Models\ExamScore::where('exam_registration_id', $record->id)
+                                    ->whereNull('grade')->count();
+                                if ($pending > 0) {
+                                    return new HtmlString('<span class="text-warning-600">Menunggu selesai penilaian <strong>' . $pending . '</strong> penguji</span>');
+                                }
+                                return new HtmlString('<span class="text-primary-600">Penilaian sudah lengkap — pesan belum dikirim</span>');
+                            }),
+                    ])->columns(2),
             ]);
     }
 

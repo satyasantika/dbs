@@ -15,6 +15,7 @@ class ExamRegistration extends Model
     protected $casts = [
         'exam_date' => 'date',
         'pass_exam' => 'boolean',
+        'sent_at'   => 'datetime',
     ];
 
     public function resolveRouteBinding($value, $field = null)

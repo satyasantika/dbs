@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/setting/registrations/{student_id}/create', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class,'createByStudent'])->name('registrations.student');
         Route::get('/setting/registrations/{student_id}/show', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class,'showByStudent'])->name('registrations.show.student');
         Route::put('/setting/examregistrations/{examregistration}/scoreset', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'scoreSet'])->name('examregistrations.scoreset');
+        Route::put('/setting/examregistrations/{examregistration}/mark-sent', [App\Http\Controllers\Setting\Examination\ExamScoreController::class, 'markSent'])->name('examregistrations.examscores.mark-sent');
         Route::get('/setting/examregistrations/date/{id}', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'index2'])->name('examregistrations.date');
         Route::get('/admin/scoring-yet', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
         Route::get('/admin/set-scoring-to-examiner-yet', [App\Http\Controllers\Examination\AdminController::class, 'getSetScoringToExaminerYet'])->name('get.setscoringtoexamineryet');
