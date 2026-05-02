@@ -76,6 +76,7 @@ class EditExamRegistration extends EditRecord
             5 => $record->guide2_id,
         ];
 
+        $activeUserIds = [];
         foreach ($slots as $order => $userId) {
             if (!$userId) continue;
 
@@ -86,7 +87,15 @@ class EditExamRegistration extends EditRecord
                 ],
                 ['examiner_order' => $order]
             );
+
+            $activeUserIds[] = $userId;
         }
+
+        // Delete orphaned scores (old examiners replaced) that have not been graded yet
+        ExamScore::where('exam_registration_id', $record->id)
+            ->whereNotIn('user_id', $activeUserIds ?: [0])
+            ->whereNull('grade')
+            ->delete();
 
         // Sync guide_examiners for this student
         GuideExaminer::where('user_id', $record->user_id)->update([

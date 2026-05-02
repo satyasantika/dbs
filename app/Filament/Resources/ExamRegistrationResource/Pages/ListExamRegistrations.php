@@ -10,6 +10,11 @@ class ListExamRegistrations extends ListRecords
 {
     protected static string $resource = ExamRegistrationResource::class;
 
+    protected function getTablePollingInterval(): ?string
+    {
+        return '30s';
+    }
+
     protected function getHeaderActions(): array
     {
         return [

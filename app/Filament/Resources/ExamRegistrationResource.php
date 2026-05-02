@@ -245,6 +245,7 @@ class ExamRegistrationResource extends Resource
             'examScores.lecture',
             'examiner1', 'examiner2', 'examiner3',
             'guide1', 'guide2',
+            'student',
         ]);
     }
 
@@ -318,6 +319,46 @@ class ExamRegistrationResource extends Resource
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
+                Tables\Actions\Action::make('view_scores')
+                    ->label('Rincian Penilaian')
+                    ->icon('heroicon-o-clipboard-document-list')
+                    ->color('info')
+                    ->iconButton()
+                    ->modalHeading(function (ExamRegistration $record): string {
+                        $record->loadMissing(['examtype', 'student']);
+                        $type  = $record->examtype?->name ?? 'Ujian';
+                        $name  = $record->student?->name ?? '';
+                        return "Penilaian {$type} (ke-{$record->registration_order}) — {$name}";
+                    })
+                    ->modalContent(fn (ExamRegistration $record) => view('filament.modals.exam-scores-detail', ['recordId' => $record->id]))
+                    ->modalWidth(\Filament\Support\Enums\MaxWidth::FiveExtraLarge)
+                    ->modalSubmitAction(false)
+                    ->modalCancelActionLabel('Tutup'),
+                Tables\Actions\Action::make('notify_student')
+                    ->label(fn (ExamRegistration $record) => $record->sent_at ? 'Kirim Ulang' : 'Kabari Mahasiswa')
+                    ->icon('heroicon-o-paper-airplane')
+                    ->color(fn (ExamRegistration $record) => $record->sent_at ? 'gray' : 'success')
+                    ->iconButton()
+                    ->tooltip(fn (ExamRegistration $record) => $record->sent_at
+                        ? 'Sudah dikabari: ' . $record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm')
+                        : 'Kirim hasil ke mahasiswa')
+                    ->modalHeading('Kirim Hasil Ujian ke Mahasiswa')
+                    ->modalSubmitActionLabel('Tandai Sudah Terkirim')
+                    ->modalContent(fn (ExamRegistration $record) => view('filament.modals.send-exam-result', [
+                        'record' => $record,
+                        'waUrl'  => static::buildWaUrl($record),
+                    ]))
+                    ->action(function (ExamRegistration $record): void {
+                        $record->update(['sent_at' => now()]);
+                    })
+                    ->visible(function (ExamRegistration $record): bool {
+                        $activeIds = array_values(array_filter([
+                            $record->examiner1_id, $record->examiner2_id, $record->examiner3_id,
+                            $record->guide1_id, $record->guide2_id,
+                        ]));
+                        $scores = $record->examScores->whereIn('user_id', $activeIds);
+                        return $scores->count() > 0 && $scores->whereNull('grade')->count() === 0;
+                    }),
                 Tables\Actions\EditAction::make()->iconButton(),
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
@@ -334,7 +375,12 @@ class ExamRegistrationResource extends Resource
 
     private static function buildExaminerHtml(ExamRegistration $record): string
     {
-        $scores = $record->examScores;
+        $activeIds = array_values(array_filter([
+            $record->examiner1_id, $record->examiner2_id, $record->examiner3_id,
+            $record->guide1_id, $record->guide2_id,
+        ]));
+
+        $scores = $record->examScores->whereIn('user_id', $activeIds);
 
         if ($scores->isEmpty()) {
             // Fallback: show from direct fields when exam_scores not yet created
@@ -376,43 +422,38 @@ class ExamRegistrationResource extends Resource
 
     private static function buildPassSendHtml(ExamRegistration $record): string
     {
-        $scores   = $record->examScores;
-        $total    = $scores->count();
+        $activeIds = array_values(array_filter([
+            $record->examiner1_id, $record->examiner2_id, $record->examiner3_id,
+            $record->guide1_id, $record->guide2_id,
+        ]));
+
+        $scores    = $record->examScores->whereIn('user_id', $activeIds);
+        $total     = $scores->count();
         $allScored = $total > 0 && $scores->whereNull('grade')->count() === 0;
 
-        $passIcon = $record->pass_exam
+        $approvedCount = $allScored ? $scores->filter(fn ($s) => $s->pass_approved == 1)->count() : 0;
+        $passed        = $allScored && $approvedCount >= 3;
+        $failed        = $allScored && !$passed;
+
+        $passIcon = $passed
             ? '<span style="color:#16a34a;font-weight:700">✓</span>'
-            : '<span style="color:#9ca3af">—</span>';
+            : ($failed
+                ? '<span style="color:#dc2626;font-weight:700">✗</span>'
+                : '<span style="color:#9ca3af">—</span>');
 
         if (!$allScored) {
             return $passIcon;
         }
 
         if ($record->sent_at) {
-            $tgl      = $record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm');
-            $sendIcon = '<span title="' . e('Dikabari ' . $tgl) . '" style="margin-left:5px;color:#16a34a" aria-label="Sudah dikabari">'
-                . '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.63 1.2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.86a16 16 0 0 0 6.12 6.12l1.07-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+            $tgl      = e($record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm'));
+            $sentIcon = '<span title="Dikabari ' . $tgl . '" style="margin-left:4px;color:#16a34a;vertical-align:middle">'
+                . '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="display:inline;vertical-align:middle"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.63 1.2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.86a16 16 0 0 0 6.12 6.12l1.07-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
                 . '</span>';
-        } else {
-            $waUrl = static::buildWaUrl($record);
-            if (!$waUrl) {
-                return $passIcon;
-            }
-            $fid = 'ms-' . $record->id;
-            $planeSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
-            $sendIcon = '<button type="button"'
-                . ' onclick="window.open(' . json_encode($waUrl) . ',\'_blank\');document.getElementById(' . json_encode($fid) . ').submit()"'
-                . ' title="Kirim hasil ke mahasiswa"'
-                . ' style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;color:#16a34a;line-height:1">'
-                . $planeSvg
-                . '</button>'
-                . '<form id="' . e($fid) . '" action="' . e(route('examregistrations.examscores.mark-sent', $record)) . '" method="POST" style="display:none">'
-                . '<input type="hidden" name="_token" value="' . e(csrf_token()) . '">'
-                . '<input type="hidden" name="_method" value="PUT">'
-                . '</form>';
+            return '<div style="display:flex;align-items:center;gap:2px">' . $passIcon . $sentIcon . '</div>';
         }
 
-        return '<div style="display:flex;align-items:center">' . $passIcon . $sendIcon . '</div>';
+        return $passIcon;
     }
 
     private static function buildWaUrl(ExamRegistration $record): ?string

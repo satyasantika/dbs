@@ -79,11 +79,11 @@
                                         @endif
                                         <a href="{{ route('examregistrations.examscores.edit',[$examregistration,$exam_score]) }}" class="badge rounded-pill bg-primary" style="text-decoration: none;">ganti penguji</a>
                                     </td>
-                                    <td>{{ $exam_score->score1 }}</td>
-                                    <td>{{ $exam_score->score2 }}</td>
-                                    <td>{{ $exam_score->score3 }}</td>
-                                    <td>{{ $exam_score->score4 }}</td>
-                                    <td>{{ $exam_score->score5 }}</td>
+                                    <td>{{ $exam_score->score01 }}</td>
+                                    <td>{{ $exam_score->score02 }}</td>
+                                    <td>{{ $exam_score->score03 }}</td>
+                                    <td>{{ $exam_score->score04 }}</td>
+                                    <td>{{ $exam_score->score05 }}</td>
                                     <td class="text-center"><span class="badge bg-dark text-white">{{ $exam_score->grade }}</span></td>
                                     <td class="text-center">{{ $exam_score->letter }}</td>
                                     <td class="text-center">{{ $exam_score->revision ? 'v' : 'x' }}</td>

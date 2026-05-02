@@ -64,7 +64,7 @@ Judul {{ $scoring->registration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}: 
                 } else {
                     $order = ($item->id);
                 }
-                $item_order = 'score'.$order;
+                $item_order = 'score0'.$order;
                 $options = [];
             @endphp
             <div class="row">
