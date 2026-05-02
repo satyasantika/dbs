@@ -4,6 +4,7 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\ExamRegistrationResource\Pages;
 use App\Models\ExamRegistration;
+use App\Models\ExamScore;
 use App\Models\ExamType;
 use App\Models\User;
 use Filament\Forms;
@@ -11,6 +12,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 class ExamRegistrationResource extends Resource
@@ -32,26 +34,56 @@ class ExamRegistrationResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Data Ujian')
                     ->schema([
-                        Forms\Components\Select::make('exam_type_id')
-                            ->label('Jenis Ujian')
-                            ->relationship('examtype', 'name')
-                            ->required(),
-                        Forms\Components\TextInput::make('registration_order')
-                            ->label('Ujian Ke-')
-                            ->numeric()
-                            ->required(),
                         Forms\Components\Select::make('user_id')
                             ->label('Mahasiswa')
-                            ->options(fn () => User::orderBy('name')->pluck('name', 'id'))
+                            ->options(fn () => User::role('mahasiswa')->orderBy('name')->pluck('name', 'id'))
                             ->searchable()
+                            ->live()
+                            ->required(),
+                        Forms\Components\Select::make('exam_type_id')
+                            ->label('Jenis Ujian')
+                            ->options(fn () => \App\Models\ExamType::orderBy('id')->pluck('name', 'id'))
+                            ->live()
+                            ->required(),
+                        Forms\Components\Select::make('registration_order')
+                            ->label('Ujian Ke-')
+                            ->options(function (Forms\Get $get, ?ExamRegistration $record): array {
+                                $userId     = $get('user_id');
+                                $examTypeId = $get('exam_type_id');
+                                $max        = 3;
+
+                                $used = ExamRegistration::where('user_id', $userId)
+                                    ->where('exam_type_id', $examTypeId)
+                                    ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
+                                    ->pluck('registration_order')
+                                    ->toArray();
+
+                                $available = [];
+                                for ($i = 1; $i <= $max; $i++) {
+                                    if (!in_array($i, $used)) {
+                                        $available[$i] = (string) $i;
+                                    }
+                                }
+
+                                return $available ?: [1 => '1'];
+                            })
+                            ->hidden(fn (Forms\Get $get): bool => !$get('exam_type_id'))
                             ->required(),
                         Forms\Components\DatePicker::make('exam_date')
-                            ->label('Tanggal Ujian'),
+                            ->label('Tanggal Ujian')
+                            ->hidden(fn (Forms\Get $get): bool => !$get('exam_type_id')),
                         Forms\Components\TimePicker::make('exam_time')
-                            ->label('Waktu Ujian'),
-                        Forms\Components\TextInput::make('room')
+                            ->label('Waktu Ujian')
+                            ->hidden(fn (Forms\Get $get): bool => !$get('exam_type_id')),
+                        Forms\Components\Select::make('room')
                             ->label('Ruangan')
-                            ->maxLength(100),
+                            ->options([
+                                '1' => 'Ruang Ujian 1',
+                                '2' => 'Ruang Ujian 2',
+                                '3' => 'Ruang Ujian 3',
+                                '4' => 'Ruang Ujian 4',
+                            ])
+                            ->hidden(fn (Forms\Get $get): bool => !$get('exam_type_id')),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Pembimbing')
@@ -207,6 +239,15 @@ class ExamRegistrationResource extends Resource
             ]);
     }
 
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->with([
+            'examScores.lecture',
+            'examiner1', 'examiner2', 'examiner3',
+            'guide1', 'guide2',
+        ]);
+    }
+
     public static function table(Table $table): Table
     {
         return $table
@@ -226,17 +267,30 @@ class ExamRegistrationResource extends Resource
                     ->label('Tgl Ujian')
                     ->date('d M Y')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('title')
-                    ->label('Judul')
-                    ->limit(40)
-                    ->tooltip(fn ($record) => $record->title),
-                Tables\Columns\TextColumn::make('grade')
-                    ->label('Nilai'),
-                Tables\Columns\TextColumn::make('letter')
-                    ->label('Huruf'),
-                Tables\Columns\IconColumn::make('pass_exam')
+                Tables\Columns\TextColumn::make('exam_time')
+                    ->label('Waktu')
+                    ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '—')
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('penguji')
+                    ->label('Penguji')
+                    ->getStateUsing(fn (ExamRegistration $record): string => static::buildExaminerHtml($record))
+                    ->html()
+                    ->wrap()
+                    ->sortable(false)
+                    ->searchable(
+                        query: function (Builder $query, string $search): Builder {
+                            return $query->where(function ($q) use ($search) {
+                                foreach (['examiner1', 'examiner2', 'examiner3', 'guide1', 'guide2'] as $rel) {
+                                    $q->orWhereHas($rel, fn ($sq) => $sq->where('name', 'like', "%{$search}%"));
+                                }
+                            });
+                        }
+                    ),
+                Tables\Columns\TextColumn::make('pass_exam')
                     ->label('Lulus')
-                    ->boolean(),
+                    ->getStateUsing(fn (ExamRegistration $record): string => static::buildPassSendHtml($record))
+                    ->html()
+                    ->sortable(false),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('exam_type_id')
@@ -244,10 +298,31 @@ class ExamRegistrationResource extends Resource
                     ->relationship('examtype', 'name'),
                 Tables\Filters\TernaryFilter::make('pass_exam')
                     ->label('Status Kelulusan'),
+                Tables\Filters\Filter::make('exam_date')
+                    ->label('Tanggal Ujian')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Dari'),
+                        Forms\Components\DatePicker::make('until')->label('Sampai'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'],  fn ($q, $d) => $q->whereDate('exam_date', '>=', $d))
+                            ->when($data['until'], fn ($q, $d) => $q->whereDate('exam_date', '<=', $d));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from']  ?? null) $indicators[] = Tables\Filters\Indicator::make('Dari: '    . $data['from']);
+                        if ($data['until'] ?? null) $indicators[] = Tables\Filters\Indicator::make('Sampai: ' . $data['until']);
+                        return $indicators;
+                    }),
             ])
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\EditAction::make()->iconButton(),
+                Tables\Actions\DeleteAction::make()
+                    ->iconButton()
+                    ->hidden(fn (ExamRegistration $record) => ExamScore::where('exam_registration_id', $record->id)
+                        ->whereNotNull('grade')->exists()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -255,6 +330,112 @@ class ExamRegistrationResource extends Resource
                 ]),
             ])
             ->defaultSort('exam_date', 'desc');
+    }
+
+    private static function buildExaminerHtml(ExamRegistration $record): string
+    {
+        $scores = $record->examScores;
+
+        if ($scores->isEmpty()) {
+            // Fallback: show from direct fields when exam_scores not yet created
+            $slots = array_filter([
+                ['no' => 1, 'id' => $record->examiner1_id, 'name' => $record->examiner1?->name],
+                ['no' => 2, 'id' => $record->examiner2_id, 'name' => $record->examiner2?->name],
+                ['no' => 3, 'id' => $record->examiner3_id, 'name' => $record->examiner3?->name],
+                ['no' => 4, 'id' => $record->guide1_id,    'name' => $record->guide1?->name],
+                ['no' => 5, 'id' => $record->guide2_id,    'name' => $record->guide2?->name],
+            ], fn ($s) => !empty($s['id']));
+
+            if (empty($slots)) {
+                return '<span style="font-size:11px;color:#9ca3af;font-style:italic">Belum diset</span>';
+            }
+
+            $html = '';
+            foreach ($slots as $slot) {
+                $isChief = $record->chief_id && $slot['id'] == $record->chief_id;
+                $html .= '<div style="font-size:11px;line-height:1.6;color:#6b7280">'
+                    . $slot['no'] . '. ' . ($isChief ? '★ ' : '') . e($slot['name'] ?? '(?)')
+                    . '</div>';
+            }
+            return $html;
+        }
+
+        $html = '';
+        foreach ($scores as $score) {
+            $name    = e($score->lecture?->name ?? '(?)');
+            $isChief = $record->chief_id && $score->user_id == $record->chief_id;
+            $prefix  = $isChief ? '★ ' : '';
+            $color   = $score->grade !== null ? '#16a34a' : '#dc2626';
+            $html   .= '<div style="font-size:11px;line-height:1.6;color:' . $color . '">'
+                . $score->examiner_order . '. ' . $prefix . $name
+                . '</div>';
+        }
+
+        return $html;
+    }
+
+    private static function buildPassSendHtml(ExamRegistration $record): string
+    {
+        $scores   = $record->examScores;
+        $total    = $scores->count();
+        $allScored = $total > 0 && $scores->whereNull('grade')->count() === 0;
+
+        $passIcon = $record->pass_exam
+            ? '<span style="color:#16a34a;font-weight:700">✓</span>'
+            : '<span style="color:#9ca3af">—</span>';
+
+        if (!$allScored) {
+            return $passIcon;
+        }
+
+        if ($record->sent_at) {
+            $tgl      = $record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm');
+            $sendIcon = '<span title="' . e('Dikabari ' . $tgl) . '" style="margin-left:5px;color:#16a34a" aria-label="Sudah dikabari">'
+                . '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.72 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.63 1.2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.86a16 16 0 0 0 6.12 6.12l1.07-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>'
+                . '</span>';
+        } else {
+            $waUrl = static::buildWaUrl($record);
+            if (!$waUrl) {
+                return $passIcon;
+            }
+            $fid = 'ms-' . $record->id;
+            $planeSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="display:inline;vertical-align:middle"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>';
+            $sendIcon = '<button type="button"'
+                . ' onclick="window.open(' . json_encode($waUrl) . ',\'_blank\');document.getElementById(' . json_encode($fid) . ').submit()"'
+                . ' title="Kirim hasil ke mahasiswa"'
+                . ' style="background:none;border:none;cursor:pointer;padding:0;margin-left:5px;color:#16a34a;line-height:1">'
+                . $planeSvg
+                . '</button>'
+                . '<form id="' . e($fid) . '" action="' . e(route('examregistrations.examscores.mark-sent', $record)) . '" method="POST" style="display:none">'
+                . '<input type="hidden" name="_token" value="' . e(csrf_token()) . '">'
+                . '<input type="hidden" name="_method" value="PUT">'
+                . '</form>';
+        }
+
+        return '<div style="display:flex;align-items:center">' . $passIcon . $sendIcon . '</div>';
+    }
+
+    private static function buildWaUrl(ExamRegistration $record): ?string
+    {
+        if (!$record->student?->phone) return null;
+
+        $examtype    = $record->examtype?->name ?? '-';
+        $studentName = $record->student->name;
+        $examDate    = $record->exam_date?->isoFormat('dddd, D MMMM Y') ?? '-';
+
+        $text = "*INFORMASI Hasil {$examtype}*\n\n"
+            . "Saudara *{$studentName}*, Kami informasikan bahwa masing-masing dosen penguji "
+            . "telah menuliskan revisi {$examtype} ({$examDate}) dan dapat dicetak pada sistem DBS berikut.\n\n"
+            . route('exam.result') . "\n"
+            . "(jika eror saat buka link di handphone, pastikan awalannya http:// bukan https://)"
+            . ($record->exam_type_id == 3
+                ? "\n\nTerakhir, harap laporkan hasil ujian Anda pada laman "
+                  . "(siapkan lembar revisi yang sudah ditandatangani dan foto ujian):\nhttps://forms.gle/umUKgAcXLnhowgpw7"
+                : '')
+            . "\n\nDemikian informasi ini Kami sampaikan. Atas perhatian Anda, Kami ucapkan terima kasih.\n"
+            . "(ttd.) *Kajur Pendidikan Matematika*";
+
+        return 'https://api.whatsapp.com/send/?phone=62' . $record->student->phone . '&text=' . rawurlencode($text);
     }
 
     public static function getRelations(): array

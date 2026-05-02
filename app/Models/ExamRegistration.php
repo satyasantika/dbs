@@ -4,7 +4,9 @@ namespace App\Models;
 
 use App\Models\User;
 use App\Models\ExamType;
+use App\Models\ExamScore;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ExamRegistration extends Model
@@ -62,6 +64,11 @@ class ExamRegistration extends Model
     public function chief()
     {
         return $this->belongsTo(User::class,'chief_id');
+    }
+
+    public function examScores(): HasMany
+    {
+        return $this->hasMany(ExamScore::class, 'exam_registration_id')->orderBy('examiner_order');
     }
 }
 

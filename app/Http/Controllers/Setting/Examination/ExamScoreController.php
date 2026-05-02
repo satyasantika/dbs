@@ -66,7 +66,7 @@ class ExamScoreController extends Controller
     public function markSent(ExamRegistration $examregistration): \Illuminate\Http\RedirectResponse
     {
         $examregistration->update(['sent_at' => now()]);
-        return to_route('examregistrations.examscores.index', $examregistration)
+        return redirect()->back()
             ->with('success', 'Pesan hasil ujian ' . $examregistration->student->name . ' telah ditandai terkirim.');
     }
 }

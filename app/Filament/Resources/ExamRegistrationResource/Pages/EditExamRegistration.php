@@ -7,12 +7,21 @@ use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use App\Models\GuideExaminer;
 use Filament\Actions;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditExamRegistration extends EditRecord
 {
     protected static string $resource = ExamRegistrationResource::class;
+
+    public bool $wasSaved = false;
+
+    protected function getCancelFormAction(): Action
+    {
+        return parent::getCancelFormAction()
+            ->label(fn (): string => $this->wasSaved ? 'Kembali' : 'Batal');
+    }
 
     protected function getHeaderActions(): array
     {
@@ -54,19 +63,29 @@ class EditExamRegistration extends EditRecord
 
     protected function afterSave(): void
     {
+        $this->wasSaved = true;
+
         $record = $this->record->fresh();
 
-        // Sync examiner_order in exam_scores based on new slot positions
-        $slotMap = array_filter([
+        // Create or update exam_scores for all slots with correct examiner_order
+        $slots = [
             1 => $record->examiner1_id,
             2 => $record->examiner2_id,
             3 => $record->examiner3_id,
-        ]);
+            4 => $record->guide1_id,
+            5 => $record->guide2_id,
+        ];
 
-        foreach ($slotMap as $order => $userId) {
-            ExamScore::where('exam_registration_id', $record->id)
-                ->where('user_id', $userId)
-                ->update(['examiner_order' => $order]);
+        foreach ($slots as $order => $userId) {
+            if (!$userId) continue;
+
+            ExamScore::updateOrCreate(
+                [
+                    'exam_registration_id' => $record->id,
+                    'user_id'              => $userId,
+                ],
+                ['examiner_order' => $order]
+            );
         }
 
         // Sync guide_examiners for this student
