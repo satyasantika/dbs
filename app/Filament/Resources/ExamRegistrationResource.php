@@ -246,10 +246,15 @@ class ExamRegistrationResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->with([
-            'examScores.lecture',
-            'examiner1', 'examiner2', 'examiner3',
-            'guide1', 'guide2',
-            'student',
+            'examScores:id,exam_registration_id,user_id,examiner_order,grade,pass_approved',
+            'examScores.lecture:id,name',
+            'examiner1:id,name',
+            'examiner2:id,name',
+            'examiner3:id,name',
+            'guide1:id,name',
+            'guide2:id,name',
+            'student:id,name,phone',
+            'examtype:id,name',
         ]);
     }
 
@@ -359,8 +364,7 @@ class ExamRegistrationResource extends Resource
                 Tables\Actions\EditAction::make()->iconButton(),
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
-                    ->hidden(fn (ExamRegistration $record) => ExamScore::where('exam_registration_id', $record->id)
-                        ->whereNotNull('grade')->exists()),
+                    ->hidden(fn (ExamRegistration $record) => $record->examScores->whereNotNull('grade')->isNotEmpty()),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
