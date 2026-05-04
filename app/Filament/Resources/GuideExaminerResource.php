@@ -18,11 +18,13 @@ class GuideExaminerResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Ujian';
 
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+
     protected static ?string $modelLabel = 'Pembimbing & Penguji';
 
     protected static ?string $pluralModelLabel = 'Pembimbing & Penguji';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     public static function form(Form $form): Form
     {

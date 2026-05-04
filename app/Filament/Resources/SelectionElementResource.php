@@ -18,6 +18,8 @@ class SelectionElementResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Seleksi';
 
+    protected static ?string $navigationIcon = 'heroicon-o-numbered-list';
+
     protected static ?string $modelLabel = 'Elemen NUIR';
 
     protected static ?string $pluralModelLabel = 'Elemen NUIR';

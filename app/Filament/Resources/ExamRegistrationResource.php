@@ -9,11 +9,13 @@ use App\Models\ExamType;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
+use Illuminate\Support\Js;
 
 class ExamRegistrationResource extends Resource
 {
@@ -22,11 +24,13 @@ class ExamRegistrationResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Ujian';
 
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
+
     protected static ?string $modelLabel = 'Pendaftaran Ujian';
 
     protected static ?string $pluralModelLabel = 'Pendaftaran Ujian';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Form $form): Form
     {
@@ -335,28 +339,21 @@ class ExamRegistrationResource extends Resource
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup'),
                 Tables\Actions\Action::make('notify_student')
-                    ->label(fn (ExamRegistration $record) => $record->sent_at ? 'Kirim Ulang' : 'Kabari Mahasiswa')
+                    ->label(fn (ExamRegistration $record): string => $record->sent_at ? 'Kirim ulang' : 'Kabari')
                     ->icon('heroicon-o-paper-airplane')
                     ->color(fn (ExamRegistration $record) => $record->sent_at ? 'gray' : 'success')
                     ->iconButton()
-                    ->tooltip(fn (ExamRegistration $record) => $record->sent_at
-                        ? 'Sudah dikabari: ' . $record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm')
-                        : 'Kirim hasil ke mahasiswa')
-                    ->modalHeading('Kirim Hasil Ujian ke Mahasiswa')
-                    ->modalSubmitActionLabel('Tandai Sudah Terkirim')
-                    ->modalContent(fn (ExamRegistration $record) => view('filament.modals.send-exam-result', [
-                        'record' => $record,
-                        'waUrl'  => static::buildWaUrl($record),
-                    ]))
-                    ->action(function (ExamRegistration $record): void {
-                        $record->update(['sent_at' => now()]);
-                    })
+                    ->tooltip(fn (ExamRegistration $record): string => $record->sent_at
+                        ? 'Kirim ulang via WhatsApp (waktu terkirim diperbarui). Terakhir: '.$record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm')
+                        : 'Kabari mahasiswa: buka WhatsApp di tab baru dan tandai terkirim')
+                    ->action(fn (ExamRegistration $record, $livewire) => static::kabariMahasiswaLewatWhatsapp($record, $livewire))
                     ->visible(function (ExamRegistration $record): bool {
                         $activeIds = array_values(array_filter([
                             $record->examiner1_id, $record->examiner2_id, $record->examiner3_id,
                             $record->guide1_id, $record->guide2_id,
                         ]));
                         $scores = $record->examScores->whereIn('user_id', $activeIds);
+
                         return $scores->count() > 0 && $scores->whereNull('grade')->count() === 0;
                     }),
                 Tables\Actions\EditAction::make()->iconButton(),
@@ -420,7 +417,7 @@ class ExamRegistrationResource extends Resource
         return $html;
     }
 
-    private static function buildPassSendHtml(ExamRegistration $record): string
+    public static function buildPassSendHtml(ExamRegistration $record): string
     {
         $activeIds = array_values(array_filter([
             $record->examiner1_id, $record->examiner2_id, $record->examiner3_id,
@@ -456,7 +453,7 @@ class ExamRegistrationResource extends Resource
         return $passIcon;
     }
 
-    private static function buildWaUrl(ExamRegistration $record): ?string
+    public static function buildWaUrl(ExamRegistration $record): ?string
     {
         if (!$record->student?->phone) return null;
 
@@ -477,6 +474,28 @@ class ExamRegistrationResource extends Resource
             . "(ttd.) *Kajur Pendidikan Matematika*";
 
         return 'https://api.whatsapp.com/send/?phone=62' . $record->student->phone . '&text=' . rawurlencode($text);
+    }
+
+    /**
+     * Menyetel sent_at ke sekarang, membuka WhatsApp di tab baru — sama seperti tombol kabari
+     * di halaman penilaian lama. Mendukung kirim ulang (sent_at selalu diperbarui).
+     */
+    public static function kabariMahasiswaLewatWhatsapp(ExamRegistration $record, mixed $livewire): void
+    {
+        $record->loadMissing(['student', 'examtype']);
+        $waUrl = static::buildWaUrl($record);
+
+        $record->update(['sent_at' => now()]);
+
+        if ($waUrl) {
+            $livewire->js('window.open('.Js::from($waUrl).', "_blank")');
+        } else {
+            Notification::make()
+                ->warning()
+                ->title('Nomor telepon mahasiswa tidak ada')
+                ->body('Hasil tetap ditandai terkirim. Lengkapi nomor HP mahasiswa untuk WhatsApp.')
+                ->send();
+        }
     }
 
     public static function getRelations(): array

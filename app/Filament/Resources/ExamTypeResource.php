@@ -17,11 +17,13 @@ class ExamTypeResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Ujian';
 
+    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $modelLabel = 'Jenis Ujian';
 
     protected static ?string $pluralModelLabel = 'Jenis Ujian';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 2;
 
     public static function form(Form $form): Form
     {

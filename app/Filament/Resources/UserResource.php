@@ -9,16 +9,18 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 use Filament\Tables\Actions\Action;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
     protected static ?string $navigationGroup = 'Manajemen Pengguna';
+
+    protected static ?string $navigationIcon = 'heroicon-o-users';
 
     protected static ?string $modelLabel = 'Pengguna';
 
@@ -58,12 +60,32 @@ class UserResource extends Resource
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context) => $context === 'create')
                             ->maxLength(255),
+                    ])->columns(2),
+
+                Forms\Components\Section::make('Role dan izin akses')
+                    ->schema([
                         Forms\Components\Select::make('roles')
                             ->label('Role')
                             ->multiple()
                             ->relationship('roles', 'name')
                             ->preload(),
-                    ])->columns(2),
+                        Forms\Components\CheckboxList::make('permissions')
+                            ->label('Permission langsung (di luar role)')
+                            ->helperText('Opsional. Ditambahkan hanya untuk pengguna ini; gabungan dengan permission dari role menentukan hak akses efektif.')
+                            ->relationship(
+                                'permissions',
+                                'name',
+                                fn ($query) => $query->where(
+                                    'guard_name',
+                                    config('auth.defaults.guard', 'web'),
+                                ),
+                            )
+                            ->searchable()
+                            ->bulkToggleable()
+                            ->columns(2)
+                            ->gridDirection('row'),
+                    ])
+                    ->columns(1),
 
                 Forms\Components\Section::make('Informasi Pribadi')
                     ->schema([
@@ -105,6 +127,12 @@ class UserResource extends Resource
                     ->label('Role')
                     ->badge()
                     ->separator(', '),
+                Tables\Columns\TextColumn::make('permissions.name')
+                    ->label('Izin langsung')
+                    ->badge()
+                    ->separator(', ')
+                    ->limitList(5)
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('gender')
                     ->label('Kelamin')
                     ->formatStateUsing(fn ($state) => match($state) {
@@ -156,6 +184,12 @@ class UserResource extends Resource
     public static function getRelations(): array
     {
         return [];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->with(['roles', 'permissions']);
     }
 
     public static function getPages(): array

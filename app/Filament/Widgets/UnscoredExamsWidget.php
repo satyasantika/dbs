@@ -9,6 +9,8 @@ use Filament\Widgets\TableWidget as BaseWidget;
 
 class UnscoredExamsWidget extends BaseWidget
 {
+    protected static string $view = 'filament.widgets.unscored-exams-widget';
+
     protected static ?int $sort = 3;
     protected int | string | array $columnSpan = 'full';
     protected static ?string $heading = 'Dosen Belum Menilai';

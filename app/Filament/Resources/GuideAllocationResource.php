@@ -18,6 +18,8 @@ class GuideAllocationResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Seleksi';
 
+    protected static ?string $navigationIcon = 'heroicon-o-chart-bar-square';
+
     protected static ?string $modelLabel = 'Kuota Pembimbing';
 
     protected static ?string $pluralModelLabel = 'Kuota Pembimbing';

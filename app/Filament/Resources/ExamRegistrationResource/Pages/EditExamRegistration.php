@@ -3,12 +3,10 @@
 namespace App\Filament\Resources\ExamRegistrationResource\Pages;
 
 use App\Filament\Resources\ExamRegistrationResource;
-use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use App\Models\GuideExaminer;
 use Filament\Actions;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 
 class EditExamRegistration extends EditRecord
@@ -27,31 +25,28 @@ class EditExamRegistration extends EditRecord
     {
         return [
             Actions\Action::make('send_result')
-                ->label(fn () => $this->record?->sent_at
-                    ? 'Kirim Ulang Hasil (' . $this->record->sent_at->format('d/m/Y') . ')'
-                    : 'Kirim Hasil ke Mahasiswa')
+                ->label(fn (): string => $this->record?->sent_at ? 'Kirim ulang' : 'Kabari')
                 ->icon('heroicon-o-paper-airplane')
-                ->color(fn () => $this->record?->sent_at ? 'gray' : 'success')
-                ->modalHeading('Kirim Hasil Ujian ke Mahasiswa')
-                ->modalSubmitActionLabel('Tandai Sudah Terkirim')
-                ->modalContent(fn () => view('filament.modals.send-exam-result', [
-                    'record' => $this->record,
-                    'waUrl'  => $this->buildStudentWaUrl(),
-                ]))
-                ->action(function () {
-                    $this->record->update(['sent_at' => now()]);
+                ->color(fn (): string => $this->record?->sent_at ? 'gray' : 'success')
+                ->iconButton()
+                ->tooltip(fn (): string => $this->record?->sent_at
+                    ? 'Kirim ulang via WhatsApp (waktu terkirim diperbarui). Terakhir: '.$this->record->sent_at->locale('id')->isoFormat('D MMM Y, HH.mm')
+                    : 'Kabari mahasiswa: buka WhatsApp di tab baru dan tandai terkirim')
+                ->action(function ($livewire): void {
+                    ExamRegistrationResource::kabariMahasiswaLewatWhatsapp($this->record, $livewire);
                     $this->record->refresh();
                     $this->fillForm();
-                    Notification::make()
-                        ->title('Pesan hasil ujian ditandai sebagai terkirim.')
-                        ->success()
-                        ->send();
                 })
-                ->visible(function () {
-                    if (!$this->record) return false;
+                ->visible(function (): bool {
+                    if (! $this->record) {
+                        return false;
+                    }
                     $id = $this->record->id;
                     $total = ExamScore::where('exam_registration_id', $id)->count();
-                    if ($total === 0) return false;
+                    if ($total === 0) {
+                        return false;
+                    }
+
                     return ExamScore::where('exam_registration_id', $id)->whereNull('grade')->doesntExist();
                 }),
 
@@ -106,36 +101,5 @@ class EditExamRegistration extends EditRecord
             'examiner3_id' => $record->examiner3_id,
             'chief_id'     => $record->chief_id,
         ]);
-    }
-
-    private function buildStudentWaUrl(): ?string
-    {
-        $record = $this->record;
-
-        if (!$record?->student?->phone) {
-            return null;
-        }
-
-        $examtype    = $record->examtype?->name ?? '-';
-        $studentName = $record->student->name;
-        $examDate    = $record->exam_date?->isoFormat('dddd, D MMMM Y') ?? '-';
-        $resultUrl   = route('exam.result');
-
-        $text = "*INFORMASI Hasil {$examtype}*\n\n"
-            . "Saudara *{$studentName}*, Kami informasikan bahwa masing-masing dosen penguji "
-            . "telah menuliskan revisi {$examtype} ({$examDate}) dan dapat dicetak pada sistem DBS berikut.\n\n"
-            . "{$resultUrl}\n"
-            . "(jika eror saat buka link di handphone, pastikan awalannya http:// bukan https://)";
-
-        if ($record->exam_type_id == 3) {
-            $text .= "\n\nTerakhir, harap laporkan hasil ujian Anda pada laman "
-                . "(siapkan lembar revisi yang sudah ditandatangani dan foto ujian):\n"
-                . "https://forms.gle/umUKgAcXLnhowgpw7";
-        }
-
-        $text .= "\n\nDemikian informasi ini Kami sampaikan. Atas perhatian Anda, Kami ucapkan terima kasih.\n"
-            . "(ttd.) *Kajur Pendidikan Matematika*";
-
-        return 'https://api.whatsapp.com/send/?phone=62' . $record->student->phone . '&text=' . rawurlencode($text);
     }
 }

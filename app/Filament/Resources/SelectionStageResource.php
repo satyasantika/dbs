@@ -18,6 +18,8 @@ class SelectionStageResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen Seleksi';
 
+    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
+
     protected static ?string $modelLabel = 'Tahap Seleksi';
 
     protected static ?string $pluralModelLabel = 'Tahap Seleksi';
