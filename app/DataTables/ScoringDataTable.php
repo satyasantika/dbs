@@ -104,7 +104,7 @@ class ScoringDataTable extends DataTable
                     ->join('users AS u', 'er.user_id', '=', 'u.id')
                     ->join('exam_types AS et', 'er.exam_type_id', '=', 'et.id')
                     ->leftJoin('users AS lec', 'exam_scores.user_id', '=', 'lec.id')
-                    ->leftJoin('users AS ch', 'er.chief', '=', 'ch.id')
+                    ->leftJoin('users AS ch', 'er.chief_id', '=', 'ch.id')
                     ->where('exam_scores.user_id',auth()->id());
     }
 
