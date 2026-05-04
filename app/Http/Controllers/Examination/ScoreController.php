@@ -50,6 +50,7 @@ class ScoreController extends Controller
         }
 
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
+        $scoring->loadMissing(['registration.student', 'registration.examtype', 'lecture']);
         $form_items = ExamFormItem::select('id','name','exam_type_id')->where('exam_type_id',$examregistration->exam_type_id)->get();
         return view('examination.scoring-form',compact('form_items','scoring','examregistration'));
     }

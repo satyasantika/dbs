@@ -288,26 +288,50 @@
 
 @php
     $tanggal_sekarang = Carbon\Carbon::now()->isoFormat('Y-MM-DD');
-    $waktu_sekarang   = Carbon\Carbon::now()->isoFormat('HH:mm:ss');
-    $waktu_bandingan  = $tanggal_sekarang.' '.$waktu_sekarang;
-    $waktu_ujian      = $examregistration->exam_date->isoFormat('Y-MM-DD').' '.$examregistration->exam_time;
+    $exam_start_at = Carbon\Carbon::parse(
+        $examregistration->exam_date->format('Y-m-d').' '.trim((string) $examregistration->exam_time)
+    );
+    $exam_not_started_yet = Carbon\Carbon::now()->lt($exam_start_at);
     $available_check  = ($examregistration->exam_date < $tanggal_sekarang && $examregistration->pass_exam)
                         && !Auth::user()->can('force edit score');
 
-    $init_grade  = ($scoring->score01 + $scoring->score02 + $scoring->score03 + $scoring->score04 + $scoring->score05) / 5;
-    $has_scores  = $scoring->score01 !== null;
+    $score_cols = ['score01','score02','score03','score04','score05'];
+    $filled_scores = [];
+    foreach ($score_cols as $col) {
+        $v = $scoring->{$col};
+        if ($v !== null && $v !== '') {
+            $filled_scores[] = (float) $v;
+        }
+    }
+    $n_filled = count($filled_scores);
+    $has_stored_grade = filled($scoring->grade);
+
+    if ($n_filled === 5) {
+        $init_grade = array_sum($filled_scores) / 5;
+    } elseif ($has_stored_grade) {
+        $init_grade = (float) $scoring->grade;
+    } elseif ($n_filled > 0) {
+        $init_grade = array_sum($filled_scores) / $n_filled;
+    } else {
+        $init_grade = null;
+    }
+
+    $has_scores = $init_grade !== null;
     $init_letter = '';
-    if ($has_scores) {
-        if      ($init_grade < 21) $init_letter = 'E';
-        elseif  ($init_grade < 29) $init_letter = 'D';
-        elseif  ($init_grade < 37) $init_letter = 'C-';
-        elseif  ($init_grade < 45) $init_letter = 'C';
-        elseif  ($init_grade < 53) $init_letter = 'C+';
-        elseif  ($init_grade < 61) $init_letter = 'B-';
-        elseif  ($init_grade < 69) $init_letter = 'B';
-        elseif  ($init_grade < 77) $init_letter = 'B+';
-        elseif  ($init_grade < 85) $init_letter = 'A-';
-        else                        $init_letter = 'A';
+    if ($has_scores && filled($scoring->letter)) {
+        $init_letter = $scoring->letter;
+    } elseif ($has_scores) {
+        $g = $init_grade;
+        if      ($g < 21) $init_letter = 'E';
+        elseif  ($g < 29) $init_letter = 'D';
+        elseif  ($g < 37) $init_letter = 'C-';
+        elseif  ($g < 45) $init_letter = 'C';
+        elseif  ($g < 53) $init_letter = 'C+';
+        elseif  ($g < 61) $init_letter = 'B-';
+        elseif  ($g < 69) $init_letter = 'B';
+        elseif  ($g < 77) $init_letter = 'B+';
+        elseif  ($g < 85) $init_letter = 'A-';
+        else              $init_letter = 'A';
     }
 
     $grades_map = [
@@ -358,7 +382,7 @@
     </div>
 </div>
 
-@if ($waktu_bandingan < $waktu_ujian)
+@if ($exam_not_started_yet)
     <div style="text-align:center;padding:52px 0;color:#ef4444;font-size:1.6rem;font-weight:900;letter-spacing:-.5px">
         ujian belum dimulai
     </div>
@@ -560,6 +584,8 @@
     // ══ Constants ════════════════════════════════
     const STORAGE_KEY   = 'dbs_rev_{{ $scoring_id }}_{{ $user_id }}';
     const PASS_THRESHOLD = 37; // minimum numeric grade for C (pass)
+    const INITIAL_AVG = @json($has_scores ? round((float) $init_grade, 5) : null);
+    const INITIAL_LETTER = @json($has_scores ? $init_letter : null);
 
     // ══ Grade helpers ════════════════════════════
     function gradeToLetter(g) {
@@ -749,8 +775,14 @@
 
     // ══ Init ═════════════════════════════════════
     document.addEventListener('DOMContentLoaded', function () {
-        // Sync decision notice with current scores on load
-        autoSetDecision(calcAverage());
+        let avg = calcAverage();
+        if (avg === null && INITIAL_AVG !== null) {
+            avg = INITIAL_AVG;
+            const ltr = INITIAL_LETTER || gradeToLetter(avg);
+            syncResultDisplay(avg, ltr);
+            syncDirectButtons(ltr);
+        }
+        autoSetDecision(avg);
 
         // Check localStorage for revision draft
         const revRow = document.getElementById('revision_row');
