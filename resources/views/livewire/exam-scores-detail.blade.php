@@ -72,8 +72,8 @@
     </div>
 @endif
 
-{{-- Toolbar laporan: gaya inline agar selalu terlihat di modal Filament --}}
-@if ($total > 0)
+{{-- Unduh BA hanya setelah semua penguji selesai menilai --}}
+@if ($allScored)
 @php
     $styToolbarWrap = 'border-radius:12px;border:2px solid #34d399;background:#ecfdf5;padding:16px 18px;margin-bottom:8px;box-sizing:border-box;position:relative;z-index:10;';
     $styToolbarTitle = 'margin:0 0 12px;font-size:15px;font-weight:800;color:#065f46;line-height:1.3;';

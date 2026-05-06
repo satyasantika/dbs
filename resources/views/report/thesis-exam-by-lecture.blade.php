@@ -61,7 +61,7 @@
                         if ($item->exam_type_id == 3) {
                             $order = ($item->id) - 10;
                         }
-                        $item_order = 'score'.$order;
+                        $item_order = sprintf('score%02d', $order);
                     @endphp
                     <tr>
                         <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $order }}.</td>
@@ -72,7 +72,7 @@
                     <tr>
                         <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-end" colspan="2">Jumlah</td>
                         <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">
-                            {{ $examscore->score1 + $examscore->score2 + $examscore->score3 + $examscore->score4 + $examscore->score5 }}
+                            {{ $examscore->score01 + $examscore->score02 + $examscore->score03 + $examscore->score04 + $examscore->score05 }}
                         </td>
                     </tr>
                     <tr>
