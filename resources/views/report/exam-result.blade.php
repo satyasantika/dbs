@@ -6,12 +6,12 @@
 
 @section('report')
 <div style="margin:auto;width:18cm;">
-    <p class="text-center" @style('font-size:12pt;font-weight:bold;')>
+    <p @style('font-size:12pt;font-weight:bold;text-align:center;')>
         BERITA ACARA HASIL {{ strToUpper($examregistration->examtype->name) }}<br>
     </p>
     <p style="text-align:justify;">
         Pada hari ini {{ $examregistration->exam_date->isoFormat('dddd, DD MMMM Y') }}
-        pukul {{ $examregistration->exam_time }} WIB
+        pukul {{ \Carbon\Carbon::parse($examregistration->exam_time)->isoFormat('HH:mm') }} WIB
         bertempat di Ruang Sidang Fakultas Keguruan dan Ilmu Pendidikan
         telah dilaksanakan {{ $examregistration->examtype->name }} bagi mahasiswa:
     </p>
@@ -47,7 +47,7 @@
     </p>
     {{-- tabel penguji --}}
     <div style="line-height:1.2; font-size:9pt">
-        <table style="width: 100%;vertical-align: middle">
+        <table style="width: 100%;vertical-align: middle; border-collapse: collapse;" class="table table-bordered table-center">
             <thead>
                 <tr class="text-center" style="vertical-align: middle">
                     <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:4px;width:.5cm;">No.</th>
@@ -57,24 +57,24 @@
                     <th rowspan="2" style="border: 1px solid black;border-collapse:collapse;padding:4px;">Keterangan Revisi</th>
                 </tr>
                 <tr >
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(1)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(2)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(3)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(4)</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm;" class="text-center">(5)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm; text-align: center;">(1)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm; text-align: center;">(2)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm; text-align: center;">(3)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm; text-align: center;">(4)</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; width:0.6cm; text-align: center;">(5)</td>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($examscores as $key => $exam_score)
                 <tr style="vertical-align: top">
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $key + 1 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; text-align: center;">{{ $key + 1 }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:4px;">{{ $exam_score->lecture->name ?? '-' }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score1 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score2 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score3 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score4 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px;" class="text-center">{{ $exam_score->score5 }}</td>
-                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px;" class="text-end">{{ $exam_score->grade.' ('.$exam_score->letter.')' }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; text-align: center;">{{ $exam_score->score01 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; text-align: center;">{{ $exam_score->score02 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; text-align: center;">{{ $exam_score->score03 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; text-align: center;">{{ $exam_score->score04 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:4px; text-align: center;">{{ $exam_score->score05 }}</td>
+                    <td style="border: 1px solid black;border-collapse:collapse;padding:5px; text-align: right;">{{ $exam_score->grade.' ('.$exam_score->letter.')' }}</td>
                     <td style="border: 1px solid black;border-collapse:collapse;padding:5px;">
                         @if ($exam_score->revision)
                             {{ !is_null($exam_score->revision_note) ? $exam_score->revision_note : 'belum ditulis' }}

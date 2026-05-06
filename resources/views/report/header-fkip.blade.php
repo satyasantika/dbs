@@ -2,8 +2,8 @@
     <table style="margin:auto;border: 1px solid white;width:18cm;">
         <tbody>
             <tr style="border-bottom: 1px solid black;">
-                <td class="text-end"><img src="{{ asset('LOGOUNSIL.png') }}" height="100"/></td>
-                <td class="text-center" style="font-family: Times; line-height: 1.2;vertical-align:middle;">
+                <td @style("text-align:right;vertical-align:middle;width:2.8cm;")>@include('report.partials.logo-unsil-img')</td>
+                <td @style("font-family: Times; line-height: 1.2;vertical-align:middle;text-align:center;")>
                     <span @style('font-size:12pt')>KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI</span><br>
                     <span @style('font-size:14pt')>UNIVERSITAS SILIWANGI</span><br>
                     <span @style('font-size:14pt; font-weight: bold')>FAKULTAS KEGURUAN DAN ILMU PENDIDIKAN</span><br>
@@ -14,5 +14,5 @@
             </tr>
         </tbody>
     </table>
-    <br>
+    <hr>
 </header>
