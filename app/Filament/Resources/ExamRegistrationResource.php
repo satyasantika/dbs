@@ -265,18 +265,23 @@ class ExamRegistrationResource extends Resource
                 Tables\Columns\TextColumn::make('student.name')
                     ->label('Mahasiswa')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->wrapHeader()
+                    ->extraCellAttributes(['class' => 'exam-registrations-wrap-cell exam-registrations-student-cell'])
+                    ->extraHeaderAttributes(['class' => 'exam-registrations-wrap-cell exam-registrations-student-cell']),
                 Tables\Columns\TextColumn::make('examtype.name')
                     ->label('Jenis Ujian')
                     ->badge()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('registration_order')
-                    ->label('Ke-')
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('exam_date')
                     ->label('Tgl Ujian')
                     ->date('d M Y')
-                    ->sortable(),
+                    ->sortable()
+                    ->wrap()
+                    ->wrapHeader()
+                    ->extraCellAttributes(['class' => 'exam-registrations-wrap-cell exam-registrations-date-cell'])
+                    ->extraHeaderAttributes(['class' => 'exam-registrations-wrap-cell exam-registrations-date-cell']),
                 Tables\Columns\TextColumn::make('exam_time')
                     ->label('Waktu')
                     ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '—')
@@ -285,8 +290,9 @@ class ExamRegistrationResource extends Resource
                     ->label('Penguji')
                     ->getStateUsing(fn (ExamRegistration $record): string => static::buildExaminerHtml($record))
                     ->html()
-                    ->wrap()
                     ->sortable(false)
+                    ->extraCellAttributes(['class' => 'exam-registrations-examiner-cell'])
+                    ->extraHeaderAttributes(['class' => 'exam-registrations-examiner-cell'])
                     ->searchable(
                         query: function (Builder $query, string $search): Builder {
                             return $query->where(function ($q) use ($search) {
@@ -328,6 +334,24 @@ class ExamRegistrationResource extends Resource
             ])
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->actions([
+                Tables\Actions\Action::make('set_examiners')
+                    ->label('Set ke penguji')
+                    ->icon('heroicon-o-user-plus')
+                    ->color('warning')
+                    ->iconButton()
+                    ->tooltip('Set jadwal ke penguji')
+                    ->requiresConfirmation()
+                    ->modalHeading('Set jadwal ke penguji')
+                    ->modalDescription('Yakin akan set ujian? Data para penguji akan ditambahkan ke sistem penilaian.')
+                    ->action(function (ExamRegistration $record): void {
+                        SetScoringToExaminerResource::assignExaminerScores($record);
+
+                        Notification::make()
+                            ->success()
+                            ->title('Data para penguji telah ditambahkan')
+                            ->send();
+                    })
+                    ->visible(fn (ExamRegistration $record): bool => ! static::hasExaminerScores($record)),
                 Tables\Actions\Action::make('view_scores')
                     ->label('Rincian Penilaian')
                     ->icon('heroicon-o-clipboard-document-list')
@@ -361,17 +385,32 @@ class ExamRegistrationResource extends Resource
 
                         return $scores->count() > 0 && $scores->whereNull('grade')->count() === 0;
                     }),
-                Tables\Actions\EditAction::make()->iconButton(),
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
-                    ->hidden(fn (ExamRegistration $record) => $record->examScores->whereNotNull('grade')->isNotEmpty()),
+                    ->visible(fn (ExamRegistration $record): bool => ! static::hasExaminerScores($record))
+                    ->before(function (ExamRegistration $record): void {
+                        if (static::hasExaminerScores($record)) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Tidak dapat dihapus')
+                                ->body('Registrasi ujian sudah diset ke penguji.')
+                                ->send();
+
+                            throw new \Filament\Support\Exceptions\Halt();
+                        }
+                    }),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->bulkActions([])
             ->defaultSort('exam_date', 'desc');
+    }
+
+    public static function hasExaminerScores(ExamRegistration $record): bool
+    {
+        if ($record->relationLoaded('examScores') && $record->examScores->isNotEmpty()) {
+            return true;
+        }
+
+        return ExamScore::where('exam_registration_id', $record->id)->exists();
     }
 
     public static function buildExaminerHtml(ExamRegistration $record): string
@@ -400,8 +439,10 @@ class ExamRegistrationResource extends Resource
             $html = '';
             foreach ($slots as $slot) {
                 $isChief = $record->chief_id && $slot['id'] == $record->chief_id;
-                $html .= '<div style="font-size:11px;line-height:1.6;color:#6b7280">'
-                    . $slot['no'] . '. ' . ($isChief ? '★ ' : '') . e($slot['name'] ?? '(?)')
+                $displayName = $slot['name'] ?? '(?)';
+                $line = $slot['no'] . '. ' . ($isChief ? '★ ' : '') . $displayName;
+                $html .= '<div title="' . e($line) . '" style="font-size:11px;line-height:1.6;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
+                    . $slot['no'] . '. ' . ($isChief ? '★ ' : '') . e($displayName)
                     . '</div>';
             }
             return $html;
@@ -409,11 +450,13 @@ class ExamRegistrationResource extends Resource
 
         $html = '';
         foreach ($scores as $score) {
-            $name    = e($score->lecture?->name ?? '(?)');
+            $displayName = $score->lecture?->name ?? '(?)';
+            $name    = e($displayName);
             $isChief = $record->chief_id && $score->user_id == $record->chief_id;
             $prefix  = $isChief ? '★ ' : '';
             $color   = $score->grade !== null ? '#16a34a' : '#dc2626';
-            $html   .= '<div style="font-size:11px;line-height:1.6;color:' . $color . '">'
+            $line    = $score->examiner_order . '. ' . $prefix . $displayName;
+            $html   .= '<div title="' . e($line) . '" style="font-size:11px;line-height:1.6;color:' . $color . ';white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'
                 . $score->examiner_order . '. ' . $prefix . $name
                 . '</div>';
         }

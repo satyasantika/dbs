@@ -10,6 +10,8 @@ class ListExamRegistrations extends ListRecords
 {
     protected static string $resource = ExamRegistrationResource::class;
 
+    protected static string $view = 'filament.resources.exam-registration-resource.pages.list-exam-registrations';
+
     protected function getHeaderActions(): array
     {
         return [
