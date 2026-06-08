@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Examination;
 
+use App\Filament\Dosen\Pages\Scoring;
 use App\Models\ExamScore;
 use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
@@ -29,6 +30,10 @@ class ScoreController extends Controller
 
     public function index(ScoringDataTable $dataTable)
     {
+        if (auth()->user()->hasRole('dosen')) {
+            return redirect(Scoring::getUrl(['activeTab' => 'unscored']));
+        }
+
         $title = 'Penilaian Ujian';
         return $dataTable->render('layouts.setting',compact('title'));
     }
@@ -99,7 +104,7 @@ class ScoreController extends Controller
         }
 
         if (auth()->user()->hasRole('dosen')) {
-            return url('/home');
+            return Scoring::getUrl(['activeTab' => 'unscored']);
         }
 
         return route('scoring.index');

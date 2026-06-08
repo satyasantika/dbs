@@ -2,6 +2,7 @@
 
 namespace App\Filament\Dosen\Widgets;
 
+use App\Filament\Dosen\Pages\Scoring;
 use App\Models\ExamScore;
 use App\Models\GuideExaminer;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -16,8 +17,12 @@ class DosenStatsWidget extends BaseWidget
         $userId = auth()->id();
 
         $unscoredCount = ExamScore::query()
-            ->where('user_id', $userId)
-            ->whereNull('grade')
+            ->where('exam_scores.user_id', $userId)
+            ->whereNull('exam_scores.grade')
+            ->count();
+
+        $totalScoringCount = ExamScore::query()
+            ->where('exam_scores.user_id', $userId)
             ->count();
 
         $supervisedQuery = GuideExaminer::query()
@@ -30,7 +35,14 @@ class DosenStatsWidget extends BaseWidget
             ->whereNull('thesis_date')
             ->count();
 
-        $graduatedSupervisedCount = (clone $supervisedQuery)
+        $graduatedCount = GuideExaminer::query()
+            ->where(function ($query) use ($userId) {
+                $query->where('guide1_id', $userId)
+                    ->orWhere('guide2_id', $userId)
+                    ->orWhere('examiner1_id', $userId)
+                    ->orWhere('examiner2_id', $userId)
+                    ->orWhere('examiner3_id', $userId);
+            })
             ->whereNotNull('thesis_date')
             ->count();
 
@@ -42,7 +54,14 @@ class DosenStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($unscoredCount > 0 ? 'warning' : 'success')
                 ->icon('heroicon-o-clipboard-document-check')
-                ->url(route('scoring.index'));
+                ->url(Scoring::getUrl(['activeTab' => 'unscored']));
+
+            $stats[] = Stat::make('Penilaian Keseluruhan', $totalScoringCount)
+                ->description('Semua penugasan penilaian ujian')
+                ->descriptionIcon('heroicon-m-clipboard-document-list')
+                ->color('primary')
+                ->icon('heroicon-o-queue-list')
+                ->url(Scoring::getUrl(['activeTab' => 'all']));
         }
 
         $stats[] = Stat::make('Bimbingan Belum Lulus', $activeSupervisedCount)
@@ -52,9 +71,9 @@ class DosenStatsWidget extends BaseWidget
             ->icon('heroicon-o-user-group')
             ->url(route('information.guide'));
 
-        $stats[] = Stat::make('Bimbingan Lulus', $graduatedSupervisedCount)
-            ->description('Mahasiswa bimbingan sudah sidang')
-            ->descriptionIcon('heroicon-m-check-badge')
+        $stats[] = Stat::make('Bimbingan/Penguji yang sudah lulus', $graduatedCount)
+            ->description('Bukti membimbing / menguji untuk BKD')
+            ->descriptionIcon('heroicon-m-document-check')
             ->color('success')
             ->icon('heroicon-o-check-circle')
             ->url(route('information.pass'));
