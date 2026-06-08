@@ -20,7 +20,7 @@
                 <br>
                 <hr>
                 menu registrasi ujian belum diset ke penguji:<br>
-                <a href="{{ route('get.setscoringtoexamineryet') }}" class="btn btn-sm btn-primary">set jadwal ke penguji</a>
+                <a href="{{ \App\Filament\Resources\SetScoringToExaminerResource::getUrl() }}" class="btn btn-sm btn-primary">set jadwal ke penguji</a>
                 <br>
             </div>
         </div>

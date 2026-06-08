@@ -4,6 +4,7 @@ namespace App\Filament\Widgets;
 
 use App\Filament\Resources\ExamRegistrationResource;
 use App\Filament\Resources\ReadyExamResultsResource;
+use App\Filament\Resources\SetScoringToExaminerResource;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -41,7 +42,7 @@ class ExamStatsWidget extends BaseWidget
             Stat::make('Belum Diset ke Penguji', $notSetCount)
                 ->icon('heroicon-o-exclamation-triangle')
                 ->color('danger')
-                ->url(route('get.setscoringtoexamineryet')),
+                ->url(SetScoringToExaminerResource::getUrl()),
             Stat::make('Belum Kabari Mahasiswa', $readyNotifyCount)
                 ->description('Sudah dinilai semua penguji, hasil belum dikirim')
                 ->icon('heroicon-o-paper-airplane')

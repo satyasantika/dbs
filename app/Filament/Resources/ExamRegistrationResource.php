@@ -374,7 +374,7 @@ class ExamRegistrationResource extends Resource
             ->defaultSort('exam_date', 'desc');
     }
 
-    private static function buildExaminerHtml(ExamRegistration $record): string
+    public static function buildExaminerHtml(ExamRegistration $record): string
     {
         $activeIds = array_values(array_filter([
             $record->examiner1_id, $record->examiner2_id, $record->examiner3_id,

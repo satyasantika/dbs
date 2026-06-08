@@ -164,31 +164,7 @@ class ExamRegistrationController extends Controller
 
     public function scoreSet(ExamRegistration $examregistration)
     {
-        ExamScore::create([
-            'exam_registration_id' => $examregistration->id,
-            'user_id'              => $examregistration->examiner1_id,
-            'examiner_order'       => 1,
-        ]);
-        ExamScore::create([
-            'exam_registration_id' => $examregistration->id,
-            'user_id'              => $examregistration->examiner2_id,
-            'examiner_order'       => 2,
-        ]);
-        ExamScore::create([
-            'exam_registration_id' => $examregistration->id,
-            'user_id'              => $examregistration->examiner3_id,
-            'examiner_order'       => 3,
-        ]);
-        ExamScore::create([
-            'exam_registration_id' => $examregistration->id,
-            'user_id'              => $examregistration->guide1_id,
-            'examiner_order'       => 4,
-        ]);
-        ExamScore::create([
-            'exam_registration_id' => $examregistration->id,
-            'user_id'              => $examregistration->guide2_id,
-            'examiner_order'       => 5,
-        ]);
+        \App\Filament\Resources\SetScoringToExaminerResource::assignExaminerScores($examregistration);
 
         return redirect()->back()->with('success', 'Data para penguji telah ditambahkan');
     }

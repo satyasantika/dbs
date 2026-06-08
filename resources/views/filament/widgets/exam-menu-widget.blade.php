@@ -35,7 +35,7 @@
                 </div>
             </a>
 
-            <a href="{{ route('get.setscoringtoexamineryet') }}"
+            <a href="{{ \App\Filament\Resources\SetScoringToExaminerResource::getUrl() }}"
                class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-danger-500 hover:shadow-md">
                 <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-danger-100 text-danger-600">
                     <x-heroicon-o-exclamation-triangle class="h-6 w-6" />

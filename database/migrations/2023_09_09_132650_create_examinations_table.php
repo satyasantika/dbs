@@ -91,11 +91,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('exam_scores');
-
-        Schema::table('exam_registrations', function (Blueprint $table) {
-            $table->dropUnique('exam_registrations_unique_exam_type_order_user');
-        });
-
         Schema::dropIfExists('exam_registrations');
         Schema::dropIfExists('exam_form_items');
         Schema::dropIfExists('exam_types');

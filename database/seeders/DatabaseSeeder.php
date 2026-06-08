@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             CreateAdminUserSeeder::class,
             PermissionSeeder::class,
             UserSeeder::class,
+            ExamRegistrationSeeder::class,
             GuideAllocationGroupSeeder::class,
         ]);
 
