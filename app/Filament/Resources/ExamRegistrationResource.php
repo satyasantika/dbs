@@ -260,8 +260,26 @@ class ExamRegistrationResource extends Resource
 
     public static function table(Table $table): Table
     {
+        return static::configureListTable($table)
+            ->filters(static::getTableFilters())
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
+            ->defaultSort('exam_date', 'desc');
+    }
+
+    public static function configureListTable(Table $table): Table
+    {
         return $table
-            ->columns([
+            ->columns(static::getTableColumns())
+            ->actions(static::getTableActions())
+            ->bulkActions([]);
+    }
+
+    /**
+     * @return array<int, Tables\Columns\Column>
+     */
+    public static function getTableColumns(): array
+    {
+        return [
                 Tables\Columns\TextColumn::make('student.name')
                     ->label('Mahasiswa')
                     ->searchable()
@@ -307,33 +325,15 @@ class ExamRegistrationResource extends Resource
                     ->getStateUsing(fn (ExamRegistration $record): string => static::buildPassSendHtml($record))
                     ->html()
                     ->sortable(false),
-            ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('exam_type_id')
-                    ->label('Jenis Ujian')
-                    ->relationship('examtype', 'name'),
-                Tables\Filters\TernaryFilter::make('pass_exam')
-                    ->label('Status Kelulusan'),
-                Tables\Filters\Filter::make('exam_date')
-                    ->label('Tanggal Ujian')
-                    ->form([
-                        Forms\Components\DatePicker::make('from')->label('Dari'),
-                        Forms\Components\DatePicker::make('until')->label('Sampai'),
-                    ])
-                    ->query(function (Builder $query, array $data): Builder {
-                        return $query
-                            ->when($data['from'],  fn ($q, $d) => $q->whereDate('exam_date', '>=', $d))
-                            ->when($data['until'], fn ($q, $d) => $q->whereDate('exam_date', '<=', $d));
-                    })
-                    ->indicateUsing(function (array $data): array {
-                        $indicators = [];
-                        if ($data['from']  ?? null) $indicators[] = Tables\Filters\Indicator::make('Dari: '    . $data['from']);
-                        if ($data['until'] ?? null) $indicators[] = Tables\Filters\Indicator::make('Sampai: ' . $data['until']);
-                        return $indicators;
-                    }),
-            ])
-            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
-            ->actions([
+        ];
+    }
+
+    /**
+     * @return array<int, Tables\Actions\Action>
+     */
+    public static function getTableActions(): array
+    {
+        return [
                 Tables\Actions\Action::make('set_examiners')
                     ->label('Set ke penguji')
                     ->icon('heroicon-o-user-plus')
@@ -361,6 +361,7 @@ class ExamRegistrationResource extends Resource
                         $record->loadMissing(['examtype', 'student']);
                         $type  = $record->examtype?->name ?? 'Ujian';
                         $name  = $record->student?->name ?? '';
+
                         return "Penilaian {$type} (ke-{$record->registration_order}) — {$name}";
                     })
                     ->modalContent(fn (ExamRegistration $record) => view('filament.modals.exam-scores-detail', ['recordId' => $record->id]))
@@ -399,9 +400,43 @@ class ExamRegistrationResource extends Resource
                             throw new \Filament\Support\Exceptions\Halt();
                         }
                     }),
-            ])
-            ->bulkActions([])
-            ->defaultSort('exam_date', 'desc');
+        ];
+    }
+
+    /**
+     * @return array<int, Tables\Filters\BaseFilter>
+     */
+    public static function getTableFilters(): array
+    {
+        return [
+                Tables\Filters\SelectFilter::make('exam_type_id')
+                    ->label('Jenis Ujian')
+                    ->relationship('examtype', 'name'),
+                Tables\Filters\TernaryFilter::make('pass_exam')
+                    ->label('Status Kelulusan'),
+                Tables\Filters\Filter::make('exam_date')
+                    ->label('Tanggal Ujian')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('Dari'),
+                        Forms\Components\DatePicker::make('until')->label('Sampai'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when($data['from'],  fn ($q, $d) => $q->whereDate('exam_date', '>=', $d))
+                            ->when($data['until'], fn ($q, $d) => $q->whereDate('exam_date', '<=', $d));
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['from']  ?? null) {
+                            $indicators[] = Tables\Filters\Indicator::make('Dari: '.$data['from']);
+                        }
+                        if ($data['until'] ?? null) {
+                            $indicators[] = Tables\Filters\Indicator::make('Sampai: '.$data['until']);
+                        }
+
+                        return $indicators;
+                    }),
+        ];
     }
 
     public static function hasExaminerScores(ExamRegistration $record): bool

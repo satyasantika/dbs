@@ -43,7 +43,7 @@ class AdminPanelProvider extends PanelProvider
             ->widgets([
                 Widgets\AccountWidget::class,
                 \App\Filament\Widgets\ExamStatsWidget::class,
-                \App\Filament\Widgets\ExamMenuWidget::class,
+                \App\Filament\Widgets\ExamRegistrationsByDateWidget::class,
             ])
             ->navigationGroups([
                 NavigationGroup::make('Manajemen Pengguna')->icon('heroicon-o-users'),
