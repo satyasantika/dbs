@@ -8,7 +8,6 @@ use App\Models\SelectionGuide;
 use App\Models\SelectionStage;
 use App\Models\ExamRegistration;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Lab404\Impersonate\Models\Impersonate;
@@ -48,12 +47,16 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return $this->hasRole('admin');
+        return match ($panel->getId()) {
+            'admin' => $this->hasRole('admin'),
+            'dosen' => $this->hasRole('dosen'),
+            default => false,
+        };
     }
 
     public function canImpersonate(): bool
     {
-        return Auth::user()->hasRole('admin');
+        return $this->hasRole('admin');
     }
 
     public function canBeImpersonated(): bool

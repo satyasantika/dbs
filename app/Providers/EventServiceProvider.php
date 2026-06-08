@@ -6,6 +6,9 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Event;
+use Lab404\Impersonate\Events\LeaveImpersonation;
+use Lab404\Impersonate\Events\TakeImpersonation;
+use App\Listeners\SyncImpersonationSession;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -25,7 +28,8 @@ class EventServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Event::listen(TakeImpersonation::class, [SyncImpersonationSession::class, 'handleTake']);
+        Event::listen(LeaveImpersonation::class, [SyncImpersonationSession::class, 'handleLeave']);
     }
 
     /**

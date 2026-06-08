@@ -98,6 +98,10 @@ class ScoreController extends Controller
             return ExamRegistrationResource::getUrl();
         }
 
+        if (auth()->user()->hasRole('dosen')) {
+            return url('/home');
+        }
+
         return route('scoring.index');
     }
 

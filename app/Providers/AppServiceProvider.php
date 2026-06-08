@@ -6,6 +6,8 @@ use Livewire\Livewire;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Filament\Http\Responses\Auth\Contracts\LogoutResponse;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,5 +45,10 @@ class AppServiceProvider extends ServiceProvider
                 return Route::get($subPath . '/livewire/livewire.min.js', $handle);
             });
         }
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::TOPBAR_START,
+            fn (): \Illuminate\Contracts\View\View => view('filament.impersonation-banner'),
+        );
     }
 }

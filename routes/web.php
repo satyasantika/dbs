@@ -89,6 +89,20 @@ Route::post('print-hasil', [App\Http\Controllers\Examination\StudentController::
 
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
+
+Route::get('/go-home', function () {
+    $user = auth()->user();
+
+    if ($user->hasRole('admin')) {
+        return redirect('/admin');
+    }
+
+    if ($user->hasRole('dosen')) {
+        return redirect('/home');
+    }
+
+    return redirect()->route('dashboard');
+})->middleware('auth')->name('home');
 
 Route::impersonate();
