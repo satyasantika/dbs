@@ -4,11 +4,7 @@
 @endpush
 @push('header')
 <br>Penilaian {{ $scoring->registration->examtype->name }}
-@if (auth()->user()->hasRole('admin'))
-<a href="{{ route('examregistrations.examscores.index',$scoring->exam_registration_id) }}" class="btn btn-outline-primary btn-sm float-end">kembali</a>
-@else
-<a href="{{ route('scoring.index') }}" class="btn btn-outline-primary btn-sm float-end">kembali</a>
-@endif
+<a href="{{ $returnUrl }}" class="btn btn-outline-primary btn-sm float-end">kembali</a>
 @endpush
 
 @push('body')
@@ -291,7 +287,12 @@
     $exam_start_at = Carbon\Carbon::parse(
         $examregistration->exam_date->format('Y-m-d').' '.trim((string) $examregistration->exam_time)
     );
-    $exam_not_started_yet = Carbon\Carbon::now()->lt($exam_start_at);
+    $exam_not_started_yet = false;
+    if ($examregistration->exam_date) {
+        $exam_not_started_yet = filled($examregistration->exam_time)
+            ? Carbon\Carbon::now()->lt($exam_start_at)
+            : Carbon\Carbon::now()->startOfDay()->lt($examregistration->exam_date->startOfDay());
+    }
     $available_check  = ($examregistration->exam_date < $tanggal_sekarang && $examregistration->pass_exam)
                         && !Auth::user()->can('force edit score');
 
@@ -564,12 +565,7 @@
     <hr style="border-color:#e2e8f0;margin:20px 0 16px">
 
     <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
-        @if (auth()->user()->hasRole('admin'))
-        <a href="{{ route('examregistrations.examscores.index',$scoring->exam_registration_id) }}"
-            class="btn btn-outline-secondary btn-sm">Batal</a>
-        @else
-        <a href="{{ route('scoring.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
-        @endif
+        <a href="{{ $returnUrl }}" class="btn btn-outline-secondary btn-sm">Batal</a>
         <button type="submit" class="dbs-save-btn" id="saveBtn" @disabled($available_check)>
             Simpan Penilaian
         </button>

@@ -138,7 +138,7 @@ class PermissionSeeder extends Seeder
         // menu for DOSEN
         $dosen_access = [
             ['ajuan pembimbing','selection/guiderespons'],
-            ['penilaian ujian','exam/scores'],
+            ['penilaian ujian','examination/scoring'],
         ];
         $permissions = [];
         foreach ($dosen_access as $access_value) {
@@ -156,7 +156,7 @@ class PermissionSeeder extends Seeder
             'parent_id' => null,
             'order' => 'D00',
         ]);
-        foreach ($mahasiswa_access as $child) {
+        foreach ($dosen_access as $child) {
             $setting->children()->create([
                 'name' => $child[0],
                 'url' => $child[1],
@@ -190,7 +190,7 @@ class PermissionSeeder extends Seeder
             'parent_id' => null,
             'order' => 'C00',
         ]);
-        foreach ($mahasiswa_access as $child) {
+        foreach ($dbs_access as $child) {
             $setting->children()->create([
                 'name' => $child[0],
                 'url' => $child[1],

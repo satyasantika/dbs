@@ -163,6 +163,10 @@ class SetScoringToExaminerResource extends Resource
             ['user_id' => $record->guide1_id, 'examiner_order' => 4],
             ['user_id' => $record->guide2_id, 'examiner_order' => 5],
         ] as $slot) {
+            if (!$slot['user_id']) {
+                continue;
+            }
+
             ExamScore::create([
                 'exam_registration_id' => $record->id,
                 'user_id' => $slot['user_id'],

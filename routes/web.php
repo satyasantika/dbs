@@ -63,6 +63,7 @@ Route::middleware('auth')->group(function () {
         Route::get('examination/chief/{chief}', [App\Http\Controllers\Examination\ChiefController::class,'show'])->name('chief.show');
         Route::put('examination/chief/{chief}/pass', [App\Http\Controllers\Examination\ChiefController::class,'pass'])->name('chief.pass');
         // dashboard dosen
+        Route::redirect('exam/scores', '/examination/scoring');
         Route::get('examination/scoring', [App\Http\Controllers\Examination\ScoreController::class,'index'])->name('scoring.index');
         Route::get('examination/scoring-archieves', [App\Http\Controllers\Examination\ScoreController::class,'archieves'])->name('scoring.archieves');
         Route::get('examination/scoring/{scoring}/edit', [App\Http\Controllers\Examination\ScoreController::class,'edit'])->name('scoring.edit');

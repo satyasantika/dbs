@@ -7,6 +7,7 @@ use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
 use App\Models\ExamRegistration;
 use App\DataTables\ScoringDataTable;
+use App\Filament\Resources\ExamRegistrationResource;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 
@@ -52,7 +53,13 @@ class ScoreController extends Controller
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
         $scoring->loadMissing(['registration.student', 'registration.examtype', 'lecture']);
         $form_items = ExamFormItem::select('id','name','exam_type_id')->where('exam_type_id',$examregistration->exam_type_id)->get();
-        return view('examination.scoring-form',compact('form_items','scoring','examregistration'));
+
+        return view('examination.scoring-form', [
+            'form_items' => $form_items,
+            'scoring' => $scoring,
+            'examregistration' => $examregistration,
+            'returnUrl' => $this->scoringReturnUrl(),
+        ]);
     }
 
     public function update(Request $request, ExamScore $scoring)
@@ -81,13 +88,17 @@ class ScoreController extends Controller
         }
         $examregistration->save();
 
+        return redirect($this->scoringReturnUrl())
+            ->with('success', 'data penilaian '.$name.' telah diperbarui');
+    }
+
+    private function scoringReturnUrl(): string
+    {
         if (auth()->user()->hasRole('admin')) {
-            return to_route('examregistrations.examscores.index',$scoring->exam_registration_id)->with('success','data penilaian '.$name.' telah diperbarui');
-        } else {
-            return to_route('scoring.index')->with('success','data penilaian '.$name.' telah diperbarui');
+            return ExamRegistrationResource::getUrl();
         }
 
-
+        return route('scoring.index');
     }
 
     private function _convertToLetter($grade)

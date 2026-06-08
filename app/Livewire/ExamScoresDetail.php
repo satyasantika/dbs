@@ -12,7 +12,10 @@ class ExamScoresDetail extends Component
     public function render()
     {
         $record = ExamRegistration::with([
-            'examScores.lecture', 'examtype', 'student',
+            'examScores' => fn ($query) => $query->orderBy('examiner_order'),
+            'examScores.lecture',
+            'examtype',
+            'student',
         ])->findOrFail($this->recordId);
 
         return view('livewire.exam-scores-detail', compact('record'));

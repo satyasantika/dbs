@@ -159,11 +159,23 @@
                     </div>
                 </td>
                 <td class="px-3 py-2 text-center">
-                    @if (!is_null($score->grade))
-                        <span style="display:inline-flex;align-items:center;border-radius:9999px;background:#1f2937;padding:1px 8px;font-size:11px;font-weight:700;color:#fff;">{{ $score->grade }}</span>
-                    @else
-                        <span class="text-gray-400">—</span>
-                    @endif
+                    <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
+                        @if (!is_null($score->grade))
+                            <span style="display:inline-flex;align-items:center;border-radius:9999px;background:#1f2937;padding:1px 8px;font-size:11px;font-weight:700;color:#fff;">{{ $score->grade }}</span>
+                        @else
+                            <span style="color:#9ca3af">—</span>
+                        @endif
+                        <x-filament::icon-button
+                            tag="a"
+                            :href="route('scoring.edit', ['scoring' => $score])"
+                            target="_blank"
+                            icon="heroicon-m-pencil-square"
+                            label="Edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                            tooltip="Edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                            color="primary"
+                            size="sm"
+                        />
+                    </div>
                 </td>
                 <td class="px-3 py-2 text-center font-bold">
                     @php
