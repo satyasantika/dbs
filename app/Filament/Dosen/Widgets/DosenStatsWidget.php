@@ -2,6 +2,8 @@
 
 namespace App\Filament\Dosen\Widgets;
 
+use App\Filament\Dosen\Pages\GraduationEvidence;
+use App\Filament\Dosen\Pages\GuideSupervision;
 use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Filament\Dosen\Pages\Scoring;
 use App\Models\ExamScore;
@@ -71,14 +73,14 @@ class DosenStatsWidget extends BaseWidget
             ->descriptionIcon('heroicon-m-academic-cap')
             ->color('primary')
             ->icon('heroicon-o-user-group')
-            ->url(route('information.guide'));
+            ->url(GuideSupervision::getUrl());
 
         $stats[] = Stat::make('Bimbingan/Penguji yang sudah lulus', $graduatedCount)
             ->description('Bukti membimbing / menguji untuk BKD')
             ->descriptionIcon('heroicon-m-document-check')
             ->color('success')
             ->icon('heroicon-o-check-circle')
-            ->url(route('information.pass'));
+            ->url(GraduationEvidence::getUrl());
 
         return $stats;
     }

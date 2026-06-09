@@ -40,11 +40,6 @@ class DatatableSearchSmokeTest extends TestCase
                 ['npm', 'mahasiswa', 'penguji_1', 'penguji_2', 'penguji_3', 'penguji_4', 'penguji_5', 'proposal_date', 'seminar_date', 'thesis_date'],
                 'mahasiswa',
             ],
-            'information guides' => [
-                '/information/guides',
-                ['year_generation', 'mahasiswa', 'penguji_4', 'penguji_5', 'proposal_date', 'seminar_date', 'thesis_date', 'npm'],
-                '2020',
-            ],
             'selection guides' => [
                 '/setting/selectionguides',
                 ['mahasiswa', 'group_id', 'pasangan', 'pembimbing', 'dosen', 'status', 'keterangan', 'updated_at'],
@@ -69,11 +64,6 @@ class DatatableSearchSmokeTest extends TestCase
                 '/examination/scoring',
                 ['mahasiswa', 'waktu', 'revision_note'],
                 'semhas',
-            ],
-            'information pass' => [
-                '/information/pass',
-                ['npm', 'mahasiswa', 'thesis_date', 'status'],
-                'lulus',
             ],
             'information pass recap' => [
                 '/information/recap-list/20/Mahasiswa%20Lulus',

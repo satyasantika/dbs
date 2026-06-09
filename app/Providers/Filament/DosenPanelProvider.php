@@ -6,6 +6,8 @@ use App\Http\Middleware\FilamentAuthenticate as Authenticate;
 use App\Filament\Dosen\Pages\ChiefExam;
 use App\Filament\Dosen\Pages\Dashboard;
 use App\Filament\Dosen\Pages\EditScoring;
+use App\Filament\Dosen\Pages\GraduationEvidence;
+use App\Filament\Dosen\Pages\GuideSupervision;
 use App\Filament\Dosen\Pages\Scoring;
 use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Filament\Dosen\Pages\ViewChiefExam;
@@ -46,6 +48,8 @@ class DosenPanelProvider extends PanelProvider
                 EditScoring::class,
                 ChiefExam::class,
                 ViewChiefExam::class,
+                GuideSupervision::class,
+                GraduationEvidence::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Dosen/Widgets'), for: 'App\\Filament\\Dosen\\Widgets')
             ->middleware([

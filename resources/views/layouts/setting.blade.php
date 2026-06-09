@@ -27,6 +27,7 @@
                             {{ session('warning') }}
                         </div>
                     @endif
+                    @stack('prepend-body')
                     {{ $dataTable->table()}}
                     @stack('body')
                 </div>
