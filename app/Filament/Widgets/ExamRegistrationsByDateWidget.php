@@ -5,6 +5,7 @@ namespace App\Filament\Widgets;
 use App\Filament\Resources\ExamRegistrationResource;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
+use Illuminate\Database\Eloquent\Builder;
 
 class ExamRegistrationsByDateWidget extends BaseWidget
 {
@@ -14,6 +15,8 @@ class ExamRegistrationsByDateWidget extends BaseWidget
 
     protected int | string | array $columnSpan = 'full';
 
+    protected static bool $isLazy = false;
+
     public ?string $examDate = null;
 
     public function mount(): void
@@ -21,13 +24,17 @@ class ExamRegistrationsByDateWidget extends BaseWidget
         $this->examDate = now()->toDateString();
     }
 
+    public function updatedExamDate(): void
+    {
+        $this->resetPage();
+        $this->flushCachedTableRecords();
+    }
+
     public function table(Table $table): Table
     {
         return ExamRegistrationResource::configureListTable(
-            $table->query(
-                ExamRegistrationResource::getEloquentQuery()
-                    ->whereDate('exam_date', $this->examDate ?? now()->toDateString())
-            )
+            $table->query(fn (): Builder => ExamRegistrationResource::getEloquentQuery()
+                ->whereDate('exam_date', $this->examDate ?: now()->toDateString()))
         )
             ->defaultSort('exam_time', 'asc')
             ->emptyStateHeading('Tidak ada ujian pada tanggal ini')
