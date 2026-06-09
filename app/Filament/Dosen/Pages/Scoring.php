@@ -200,7 +200,7 @@ class Scoring extends Page implements HasTable
                     ->label('Ketua')
                     ->icon('heroicon-o-user-circle')
                     ->color('gray')
-                    ->url(fn (ExamScore $record): string => route('chief.show', $record->exam_registration_id))
+                    ->url(fn (ExamScore $record): string => ViewChiefExam::getUrl(['record' => $record->exam_registration_id]))
                     ->visible(fn (ExamScore $record): bool => $record->user_id === $record->registration?->chief_id),
             ])
             ->emptyStateHeading(fn (): string => $this->activeTab === 'unscored'

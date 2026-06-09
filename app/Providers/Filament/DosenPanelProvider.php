@@ -3,9 +3,11 @@
 namespace App\Providers\Filament;
 
 use App\Http\Middleware\FilamentAuthenticate as Authenticate;
+use App\Filament\Dosen\Pages\ChiefExam;
 use App\Filament\Dosen\Pages\Dashboard;
 use App\Filament\Dosen\Pages\EditScoring;
 use App\Filament\Dosen\Pages\Scoring;
+use App\Filament\Dosen\Pages\ViewChiefExam;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -40,6 +42,8 @@ class DosenPanelProvider extends PanelProvider
                 Dashboard::class,
                 Scoring::class,
                 EditScoring::class,
+                ChiefExam::class,
+                ViewChiefExam::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Dosen/Widgets'), for: 'App\\Filament\\Dosen\\Widgets')
             ->middleware([
