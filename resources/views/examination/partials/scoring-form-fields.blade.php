@@ -145,6 +145,13 @@
     }
     .dbs-result-number { font-size: 1.15rem; font-weight: 700; color: rgba(255,255,255,.85); transition: all .3s; }
     .dbs-result-divider { width: 1px; height: 44px; background: rgba(255,255,255,.18); flex-shrink: 0; }
+    .dbs-result-letter.dbs-result-fail {
+        background: none;
+        -webkit-text-fill-color: #f87171;
+        background-clip: unset;
+        color: #f87171;
+    }
+    .dbs-result-number.dbs-result-fail { color: #fca5a5; }
 
     /* ── Revision toggle (Ya/Tidak pills) ── */
     .revision-card {
@@ -270,7 +277,51 @@
     }
     .dbs-save-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,70,229,.4); }
     .dbs-save-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .dbs-history-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28);
+        color: #e0e7ff; border-radius: 8px; padding: 5px 14px;
+        font-size: .82rem; font-weight: 700; cursor: pointer;
+        font-family: 'Nunito', sans-serif; transition: background .2s;
+    }
+    .dbs-history-btn:hover { background: rgba(255,255,255,.24); color: #fff; }
+
+    .dbs-history-dialog {
+        width: min(720px, calc(100vw - 32px));
+        border: none; border-radius: 14px; padding: 0;
+        box-shadow: 0 20px 50px rgba(15,23,42,.25);
+    }
+    .dbs-history-dialog::backdrop { background: rgba(15,23,42,.55); }
+    .dbs-history-dialog-header {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #4f46e5 100%);
+        color: #fff; padding: 18px 22px;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .dbs-history-dialog-title { font-size: 1rem; font-weight: 800; margin: 0; }
+    .dbs-history-dialog-close {
+        background: rgba(255,255,255,.15); border: none; color: #fff;
+        width: 32px; height: 32px; border-radius: 8px; cursor: pointer; font-size: 1.1rem;
+    }
+    .dbs-history-dialog-body { padding: 18px 22px 22px; max-height: 70vh; overflow-y: auto; background: #fff; }
+    .dbs-history-item {
+        border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; margin-bottom: 12px;
+    }
+    .dbs-history-item:last-child { margin-bottom: 0; }
+    .dbs-history-meta { font-size: .78rem; color: #64748b; margin-bottom: 8px; }
+    .dbs-history-type {
+        display: inline-block; margin-bottom: 8px; font-size: .75rem; font-weight: 800;
+        color: #1e40af; background: #eff6ff; border-radius: 999px; padding: 2px 10px;
+    }
+    .dbs-history-title { font-size: .92rem; font-weight: 700; color: #334155; margin-bottom: 10px; line-height: 1.5; }
+    .dbs-history-grid { display: grid; gap: 8px; font-size: .84rem; }
+    .dbs-history-grid dt { color: #64748b; font-weight: 700; }
+    .dbs-history-grid dd { margin: 0; color: #334155; }
 </style>
+
+@php
+    $previousExams = $previousExams ?? [];
+@endphp
 
 
 {{-- ── Student info header ── --}}
@@ -289,9 +340,50 @@
         @else
             <span style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.35);color:#fca5a5;border-radius:7px;padding:4px 12px;font-size:.8rem;font-weight:700">File Ujian Belum Ada</span>
         @endif
+
+        @if (count($previousExams) > 0)
+            <button type="button" class="dbs-history-btn" onclick="document.getElementById('previousExamsModal')?.showModal()">
+                🕘 riwayat penilaian
+            </button>
+        @endif
+
         <span class="dbs-penilai">Penilai: {{ $scoring->lecture->name }}</span>
     </div>
 </div>
+
+@if (count($previousExams) > 0)
+    <dialog id="previousExamsModal" class="dbs-history-dialog">
+        <div class="dbs-history-dialog-header">
+            <h2 class="dbs-history-dialog-title">Riwayat Penilaian Ujian Mahasiswa</h2>
+            <button type="button" class="dbs-history-dialog-close" onclick="document.getElementById('previousExamsModal')?.close()" aria-label="Tutup">×</button>
+        </div>
+        <div class="dbs-history-dialog-body">
+            @foreach ($previousExams as $pastExam)
+                <article class="dbs-history-item">
+                    <div class="dbs-history-meta">
+                        {{ $pastExam['exam_date'] }} · {{ $pastExam['exam_time'] }} WIB
+                    </div>
+                    <div class="dbs-history-type">{{ $pastExam['exam_type_name'] }}</div>
+                    <div class="dbs-history-title">{{ $pastExam['title'] }}</div>
+                    <dl class="dbs-history-grid">
+                        <div>
+                            <dt>Nilai</dt>
+                            <dd>{{ $pastExam['grade_display'] }}</dd>
+                        </div>
+                        <div>
+                            <dt>Catatan revisi</dt>
+                            <dd>{{ $pastExam['revision_note'] }}</dd>
+                        </div>
+                        <div>
+                            <dt>Keputusan akhir</dt>
+                            <dd>{{ $pastExam['final_decision'] }}</dd>
+                        </div>
+                    </dl>
+                </article>
+            @endforeach
+        </div>
+    </dialog>
+@endif
 
 @if ($exam_not_started_yet)
     <div style="text-align:center;padding:52px 0;color:#ef4444;font-size:1.6rem;font-weight:900;letter-spacing:-.5px">
@@ -304,410 +396,14 @@
     $saveButtonLabel = $save_button_label ?? 'Simpan Penilaian';
 @endphp
 
-<form id="formAction" action="{{ $formAction }}" method="post">
-    @csrf
-    @method('PUT')
-    <input type="hidden" name="return_url" value="{{ $returnUrl }}">
-    <input type="hidden" value="{{ $scoring->exam_registration_id }}" name="exam_registration_id">
-
-    {{-- ── Mode toggle ── --}}
-    <div style="text-align:center;margin-bottom:20px">
-        <div class="mode-toggle-wrap">
-            <button type="button" class="mode-btn active" id="btn-direct"
-                onclick="switchMode('direct')" @disabled($formDisabled)>
-                ⊕&nbsp; Pilih Nilai Huruf
-            </button>
-            <button type="button" class="mode-btn" id="btn-detail"
-                onclick="switchMode('detail')" @disabled($formDisabled)>
-                ≡&nbsp; Penilaian Per Aspek
-            </button>
-        </div>
+@if ($errors->has('revision_note'))
+    <div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.88rem;font-weight:700">
+        {{ $errors->first('revision_note') }}
     </div>
+@endif
 
-    {{-- ══ Panel 1 – Direct letter selection ══ --}}
-    <div id="panel-direct">
-        <div class="dbs-section-label">Pilih Nilai</div>
-        <div class="grade-grid">
-            @foreach ($grades_map as $letter => $range)
-            <button type="button"
-                class="grade-btn {{ ($has_scores && $init_letter === $letter) ? 'selected' : '' }}"
-                data-grade="{{ $letter }}"
-                onclick="selectDirectGrade('{{ $letter }}')"
-                @disabled($formDisabled)>
-                {{ $letter }}
-                <span class="grade-range">{{ $range['min'] }}–{{ $range['max'] }}</span>
-            </button>
-            @endforeach
-        </div>
-        <div class="grade-hint">
-            <svg width="14" height="14" viewBox="0 0 20 20" fill="#94a3b8"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
-            Memilih nilai huruf akan mengatur semua aspek ke nilai yang sama
-        </div>
-    </div>
-
-    {{-- ══ Panel 2 – Five-aspect detail scoring ══ --}}
-    <div id="panel-detail" style="display:none">
-        <div class="dbs-section-label">Penilaian Per Aspek</div>
-        @foreach ($form_items as $item)
-        @php
-            if      ($item->exam_type_id == 3) { $order = ($item->id) - 10; }
-            elseif  ($item->exam_type_id == 2) { $order = ($item->id) - 5; }
-            else                               { $order = ($item->id); }
-            $item_order = 'score0'.$order;
-        @endphp
-        <div class="aspect-item">
-            <div class="aspect-num">{{ $order }}</div>
-            <div class="aspect-name">{{ $item->name }}</div>
-            <div class="aspect-select">
-                <select class="form-select form-select-sm"
-                    name="{{ $item_order }}" id="{{ $item_order }}"
-                    onchange="updateFromAspects()" @disabled($formDisabled)>
-                    <option value="">—</option>
-                    <option value="{{ rand(86,98) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=85)>A</option>
-                    <option value="{{ rand(78,82) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=77 && intval($scoring->$item_order)<=84)>A-</option>
-                    <option value="{{ rand(70,74) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=69 && intval($scoring->$item_order)<=76)>B+</option>
-                    <option value="{{ rand(62,66) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=61 && intval($scoring->$item_order)<=68)>B</option>
-                    <option value="{{ rand(54,58) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=53 && intval($scoring->$item_order)<=60)>B-</option>
-                    <option value="{{ rand(46,50) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=45 && intval($scoring->$item_order)<=52)>C+</option>
-                    <option value="{{ rand(38,42) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=37 && intval($scoring->$item_order)<=44)>C</option>
-                    <option value="{{ rand(30,34) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=29 && intval($scoring->$item_order)<=36)>C-</option>
-                    <option value="{{ rand(22,26) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=21 && intval($scoring->$item_order)<=28)>D</option>
-                    <option value="{{ rand(0,18) }}"  @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=0  && intval($scoring->$item_order)<=20)>E</option>
-                </select>
-            </div>
-        </div>
-        @endforeach
-    </div>
-
-    {{-- ── Result bar (shared) ── --}}
-    <div class="dbs-result">
-        <div>
-            <div class="dbs-result-label">Simpulan Nilai Akhir</div>
-            <div class="dbs-result-letter" id="letterout">{{ $has_scores ? $init_letter : '—' }}</div>
-        </div>
-        <div class="dbs-result-divider"></div>
-        <div>
-            <div class="dbs-result-label">Nilai Angka</div>
-            <div class="dbs-result-number" id="gradeout">{{ $has_scores ? number_format($init_grade,2) : '—' }}</div>
-        </div>
-        <div style="margin-left:auto;font-size:.75rem;opacity:.5;align-self:center;text-align:right;line-height:1.4">
-            rata-rata<br>5 aspek
-        </div>
-    </div>
-
-    <hr style="border-color:#e2e8f0;margin:4px 0 6px">
-
-    {{-- ══ Keputusan Revisi ══ --}}
-    <div class="dbs-section-label">Keputusan Revisi</div>
-    <div class="revision-card">
-        <div class="revision-card-title">Perlu direvisi?</div>
-        <div class="rev-toggle-group">
-            <input type="radio" class="btn-check" name="revision" id="revisi2"
-                autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($formDisabled)
-                onClick='toggleRevisionNotes(false)' @required(true)>
-            <label for="revisi2" class="rev-pill rev-pill-tidak">✓ Tidak Perlu Revisi</label>
-
-            <input type="radio" class="btn-check" name="revision" id="revisi1"
-                autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($formDisabled)
-                onClick='toggleRevisionNotes(true)' @required(true)>
-            <label for="revisi1" class="rev-pill rev-pill-ya">✎ Perlu Revisi</label>
-        </div>
-    </div>
-
-    {{-- ── Revision notes (expandable) ── --}}
-    <div id="revision_row" @style($scoring->revision==1 ? "display:block" : "display:none")>
-        {{-- Draft restore banner --}}
-        <div id="draftBanner" class="draft-banner" style="display:none">
-            <div>
-                <span style="font-size:1rem;margin-right:6px">⚡</span>
-                <span class="draft-banner-text" id="draftBannerText">Ditemukan draf yang belum disimpan</span>
-            </div>
-            <div class="draft-banner-actions">
-                <button type="button" class="draft-btn-restore" onclick="restoreDraft()">Pulihkan</button>
-                <button type="button" class="draft-btn-dismiss" onclick="dismissDraft()">Abaikan</button>
-            </div>
-        </div>
-        <div class="notes-card">
-            <div class="notes-header">
-                <div class="notes-title">Catatan Revisi</div>
-                <div class="autosave-pill" id="autosavePill">
-                    <span class="autosave-dot"></span>
-                    <span id="autosaveText">belum ada perubahan</span>
-                </div>
-            </div>
-            <textarea name="revision_note" rows="7" class="form-control"
-                id="revision_note" @disabled($formDisabled)
-                oninput="onRevisionInput()" onblur="saveRevisionDraft()">{{ $scoring->revision_note }}</textarea>
-            <div class="notes-hint">Jika kosong, tercetak <em>belum diisi</em> pada lembar revisi mahasiswa</div>
-        </div>
-    </div>
-
-    {{-- ══ Keputusan Akhir (otomatis, hanya pemberitahuan) ══ --}}
-    {{-- hidden input — nilainya diset otomatis oleh JS berdasarkan nilai angka --}}
-    @php
-        $init_pass = $has_scores ? ($init_grade >= 37 ? 1 : 0) : ($scoring->pass_approved ?? '');
-    @endphp
-    <input type="hidden" name="pass_approved" id="pass_approved_input" value="{{ $init_pass }}">
-
-    <div class="dbs-section-label">Keputusan Akhir</div>
-    @php
-        if (!$has_scores)         { $notice_state = 'pending'; }
-        elseif ($init_grade >= 37){ $notice_state = 'pass'; }
-        else                      { $notice_state = 'fail'; }
-    @endphp
-    <div class="decision-notice decision-notice-{{ $notice_state }}" id="decisionNotice">
-        <div class="decision-notice-icon" id="decisionIcon">
-            @if ($notice_state === 'pass') ✓
-            @elseif ($notice_state === 'fail') ✗
-            @else —
-            @endif
-        </div>
-        <div>
-            <div class="decision-notice-verdict" id="decisionVerdict">
-                @if ($notice_state === 'pass') {{ $pass_verdict }}
-                @elseif ($notice_state === 'fail') {{ $fail_verdict }}
-                @else Nilai belum diisi
-                @endif
-            </div>
-            <div class="decision-notice-sub" id="decisionSub">
-                @if ($notice_state === 'pass') Nilai ≥ C (≥ 37) — ditentukan otomatis dari nilai yang diberikan
-                @elseif ($notice_state === 'fail') Nilai &lt; C (&lt; 37) — ditentukan otomatis dari nilai yang diberikan
-                @else Keputusan akan muncul setelah nilai diisi
-                @endif
-            </div>
-        </div>
-    </div>
-
-    <hr style="border-color:#e2e8f0;margin:20px 0 16px">
-
-    <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
-        <a href="{{ $returnUrl }}" class="btn btn-outline-secondary btn-sm">Batal</a>
-        <button type="submit" class="dbs-save-btn" id="saveBtn" @disabled($formDisabled)>
-            {{ $saveButtonLabel }}
-        </button>
-    </div>
-</form>
+@include('examination.partials.scoring-form-body', ['for_filament_panel' => false])
 
 @endif
 
-<script>
-    // ══ Constants ════════════════════════════════
-    const STORAGE_KEY   = 'dbs_rev_{{ $scoring_id }}_{{ $user_id }}';
-    const PASS_THRESHOLD = 37; // minimum numeric grade for C (pass)
-    const INITIAL_AVG = @json($has_scores ? round((float) $init_grade, 5) : null);
-    const INITIAL_LETTER = @json($has_scores ? $init_letter : null);
-
-    // ══ Grade helpers ════════════════════════════
-    function gradeToLetter(g) {
-        if      (g < 21) return 'E';
-        else if (g < 29) return 'D';
-        else if (g < 37) return 'C-';
-        else if (g < 45) return 'C';
-        else if (g < 53) return 'C+';
-        else if (g < 61) return 'B-';
-        else if (g < 69) return 'B';
-        else if (g < 77) return 'B+';
-        else if (g < 85) return 'A-';
-        else              return 'A';
-    }
-
-    function calcAverage() {
-        let sum = 0, count = 0;
-        for (let i = 1; i <= 5; i++) {
-            const el = document.getElementById('score0' + i);
-            if (el && el.value !== '') { sum += Number(el.value); count++; }
-        }
-        return count === 5 ? sum / count : null;
-    }
-
-    // ══ Grade display sync ═══════════════════════
-    function syncResultDisplay(avg, ltr) {
-        document.getElementById('letterout').textContent = ltr  || '—';
-        document.getElementById('gradeout').textContent  = avg !== null ? avg.toFixed(2) : '—';
-    }
-
-    function syncDirectButtons(ltr) {
-        document.querySelectorAll('.grade-btn').forEach(btn => {
-            btn.classList.toggle('selected', btn.dataset.grade === ltr);
-        });
-    }
-
-    // ══ Auto pass/fail decision (notice only) ════
-    const PASS_VERDICT = '{{ $pass_verdict }}';
-    const FAIL_VERDICT = '{{ $fail_verdict }}';
-    function autoSetDecision(avg) {
-        const input   = document.getElementById('pass_approved_input');
-        const notice  = document.getElementById('decisionNotice');
-        const icon    = document.getElementById('decisionIcon');
-        const verdict = document.getElementById('decisionVerdict');
-        const sub     = document.getElementById('decisionSub');
-        if (!input || !notice) return;
-
-        if (avg === null) {
-            input.value = '';
-            notice.className    = 'decision-notice decision-notice-pending';
-            icon.textContent    = '—';
-            verdict.textContent = 'Nilai belum diisi';
-            sub.textContent     = 'Keputusan akan muncul setelah nilai diisi';
-            return;
-        }
-        const pass = avg >= PASS_THRESHOLD;
-        input.value = pass ? 1 : 0;
-        notice.className    = 'decision-notice decision-notice-' + (pass ? 'pass' : 'fail');
-        icon.textContent    = pass ? '✓' : '✗';
-        verdict.textContent = pass ? PASS_VERDICT : FAIL_VERDICT;
-        sub.textContent     = pass
-            ? 'dengan nilai akhir ' + gradeToLetter(avg) + ' — ditentukan otomatis dari nilai yang diberikan'
-            : 'dengan nilai akhir ' + gradeToLetter(avg) + ' — ditentukan otomatis dari nilai yang diberikan';
-    }
-
-    // ══ Called on any aspect change ══════════════
-    function updateFromAspects() {
-        const avg = calcAverage();
-        const ltr = avg !== null ? gradeToLetter(avg) : null;
-        syncResultDisplay(avg, ltr);
-        syncDirectButtons(ltr);
-        autoSetDecision(avg);
-        autoSetRevision(ltr);
-    }
-
-    // ══ Called when direct grade button clicked ══
-    function selectDirectGrade(gradeLabel) {
-        for (let i = 1; i <= 5; i++) {
-            const sel = document.getElementById('score0' + i);
-            if (!sel) continue;
-            for (const opt of sel.options) {
-                if (opt.text.trim() === gradeLabel) { sel.value = opt.value; break; }
-            }
-        }
-        syncDirectButtons(gradeLabel);
-        const avg = calcAverage();
-        syncResultDisplay(avg, gradeLabel);
-        autoSetDecision(avg);
-        autoSetRevision(gradeLabel);
-    }
-
-    // ══ Mode switch ══════════════════════════════
-    function switchMode(mode) {
-        document.getElementById('btn-direct').classList.toggle('active', mode === 'direct');
-        document.getElementById('btn-detail').classList.toggle('active', mode === 'detail');
-        document.getElementById('panel-direct').style.display = mode === 'direct' ? 'block' : 'none';
-        document.getElementById('panel-detail').style.display = mode === 'detail' ? 'block' : 'none';
-        if (mode === 'direct') {
-            const avg = calcAverage();
-            if (avg !== null) syncDirectButtons(gradeToLetter(avg));
-        }
-    }
-
-    // ══ Auto revision based on grade ════════════
-    function autoSetRevision(ltr) {
-        if (!ltr) return;
-        const needsRevision = ltr !== 'A';
-        document.getElementById(needsRevision ? 'revisi1' : 'revisi2').checked = true;
-        toggleRevisionNotes(needsRevision);
-    }
-
-    // ══ Revision notes toggle ════════════════════
-    function toggleRevisionNotes(show) {
-        document.getElementById('revision_row').style.display = show ? 'block' : 'none';
-    }
-
-    // ══ Auto-save to localStorage ════════════════
-    let autosaveTimer  = null;
-    let autosavePeriod = null;
-    let draftData      = null;
-
-    function setAutosaveStatus(state, msg) {
-        const pill = document.getElementById('autosavePill');
-        const text = document.getElementById('autosaveText');
-        pill.className = 'autosave-pill ' + state;
-        text.textContent = msg;
-    }
-
-    function saveRevisionDraft() {
-        const ta = document.getElementById('revision_note');
-        if (!ta) return;
-        const payload = { note: ta.value, ts: Date.now() };
-        try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-            draftData = payload;
-            const t = new Date(payload.ts);
-            const hm = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-            setAutosaveStatus('saved', '✓ tersimpan — ' + hm);
-        } catch(e) {
-            setAutosaveStatus('unsaved', '⚠ gagal menyimpan');
-        }
-    }
-
-    let inputDebounce = null;
-    function onRevisionInput() {
-        setAutosaveStatus('unsaved', '● belum tersimpan');
-        clearTimeout(inputDebounce);
-        inputDebounce = setTimeout(saveRevisionDraft, 2000); // save 2s after typing stops
-    }
-
-    function checkRevisionDraft() {
-        try {
-            const raw = localStorage.getItem(STORAGE_KEY);
-            if (!raw) return;
-            const saved = JSON.parse(raw);
-            const ta    = document.getElementById('revision_note');
-            if (!ta || !saved.note) return;
-            // Only show banner if saved note differs from current
-            if (saved.note === ta.value) {
-                const t  = new Date(saved.ts);
-                const hm = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-                setAutosaveStatus('saved', '✓ tersimpan — ' + hm);
-                return;
-            }
-            draftData = saved;
-            const t  = new Date(saved.ts);
-            const hm = t.toLocaleDateString('id-ID', {day:'numeric',month:'short'}) + ' ' +
-                       t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
-            document.getElementById('draftBannerText').textContent =
-                '⚡  Draf catatan revisi ditemukan dari sesi sebelumnya (' + hm + ')';
-            document.getElementById('draftBanner').style.display = 'flex';
-        } catch(e) { /* ignore */ }
-    }
-
-    function restoreDraft() {
-        if (!draftData) return;
-        const ta = document.getElementById('revision_note');
-        if (ta) { ta.value = draftData.note; onRevisionInput(); }
-        document.getElementById('draftBanner').style.display = 'none';
-    }
-
-    function dismissDraft() {
-        try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-        draftData = null;
-        document.getElementById('draftBanner').style.display = 'none';
-    }
-
-    // ══ Init ═════════════════════════════════════
-    document.addEventListener('DOMContentLoaded', function () {
-        let avg = calcAverage();
-        if (avg === null && INITIAL_AVG !== null) {
-            avg = INITIAL_AVG;
-            const ltr = INITIAL_LETTER || gradeToLetter(avg);
-            syncResultDisplay(avg, ltr);
-            syncDirectButtons(ltr);
-        }
-        autoSetDecision(avg);
-
-        // Check localStorage for revision draft
-        const revRow = document.getElementById('revision_row');
-        if (revRow && revRow.style.display !== 'none') checkRevisionDraft();
-
-        // Periodic auto-save every 60s while the page is open
-        autosavePeriod = setInterval(function () {
-            const ta = document.getElementById('revision_note');
-            const revVisible = document.getElementById('revision_row')?.style.display !== 'none';
-            if (ta && revVisible && ta.value) saveRevisionDraft();
-        }, 60000);
-    });
-
-    // Clear draft from localStorage on successful form submit
-    document.getElementById('formAction')?.addEventListener('submit', function () {
-        try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
-    });
-</script>
+@include('examination.partials.scoring-form-script')

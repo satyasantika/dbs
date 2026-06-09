@@ -16,6 +16,7 @@ use App\Services\Examination\ExamScoreUpdater;
 use App\Services\Examination\ScoringFormPresenter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class ScoreController extends Controller
 {
@@ -95,8 +96,24 @@ class ScoreController extends Controller
             }
         }
 
+        $validated = $request->validate([
+            'revision' => ['required', 'in:0,1'],
+            'revision_note' => ['nullable', 'string'],
+        ]);
+
+        if ((int) $validated['revision'] === 1 && blank($request->input('revision_note'))) {
+            throw ValidationException::withMessages([
+                'revision_note' => 'Catatan revisi wajib diisi jika mahasiswa perlu revisi.',
+            ]);
+        }
+
+        $payload = $request->all();
+        if ((int) $validated['revision'] === 0) {
+            $payload['revision_note'] = null;
+        }
+
         $studentName = strtoupper($scoring->registration?->student?->name ?? 'MAHASISWA');
-        $updater->update($scoring, $request->all());
+        $updater->update($scoring, $payload);
 
         return redirect($returnUrl)
             ->with('success', 'data penilaian '.$studentName.' telah diperbarui');

@@ -6,6 +6,7 @@ use App\Models\ExamFormItem;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use App\Services\Examination\ScoringFormPresenter;
+use App\Services\Examination\StudentExamScoringHistory;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
@@ -22,6 +23,8 @@ class EditScoring extends Page
     public ExamScore $record;
 
     public array $formData = [];
+
+    public array $previousExams = [];
 
     #[Url]
     public ?string $from = null;
@@ -64,6 +67,7 @@ class EditScoring extends Page
             $formItems,
             forDosenPanel: true,
         );
+        $this->previousExams = StudentExamScoringHistory::forExaminer($record, auth()->id())->all();
     }
 
     public function getReturnUrl(): string

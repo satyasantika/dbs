@@ -54,6 +54,10 @@ class ExamScoreUpdater
         $data['grade'] = $finalGrade;
         $data['letter'] = $this->convertToLetter($finalGrade);
 
+        if (! (bool) ($data['revision'] ?? false)) {
+            $data['revision_note'] = null;
+        }
+
         $scoring->fill($data)->save();
 
         $examRegistration = ExamRegistration::find($scoring->exam_registration_id);
