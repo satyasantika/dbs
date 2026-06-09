@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Examination;
 
+use App\Filament\Dosen\Pages\EditScoring;
 use App\Filament\Dosen\Pages\Scoring;
 use App\Models\ExamScore;
 use App\Models\ExamFormItem;
@@ -10,6 +11,8 @@ use App\Models\ExamRegistration;
 use App\DataTables\ScoringDataTable;
 use App\Filament\Resources\ExamRegistrationResource;
 use App\Http\Controllers\Controller;
+use App\Services\Examination\ExamScoreUpdater;
+use App\Services\Examination\ScoringFormPresenter;
 use Illuminate\Support\Facades\Auth;
 
 class ScoreController extends Controller
@@ -21,12 +24,6 @@ class ScoreController extends Controller
         // $this->middleware('permission:update scoring', ['only' => ['edit','update']]);
         // $this->middleware('permission:delete scoring', ['only' => ['destroy']]);
     }
-
-    // public function index()
-    // {
-    //     $exam_scores = ExamScore::where('user_id',auth()->id())->whereNull('grade')->orderBy('exam_date','desc')->get();
-    //     return view('examination.scoring',compact('exam_scores'));
-    // }
 
     public function index(ScoringDataTable $dataTable)
     {
@@ -51,50 +48,40 @@ class ScoreController extends Controller
 
     public function edit(ExamScore $scoring)
     {
-        if ( $scoring->user_id != Auth::id() && !auth()->user()->can('force edit score')) {
+        if ($scoring->user_id != Auth::id() && ! auth()->user()->can('force edit score')) {
             return to_route('scoring.index');
+        }
+
+        if (auth()->user()->hasRole('dosen')) {
+            return redirect(EditScoring::getUrl(['record' => $scoring->id]));
         }
 
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
         $scoring->loadMissing(['registration.student', 'registration.examtype', 'lecture']);
-        $form_items = ExamFormItem::select('id','name','exam_type_id')->where('exam_type_id',$examregistration->exam_type_id)->get();
+        $form_items = ExamFormItem::select('id', 'name', 'exam_type_id')
+            ->where('exam_type_id', $examregistration->exam_type_id)
+            ->get();
+
+        $formData = app(ScoringFormPresenter::class)->present($scoring, $examregistration, $form_items);
 
         return view('examination.scoring-form', [
-            'form_items' => $form_items,
+            'formData' => $formData,
             'scoring' => $scoring,
-            'examregistration' => $examregistration,
             'returnUrl' => $this->scoringReturnUrl(),
         ]);
     }
 
-    public function update(Request $request, ExamScore $scoring)
+    public function update(Request $request, ExamScore $scoring, ExamScoreUpdater $updater)
     {
-        $name = strtoupper($scoring->name);
-        $data = $request->all();
-        $grade = 0;
-        for ($i=0; $i < 5; $i++) {
-            $score = 'score0'.($i+1);
-            $grade += $request->$score;
+        if ($scoring->user_id != Auth::id() && ! auth()->user()->can('force edit score')) {
+            return to_route('scoring.index');
         }
-        $final_grade = round($grade/5,2);
-        $data['exam_registration_id'] = $scoring->exam_registration_id;
-        $data['grade'] = $final_grade;
-        $data['letter'] = $this->_convertToLetter($final_grade);
-        $scoring->fill($data)->save();
 
-        $grade_sum = ExamScore::where('exam_registration_id',$scoring->exam_registration_id)->sum('grade');
-        $pass_approved_sum = ExamScore::where('exam_registration_id',$scoring->exam_registration_id)->sum('pass_approved');
-        $final_grade = round($grade_sum/5,2);
-        $examregistration = ExamRegistration::find($scoring->exam_registration_id);
-        $examregistration->grade = $final_grade;
-        $examregistration->letter = $this->_convertToLetter($final_grade);
-        if ($pass_approved_sum==5) {
-            $examregistration->pass_exam = 1;
-        }
-        $examregistration->save();
+        $studentName = strtoupper($scoring->registration?->student?->name ?? 'MAHASISWA');
+        $updater->update($scoring, $request->all());
 
         return redirect($this->scoringReturnUrl())
-            ->with('success', 'data penilaian '.$name.' telah diperbarui');
+            ->with('success', 'data penilaian '.$studentName.' telah diperbarui');
     }
 
     private function scoringReturnUrl(): string
@@ -108,29 +95,5 @@ class ScoreController extends Controller
         }
 
         return route('scoring.index');
-    }
-
-    private function _convertToLetter($grade)
-    {
-        if ($grade >= 85)
-        { return 'A'; }
-        elseif ($grade >= 77)
-        { return 'A-'; }
-        elseif ($grade >= 69)
-        { return 'B+'; }
-        elseif ($grade >= 61)
-        { return 'B'; }
-        elseif ($grade >= 53)
-        { return 'B-'; }
-        elseif ($grade >= 45)
-        { return 'C+'; }
-        elseif ($grade >= 37)
-        { return 'C'; }
-        elseif ($grade >= 29)
-        { return 'C-'; }
-        elseif ($grade >= 21)
-        { return 'D'; }
-        else
-        { return 'E'; }
     }
 }

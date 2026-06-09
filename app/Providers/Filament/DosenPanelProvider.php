@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Http\Middleware\FilamentAuthenticate as Authenticate;
 use App\Filament\Dosen\Pages\Dashboard;
+use App\Filament\Dosen\Pages\EditScoring;
 use App\Filament\Dosen\Pages\Scoring;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -11,6 +12,7 @@ use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Enums\MaxWidth;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -32,10 +34,12 @@ class DosenPanelProvider extends PanelProvider
                 'primary' => Color::Blue,
             ])
             ->darkMode(false)
+            ->maxContentWidth(MaxWidth::SevenExtraLarge)
             ->discoverPages(in: app_path('Filament/Dosen/Pages'), for: 'App\\Filament\\Dosen\\Pages')
             ->pages([
                 Dashboard::class,
                 Scoring::class,
+                EditScoring::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Dosen/Widgets'), for: 'App\\Filament\\Dosen\\Widgets')
             ->middleware([

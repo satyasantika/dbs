@@ -173,7 +173,7 @@ class Scoring extends Page implements HasTable
                     ->label('Nilai')
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
-                    ->url(fn (ExamScore $record): string => route('scoring.edit', $record)),
+                    ->url(fn (ExamScore $record): string => EditScoring::getUrl(['record' => $record->id])),
                 Tables\Actions\Action::make('file')
                     ->label('File')
                     ->icon('heroicon-o-document')
