@@ -72,6 +72,22 @@ class ExamRegistration extends Model
         return $this->hasMany(ExamScore::class, 'exam_registration_id')->orderBy('examiner_order');
     }
 
+    public function scopeWhereExaminerScoringIncomplete(Builder $query): Builder
+    {
+        return $query->whereHas('examScores', fn (Builder $query) => $query->whereNull('grade'));
+    }
+
+    public function scopeWhereExaminerScoringComplete(Builder $query): Builder
+    {
+        return $query->whereHas('examScores')
+            ->whereDoesntHave('examScores', fn (Builder $query) => $query->whereNull('grade'));
+    }
+
+    public function hasIncompleteExaminerScoring(): bool
+    {
+        return $this->examScores()->whereNull('grade')->exists();
+    }
+
     /**
      * Semua slot penguji/pembimbing yang diisi sudah memiliki baris exam_scores dengan grade terisi,
      * dan hasil belum pernah dikirim ke mahasiswa (sent_at null).

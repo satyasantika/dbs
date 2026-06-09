@@ -7,6 +7,7 @@ use App\Filament\Dosen\Pages\ChiefExam;
 use App\Filament\Dosen\Pages\Dashboard;
 use App\Filament\Dosen\Pages\EditScoring;
 use App\Filament\Dosen\Pages\Scoring;
+use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Filament\Dosen\Pages\ViewChiefExam;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -40,6 +41,7 @@ class DosenPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Dosen/Pages'), for: 'App\\Filament\\Dosen\\Pages')
             ->pages([
                 Dashboard::class,
+                UnscoredScoring::class,
                 Scoring::class,
                 EditScoring::class,
                 ChiefExam::class,

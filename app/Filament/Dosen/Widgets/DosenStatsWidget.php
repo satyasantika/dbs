@@ -2,6 +2,7 @@
 
 namespace App\Filament\Dosen\Widgets;
 
+use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Filament\Dosen\Pages\Scoring;
 use App\Models\ExamScore;
 use App\Models\GuideExaminer;
@@ -16,13 +17,14 @@ class DosenStatsWidget extends BaseWidget
     {
         $userId = auth()->id();
 
-        $unscoredCount = ExamScore::query()
+        $unfinishedCount = ExamScore::query()
             ->where('exam_scores.user_id', $userId)
-            ->whereNull('exam_scores.grade')
+            ->whereHas('registration', fn ($query) => $query->whereExaminerScoringIncomplete())
             ->count();
 
-        $totalScoringCount = ExamScore::query()
+        $archivedScoringCount = ExamScore::query()
             ->where('exam_scores.user_id', $userId)
+            ->whereHas('registration', fn ($query) => $query->whereExaminerScoringComplete())
             ->count();
 
         $supervisedQuery = GuideExaminer::query()
@@ -49,19 +51,19 @@ class DosenStatsWidget extends BaseWidget
         $stats = [];
 
         if (auth()->user()?->can('access examination/scoring')) {
-            $stats[] = Stat::make('Belum Dinilai', $unscoredCount)
-                ->description('Penilaian ujian yang menunggu input')
+            $stats[] = Stat::make('Ujian Belum Selesai Dinilai', $unfinishedCount)
+                ->description('Ujian yang masih ada penguji belum menilai')
                 ->descriptionIcon('heroicon-m-clock')
-                ->color($unscoredCount > 0 ? 'warning' : 'success')
+                ->color($unfinishedCount > 0 ? 'warning' : 'success')
                 ->icon('heroicon-o-clipboard-document-check')
-                ->url(Scoring::getUrl(['activeTab' => 'unscored']));
+                ->url(UnscoredScoring::getUrl());
 
-            $stats[] = Stat::make('Penilaian Keseluruhan', $totalScoringCount)
-                ->description('Semua penugasan penilaian ujian')
+            $stats[] = Stat::make('Arsip Penilaian', $archivedScoringCount)
+                ->description('Ujian yang sudah dinilai semua penguji')
                 ->descriptionIcon('heroicon-m-clipboard-document-list')
                 ->color('primary')
                 ->icon('heroicon-o-queue-list')
-                ->url(Scoring::getUrl(['activeTab' => 'all']));
+                ->url(Scoring::getUrl());
         }
 
         $stats[] = Stat::make('Bimbingan Belum Lulus', $activeSupervisedCount)

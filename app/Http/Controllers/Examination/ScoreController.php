@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Examination;
 
 use App\Filament\Dosen\Pages\EditScoring;
 use App\Filament\Dosen\Pages\Scoring;
+use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Models\ExamScore;
 use App\Models\ExamFormItem;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ use App\Filament\Resources\ExamRegistrationResource;
 use App\Http\Controllers\Controller;
 use App\Services\Examination\ExamScoreUpdater;
 use App\Services\Examination\ScoringFormPresenter;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ScoreController extends Controller
@@ -28,7 +30,7 @@ class ScoreController extends Controller
     public function index(ScoringDataTable $dataTable)
     {
         if (auth()->user()->hasRole('dosen')) {
-            return redirect(Scoring::getUrl(['activeTab' => 'unscored']));
+            return redirect(UnscoredScoring::getUrl());
         }
 
         $title = 'Penilaian Ujian';
@@ -53,7 +55,9 @@ class ScoreController extends Controller
         }
 
         if (auth()->user()->hasRole('dosen')) {
-            return redirect(EditScoring::getUrl(['record' => $scoring->id]));
+            $from = request()->query('from') === 'archive' ? '?from=archive' : '';
+
+            return redirect(EditScoring::getUrl(['record' => $scoring->id]).$from);
         }
 
         $examregistration = ExamRegistration::find($scoring->exam_registration_id);
@@ -67,33 +71,61 @@ class ScoreController extends Controller
         return view('examination.scoring-form', [
             'formData' => $formData,
             'scoring' => $scoring,
-            'returnUrl' => $this->scoringReturnUrl(),
+            'returnUrl' => $this->scoringReturnUrl(request()),
         ]);
     }
 
-    public function update(Request $request, ExamScore $scoring, ExamScoreUpdater $updater)
+    public function update(Request $request, ExamScore $scoring, ExamScoreUpdater $updater, ScoringFormPresenter $presenter)
     {
         if ($scoring->user_id != Auth::id() && ! auth()->user()->can('force edit score')) {
             return to_route('scoring.index');
         }
 
+        $returnUrl = $this->scoringReturnUrl($request);
+
+        if (auth()->user()->hasRole('dosen')) {
+            $examRegistration = ExamRegistration::query()->findOrFail($scoring->exam_registration_id);
+            $examStartAt = Carbon::parse(
+                $examRegistration->exam_date->format('Y-m-d').' '.trim((string) $examRegistration->exam_time)
+            );
+
+            if ($presenter->isDosenScoringLocked($scoring, $examStartAt)) {
+                return redirect($returnUrl)
+                    ->with('warning', 'Penilaian sudah dikunci dan tidak dapat diubah.');
+            }
+        }
+
         $studentName = strtoupper($scoring->registration?->student?->name ?? 'MAHASISWA');
         $updater->update($scoring, $request->all());
 
-        return redirect($this->scoringReturnUrl())
+        return redirect($returnUrl)
             ->with('success', 'data penilaian '.$studentName.' telah diperbarui');
     }
 
-    private function scoringReturnUrl(): string
+    private function scoringReturnUrl(Request $request): string
     {
         if (auth()->user()->hasRole('admin')) {
             return ExamRegistrationResource::getUrl();
         }
 
         if (auth()->user()->hasRole('dosen')) {
-            return Scoring::getUrl(['activeTab' => 'unscored']);
+            return $this->validatedDosenReturnUrl($request->input('return_url'));
         }
 
         return route('scoring.index');
+    }
+
+    private function validatedDosenReturnUrl(?string $url): string
+    {
+        $allowed = [
+            UnscoredScoring::getUrl(),
+            Scoring::getUrl(),
+        ];
+
+        if ($url && in_array($url, $allowed, true)) {
+            return $url;
+        }
+
+        return UnscoredScoring::getUrl();
     }
 }

@@ -9,6 +9,7 @@ use App\Services\Examination\ScoringFormPresenter;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Livewire\Attributes\Url;
 
 class EditScoring extends Page
 {
@@ -22,6 +23,9 @@ class EditScoring extends Page
 
     public array $formData = [];
 
+    #[Url]
+    public ?string $from = null;
+
     public static function canAccess(): bool
     {
         return auth()->user()?->can('access examination/scoring') ?? false;
@@ -32,10 +36,15 @@ class EditScoring extends Page
         return parent::getUrl($parameters, $isAbsolute, $panel ?? 'dosen', $tenant);
     }
 
+    public static function archiveEditUrl(ExamScore $record): string
+    {
+        return static::getUrl(['record' => $record->id]).'?from=archive';
+    }
+
     public function mount(ExamScore $record): void
     {
         if ($record->user_id !== auth()->id() && ! auth()->user()->can('force edit score')) {
-            $this->redirect(Scoring::getUrl(['activeTab' => 'unscored']));
+            $this->redirect(UnscoredScoring::getUrl());
 
             return;
         }
@@ -49,7 +58,19 @@ class EditScoring extends Page
             ->get();
 
         $this->record = $record;
-        $this->formData = app(ScoringFormPresenter::class)->present($record, $examRegistration, $formItems);
+        $this->formData = app(ScoringFormPresenter::class)->present(
+            $record,
+            $examRegistration,
+            $formItems,
+            forDosenPanel: true,
+        );
+    }
+
+    public function getReturnUrl(): string
+    {
+        return $this->from === 'archive'
+            ? Scoring::getUrl()
+            : UnscoredScoring::getUrl();
     }
 
     public function getTitle(): string | Htmlable
@@ -65,7 +86,7 @@ class EditScoring extends Page
             Action::make('back')
                 ->label('Kembali')
                 ->icon('heroicon-o-arrow-left')
-                ->url(Scoring::getUrl(['activeTab' => 'unscored'])),
+                ->url($this->getReturnUrl()),
         ];
     }
 }

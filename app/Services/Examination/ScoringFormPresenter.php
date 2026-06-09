@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ScoringFormPresenter
 {
-    public function present(ExamScore $scoring, ExamRegistration $examRegistration, Collection $formItems): array
+    public function present(ExamScore $scoring, ExamRegistration $examRegistration, Collection $formItems, bool $forDosenPanel = false): array
     {
         $scoring->loadMissing(['registration.student', 'registration.examtype', 'lecture']);
 
@@ -29,6 +29,9 @@ class ScoringFormPresenter
 
         $availableCheck = ($examRegistration->exam_date < $tanggalSekarang && $examRegistration->pass_exam)
             && ! Auth::user()->can('force edit score');
+
+        $dosenScoringLocked = $forDosenPanel
+            && $this->isDosenScoringLocked($scoring, $examStartAt);
 
         $scoreCols = ['score01', 'score02', 'score03', 'score04', 'score05'];
         $filledScores = [];
@@ -71,6 +74,9 @@ class ScoringFormPresenter
             'form_items' => $formItems,
             'exam_not_started_yet' => $examNotStartedYet,
             'available_check' => $availableCheck,
+            'dosen_scoring_locked' => $dosenScoringLocked,
+            'form_disabled' => $availableCheck || $dosenScoringLocked,
+            'save_button_label' => $dosenScoringLocked ? 'Dikunci' : 'Simpan Penilaian',
             'has_scores' => $hasScores,
             'init_grade' => $initGrade,
             'init_letter' => $initLetter,
@@ -90,6 +96,19 @@ class ScoringFormPresenter
             'scoring_id' => $scoring->id,
             'user_id' => auth()->id(),
         ];
+    }
+
+    public function isDosenScoringLocked(ExamScore $scoring, Carbon $examStartAt): bool
+    {
+        if (Auth::user()->can('force edit score')) {
+            return false;
+        }
+
+        if (! filled($scoring->grade)) {
+            return false;
+        }
+
+        return Carbon::now()->gte($examStartAt->copy()->addHours(24));
     }
 
     private function gradesMap(): array

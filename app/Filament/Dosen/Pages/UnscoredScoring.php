@@ -4,6 +4,7 @@ namespace App\Filament\Dosen\Pages;
 
 use App\Filament\Dosen\Concerns\HasDosenScoringRecap;
 use App\Models\ExamScore;
+use App\Services\Examination\DosenScoringPresenter;
 use Filament\Actions\Action;
 use Filament\Pages\Page;
 use Filament\Tables;
@@ -13,18 +14,18 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
-class Scoring extends Page implements HasTable
+class UnscoredScoring extends Page implements HasTable
 {
     use HasDosenScoringRecap;
     use InteractsWithTable;
 
-    protected static ?string $navigationIcon = 'heroicon-o-queue-list';
+    protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $title = 'Arsip Penilaian';
+    protected static ?string $title = 'Ujian Belum Selesai Dinilai';
 
-    protected static ?string $slug = 'examination/scoring/all';
+    protected static ?string $slug = 'examination/scoring';
 
-    protected static string $view = 'filament.dosen.pages.scoring';
+    protected static string $view = 'filament.dosen.pages.unscored-scoring';
 
     public static function canAccess(): bool
     {
@@ -36,14 +37,18 @@ class Scoring extends Page implements HasTable
         return parent::getUrl($parameters, $isAbsolute, $panel ?? 'dosen', $tenant);
     }
 
+    public static function examTypeBadgeColor(?string $examTypeName, ?string $examTypeCode = null): string
+    {
+        return DosenScoringPresenter::examTypeBadgeColor($examTypeName, $examTypeCode);
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('unscored')
-                ->label('Ujian Belum Selesai Dinilai')
-                ->icon('heroicon-o-clock')
-                ->color('warning')
-                ->url(UnscoredScoring::getUrl()),
+            Action::make('all')
+                ->label('Arsip Penilaian')
+                ->icon('heroicon-o-queue-list')
+                ->url(Scoring::getUrl()),
             Action::make('dashboard')
                 ->label('Dashboard')
                 ->icon('heroicon-o-home')
@@ -65,11 +70,10 @@ class Scoring extends Page implements HasTable
             ])
             ->join('exam_registrations', 'exam_registrations.id', '=', 'exam_scores.exam_registration_id')
             ->where('exam_scores.user_id', auth()->id())
-            ->whereHas('registration', fn (Builder $query) => $query->whereExaminerScoringComplete())
+            ->whereHas('registration', fn (Builder $query) => $query->whereExaminerScoringIncomplete())
             ->select('exam_scores.*')
-            ->orderByDesc('exam_registrations.exam_date')
-            ->orderByDesc('exam_registrations.exam_time')
-            ->orderByDesc('exam_scores.updated_at');
+            ->orderBy('exam_registrations.exam_date')
+            ->orderBy('exam_registrations.exam_time');
     }
 
     protected function applyGlobalSearchToTableQuery(Builder $query): Builder
@@ -97,7 +101,7 @@ class Scoring extends Page implements HasTable
             ->searchable()
             ->searchPlaceholder('Cari mahasiswa atau jenis ujian...')
             ->columns([
-                View::make('filament.dosen.pages.scoring-card'),
+                View::make('filament.dosen.pages.unscored-scoring-card'),
             ])
             ->contentGrid([
                 'md' => 2,
@@ -109,7 +113,7 @@ class Scoring extends Page implements HasTable
                     ->label('Nilai')
                     ->icon('heroicon-o-pencil-square')
                     ->color('primary')
-                    ->url(fn (ExamScore $record): string => EditScoring::archiveEditUrl($record)),
+                    ->url(fn (ExamScore $record): string => EditScoring::getUrl(['record' => $record->id])),
                 Tables\Actions\Action::make('file')
                     ->label('File')
                     ->icon('heroicon-o-document')
@@ -139,8 +143,8 @@ class Scoring extends Page implements HasTable
                     ->url(fn (ExamScore $record): string => ViewChiefExam::getUrl(['record' => $record->exam_registration_id]))
                     ->visible(fn (ExamScore $record): bool => $record->user_id === $record->registration?->chief_id),
             ])
-            ->emptyStateHeading('Belum ada arsip penilaian')
-            ->emptyStateDescription('Ujian akan masuk arsip setelah semua penguji selesai menilai.')
+            ->emptyStateHeading('Semua ujian sudah selesai dinilai')
+            ->emptyStateDescription('Tidak ada ujian yang masih menunggu penilaian penguji.')
             ->emptyStateIcon('heroicon-o-clipboard-document-check')
             ->paginated([10, 25, 50]);
     }

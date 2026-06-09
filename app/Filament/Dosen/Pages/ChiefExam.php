@@ -38,7 +38,7 @@ class ChiefExam extends Page implements HasTable
             Action::make('back')
                 ->label('Kembali')
                 ->icon('heroicon-o-arrow-left')
-                ->url(Scoring::getUrl()),
+                ->url(UnscoredScoring::getUrl()),
         ];
     }
 

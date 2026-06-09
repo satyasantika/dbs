@@ -38,7 +38,7 @@ class ViewChiefExam extends Page implements HasTable
     public function mount(ExamRegistration $record): void
     {
         if ($record->chief_id !== auth()->id()) {
-            $this->redirect(Scoring::getUrl(['activeTab' => 'unscored']));
+            $this->redirect(UnscoredScoring::getUrl());
 
             return;
         }
@@ -91,7 +91,7 @@ class ViewChiefExam extends Page implements HasTable
             Action::make('back')
                 ->label('Kembali')
                 ->icon('heroicon-o-arrow-left')
-                ->url(Scoring::getUrl()),
+                ->url(UnscoredScoring::getUrl()),
         ];
     }
 

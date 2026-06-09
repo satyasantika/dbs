@@ -3,7 +3,7 @@
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
         @include('examination.partials.scoring-form-fields', array_merge($formData, [
-            'returnUrl' => \App\Filament\Dosen\Pages\Scoring::getUrl(['activeTab' => 'unscored']),
+            'returnUrl' => $this->getReturnUrl(),
             'formAction' => route('scoring.update', $record),
         ]))
     </x-filament::section>

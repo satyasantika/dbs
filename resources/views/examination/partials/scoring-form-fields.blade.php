@@ -299,20 +299,26 @@
     </div>
 @else
 
+@php
+    $formDisabled = $form_disabled ?? $available_check ?? false;
+    $saveButtonLabel = $save_button_label ?? 'Simpan Penilaian';
+@endphp
+
 <form id="formAction" action="{{ $formAction }}" method="post">
     @csrf
     @method('PUT')
+    <input type="hidden" name="return_url" value="{{ $returnUrl }}">
     <input type="hidden" value="{{ $scoring->exam_registration_id }}" name="exam_registration_id">
 
     {{-- ── Mode toggle ── --}}
     <div style="text-align:center;margin-bottom:20px">
         <div class="mode-toggle-wrap">
             <button type="button" class="mode-btn active" id="btn-direct"
-                onclick="switchMode('direct')" @disabled($available_check)>
+                onclick="switchMode('direct')" @disabled($formDisabled)>
                 ⊕&nbsp; Pilih Nilai Huruf
             </button>
             <button type="button" class="mode-btn" id="btn-detail"
-                onclick="switchMode('detail')" @disabled($available_check)>
+                onclick="switchMode('detail')" @disabled($formDisabled)>
                 ≡&nbsp; Penilaian Per Aspek
             </button>
         </div>
@@ -327,7 +333,7 @@
                 class="grade-btn {{ ($has_scores && $init_letter === $letter) ? 'selected' : '' }}"
                 data-grade="{{ $letter }}"
                 onclick="selectDirectGrade('{{ $letter }}')"
-                @disabled($available_check)>
+                @disabled($formDisabled)>
                 {{ $letter }}
                 <span class="grade-range">{{ $range['min'] }}–{{ $range['max'] }}</span>
             </button>
@@ -355,7 +361,7 @@
             <div class="aspect-select">
                 <select class="form-select form-select-sm"
                     name="{{ $item_order }}" id="{{ $item_order }}"
-                    onchange="updateFromAspects()" @disabled($available_check)>
+                    onchange="updateFromAspects()" @disabled($formDisabled)>
                     <option value="">—</option>
                     <option value="{{ rand(86,98) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=85)>A</option>
                     <option value="{{ rand(78,82) }}" @selected($scoring->$item_order !== null && intval($scoring->$item_order)>=77 && intval($scoring->$item_order)<=84)>A-</option>
@@ -397,12 +403,12 @@
         <div class="revision-card-title">Perlu direvisi?</div>
         <div class="rev-toggle-group">
             <input type="radio" class="btn-check" name="revision" id="revisi2"
-                autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($available_check)
+                autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($formDisabled)
                 onClick='toggleRevisionNotes(false)' @required(true)>
             <label for="revisi2" class="rev-pill rev-pill-tidak">✓ Tidak Perlu Revisi</label>
 
             <input type="radio" class="btn-check" name="revision" id="revisi1"
-                autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($available_check)
+                autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($formDisabled)
                 onClick='toggleRevisionNotes(true)' @required(true)>
             <label for="revisi1" class="rev-pill rev-pill-ya">✎ Perlu Revisi</label>
         </div>
@@ -430,7 +436,7 @@
                 </div>
             </div>
             <textarea name="revision_note" rows="7" class="form-control"
-                id="revision_note" @disabled($available_check)
+                id="revision_note" @disabled($formDisabled)
                 oninput="onRevisionInput()" onblur="saveRevisionDraft()">{{ $scoring->revision_note }}</textarea>
             <div class="notes-hint">Jika kosong, tercetak <em>belum diisi</em> pada lembar revisi mahasiswa</div>
         </div>
@@ -476,8 +482,8 @@
 
     <div style="display:flex;gap:10px;justify-content:flex-end;align-items:center">
         <a href="{{ $returnUrl }}" class="btn btn-outline-secondary btn-sm">Batal</a>
-        <button type="submit" class="dbs-save-btn" id="saveBtn" @disabled($available_check)>
-            Simpan Penilaian
+        <button type="submit" class="dbs-save-btn" id="saveBtn" @disabled($formDisabled)>
+            {{ $saveButtonLabel }}
         </button>
     </div>
 </form>
