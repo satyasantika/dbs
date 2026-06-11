@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ExamTypeResource extends Resource
 {
@@ -65,13 +66,29 @@ class ExamTypeResource extends Resource
                     ->label('Status Aktif'),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                Tables\Actions\DeleteAction::make()
+                    ->iconButton()
+                    ->tooltip('Hapus')
+                    ->visible(fn (ExamType $record): bool => ! static::isInUse($record)),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
+            ->bulkActions([]);
+    }
+
+    public static function isInUse(ExamType $record): bool
+    {
+        if (isset($record->has_registrations, $record->has_form_items)) {
+            return (bool) $record->has_registrations || (bool) $record->has_form_items;
+        }
+
+        return $record->registrations()->exists() || $record->formitems()->exists();
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->withExists([
+                'registrations as has_registrations',
+                'formitems as has_form_items',
             ]);
     }
 
