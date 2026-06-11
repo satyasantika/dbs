@@ -50,6 +50,26 @@ class AcademicSemester
             ->whereMonth($column, '<=', 7);
     }
 
+    public static function applyUserRoleFilter(
+        Builder $query,
+        int $userId,
+        string $role,
+        string $prefix = 'guide_examiners',
+    ): Builder {
+        return match ($role) {
+            'pembimbing' => $query->where(function (Builder $query) use ($userId, $prefix): void {
+                $query->where("{$prefix}.guide1_id", $userId)
+                    ->orWhere("{$prefix}.guide2_id", $userId);
+            }),
+            'penguji' => $query->where(function (Builder $query) use ($userId, $prefix): void {
+                $query->where("{$prefix}.examiner1_id", $userId)
+                    ->orWhere("{$prefix}.examiner2_id", $userId)
+                    ->orWhere("{$prefix}.examiner3_id", $userId);
+            }),
+            default => $query,
+        };
+    }
+
     public static function userRole(GuideExaminer $record, int $userId): ?string
     {
         if ((int) $record->guide1_id === $userId || (int) $record->guide2_id === $userId) {

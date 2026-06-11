@@ -81,4 +81,11 @@ trait HasGraduationSemesterRecap
             ->mapWithKeys(fn (array $row): array => [$row['code'] => $row['label']])
             ->all();
     }
+
+    public function getLatestSemesterCode(): ?string
+    {
+        $rekap = $this->getGraduationRecapBySemester();
+
+        return $rekap[0]['code'] ?? null;
+    }
 }

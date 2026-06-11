@@ -66,6 +66,22 @@ class GraduationEvidence extends Page implements HasTable
             ->orderBy('graduated_students.name');
     }
 
+    protected function getTableFilterValue(string $filter): mixed
+    {
+        return data_get($this->tableFilters, "{$filter}.value");
+    }
+
+    protected function shouldPaginateGraduationTable(): bool
+    {
+        return blank($this->getTableFilterValue('status'))
+            && blank($this->getTableFilterValue('semester'));
+    }
+
+    public function updatedTableFilters(): void
+    {
+        $this->resetPage();
+    }
+
     protected function applyGlobalSearchToTableQuery(Builder $query): Builder
     {
         $search = $this->getTableSearch();
@@ -99,9 +115,31 @@ class GraduationEvidence extends Page implements HasTable
             ->searchable()
             ->searchPlaceholder('Cari mahasiswa, NPM, angkatan, pembimbing, atau penguji...')
             ->filters([
+                SelectFilter::make('status')
+                    ->label('Status')
+                    ->options([
+                        'pembimbing' => 'Pembimbing',
+                        'penguji' => 'Penguji',
+                    ])
+                    ->placeholder('Semua')
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['value'])) {
+                            return $query;
+                        }
+
+                        $status = (string) $data['value'];
+
+                        return AcademicSemester::applyUserRoleFilter(
+                            $query,
+                            (int) auth()->id(),
+                            (string) $status,
+                        );
+                    }),
                 SelectFilter::make('semester')
                     ->label('Semester')
                     ->options(fn (): array => $this->getSemesterFilterOptions())
+                    ->placeholder('Semua')
+                    ->default(fn (): ?string => $this->getLatestSemesterCode())
                     ->query(function (Builder $query, array $data): Builder {
                         if (blank($data['value'])) {
                             return $query;
@@ -150,6 +188,8 @@ class GraduationEvidence extends Page implements HasTable
             ->emptyStateHeading('Belum ada data kelulusan')
             ->emptyStateDescription('Mahasiswa yang sudah sidang skripsi akan muncul di sini.')
             ->emptyStateIcon('heroicon-o-document-check')
-            ->paginated([10, 25, 50]);
+            ->paginated(fn (): bool => $this->shouldPaginateGraduationTable())
+            ->paginationPageOptions([6, 12, 24])
+            ->defaultPaginationPageOption(6);
     }
 }
