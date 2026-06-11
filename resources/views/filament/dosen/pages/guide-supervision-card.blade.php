@@ -30,7 +30,7 @@
             </x-filament::badge>
 
             @foreach ($roles as $role)
-                <x-filament::badge color="gray">
+                <x-filament::badge :color="\App\Filament\Dosen\Pages\GuideSupervision::roleBadgeColor($role)">
                     {{ $role }}
                 </x-filament::badge>
             @endforeach
@@ -68,13 +68,6 @@
             <dt class="shrink-0 text-gray-500 dark:text-gray-400">Semhas</dt>
             <dd class="text-right font-medium text-gray-950 dark:text-white">
                 {{ $formatDate($record->seminar_date) }}
-            </dd>
-        </div>
-
-        <div class="flex items-start justify-between gap-3">
-            <dt class="shrink-0 text-gray-500 dark:text-gray-400">Sidang</dt>
-            <dd class="text-right font-medium text-gray-950 dark:text-white">
-                {{ $formatDate($record->thesis_date) }}
             </dd>
         </div>
     </dl>

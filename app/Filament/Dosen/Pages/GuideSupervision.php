@@ -51,7 +51,16 @@ class GuideSupervision extends Page implements HasTable
         return match (self::progressLabel($record)) {
             'Belum Sempro' => 'gray',
             'Baru Sempro' => 'info',
-            'Sudah Semhas' => 'primary',
+            'Sudah Semhas' => 'success',
+            default => 'gray',
+        };
+    }
+
+    public static function roleBadgeColor(string $role): string
+    {
+        return match ($role) {
+            'P1' => 'warning',
+            'P2' => 'primary',
             default => 'gray',
         };
     }
@@ -147,6 +156,7 @@ class GuideSupervision extends Page implements HasTable
             ->emptyStateHeading('Belum ada data bimbingan')
             ->emptyStateDescription('Mahasiswa bimbingan aktif akan muncul di sini.')
             ->emptyStateIcon('heroicon-o-user-group')
-            ->paginated([10, 25, 50]);
+            ->paginated([6, 12, 24])
+            ->defaultPaginationPageOption(6);
     }
 }
