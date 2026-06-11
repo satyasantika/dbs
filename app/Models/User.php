@@ -16,6 +16,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable implements FilamentUser
 {
@@ -82,5 +83,10 @@ class User extends Authenticatable implements FilamentUser
     public function examexaminer(): HasMany
     {
         return $this->hasMany(ExamExaminer::class);
+    }
+
+    public function guideExaminer(): HasOne
+    {
+        return $this->hasOne(GuideExaminer::class);
     }
 }
