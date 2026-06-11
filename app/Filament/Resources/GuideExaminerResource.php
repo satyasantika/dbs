@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\GuideExaminerResource\Pages;
-use App\Models\ExamRegistration;
 use App\Models\GuideExaminer;
 use App\Models\User;
 use Filament\Forms;
@@ -14,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 class GuideExaminerResource extends Resource
@@ -58,10 +58,16 @@ class GuideExaminerResource extends Resource
 
         $studentOptions = function (?GuideExaminer $record): array {
             return User::role('mahasiswa')
-                ->whereDoesntHave(
-                    'guideExaminer',
-                    fn (Builder $query) => $query->whereNotNull('thesis_date'),
-                )
+                ->where(function (Builder $query) use ($record): void {
+                    $query->whereDoesntHave(
+                        'guideExaminer',
+                        fn (Builder $query) => $query->whereNotNull('thesis_date'),
+                    );
+
+                    if ($record?->exists && filled($record->user_id)) {
+                        $query->orWhere('id', $record->user_id);
+                    }
+                })
                 ->when(
                     $record?->exists,
                     fn (Builder $query) => $query->where(function (Builder $query) use ($record): void {
@@ -94,6 +100,7 @@ class GuideExaminerResource extends Resource
                         Forms\Components\Select::make('user_id')
                             ->label('Mahasiswa')
                             ->options(fn (?GuideExaminer $record): array => $studentOptions($record))
+                            ->getOptionLabelUsing(fn ($value): ?string => filled($value) ? User::find($value)?->name : null)
                             ->disabled(fn (?GuideExaminer $record): bool => $record?->exists && filled($record->thesis_date))
                             ->dehydrated()
                             ->searchable()
@@ -187,7 +194,8 @@ class GuideExaminerResource extends Resource
                             ->label('Tanggal Seminar Hasil'),
                         Forms\Components\DatePicker::make('thesis_date')
                             ->label('Tanggal Sidang Skripsi'),
-                    ])->columns(3)->collapsed(),
+                    ])->columns(3)
+                    ->collapsed(fn (?GuideExaminer $record): bool => ! $record?->exists),
             ]);
     }
 
@@ -233,19 +241,12 @@ class GuideExaminerResource extends Resource
                     ->options(fn () => GuideExaminer::distinct()->pluck('year_generation', 'year_generation')),
             ])
             ->actions([
-                Tables\Actions\EditAction::make()
-                    ->iconButton()
-                    ->tooltip('Ubah'),
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
                     ->tooltip('Hapus')
-                    ->visible(fn (GuideExaminer $record): bool => ! static::studentHasExamRegistrations($record)),
+                    ->visible(fn (GuideExaminer $record): bool => static::canDelete($record)),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
-                ]),
-            ])
+            ->bulkActions([])
             ->defaultSort('student.name');
     }
 
@@ -294,15 +295,22 @@ class GuideExaminerResource extends Resource
         );
     }
 
+    public static function canDelete(Model $record): bool
+    {
+        /** @var GuideExaminer $record */
+        return ! static::studentHasExamRegistrations($record)
+            && blank($record->proposal_date)
+            && blank($record->seminar_date)
+            && blank($record->thesis_date);
+    }
+
     public static function studentHasExamRegistrations(GuideExaminer $record): bool
     {
-        if (isset($record->has_exam_registrations)) {
-            return (bool) $record->has_exam_registrations;
+        if (array_key_exists('has_exam_registrations', $record->getAttributes())) {
+            return (int) $record->getAttribute('has_exam_registrations') > 0;
         }
 
-        return ExamRegistration::query()
-            ->where('user_id', $record->user_id)
-            ->exists();
+        return $record->examRegistrations()->exists();
     }
 
     public static function getEloquentQuery(): Builder

@@ -10,10 +10,16 @@ class EditGuideExaminer extends EditRecord
 {
     protected static string $resource = GuideExaminerResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return GuideExaminerResource::getUrl('index');
+    }
+
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->visible(fn (): bool => GuideExaminerResource::canDelete($this->getRecord())),
         ];
     }
 }
