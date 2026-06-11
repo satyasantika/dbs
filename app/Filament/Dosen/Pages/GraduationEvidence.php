@@ -66,17 +66,6 @@ class GraduationEvidence extends Page implements HasTable
             ->orderBy('graduated_students.name');
     }
 
-    protected function getTableFilterValue(string $filter): mixed
-    {
-        return data_get($this->tableFilters, "{$filter}.value");
-    }
-
-    protected function shouldPaginateGraduationTable(): bool
-    {
-        return blank($this->getTableFilterValue('status'))
-            && blank($this->getTableFilterValue('semester'));
-    }
-
     public function updatedTableFilters(): void
     {
         $this->resetPage();
@@ -188,8 +177,7 @@ class GraduationEvidence extends Page implements HasTable
             ->emptyStateHeading('Belum ada data kelulusan')
             ->emptyStateDescription('Mahasiswa yang sudah sidang skripsi akan muncul di sini.')
             ->emptyStateIcon('heroicon-o-document-check')
-            ->paginated(fn (): bool => $this->shouldPaginateGraduationTable())
-            ->paginationPageOptions([6, 12, 24])
+            ->paginated([6, 12, 24])
             ->defaultPaginationPageOption(6);
     }
 }

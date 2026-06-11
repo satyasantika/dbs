@@ -142,6 +142,7 @@ class Scoring extends Page implements HasTable
             ->emptyStateHeading('Belum ada arsip penilaian')
             ->emptyStateDescription('Ujian akan masuk arsip setelah semua penguji selesai menilai.')
             ->emptyStateIcon('heroicon-o-clipboard-document-check')
-            ->paginated([10, 25, 50]);
+            ->paginated([6, 12, 24])
+            ->defaultPaginationPageOption(6);
     }
 }
