@@ -150,6 +150,16 @@
                             </a>
                         @endif
                         <span class="font-medium text-gray-900 dark:text-white">{{ $score->lecture?->name ?: '(?)' }}</span>
+                        <x-filament::icon-button
+                            tag="button"
+                            type="button"
+                            icon="heroicon-m-arrow-path-rounded-square"
+                            label="Ganti penguji {{ $score->lecture?->name ?? '' }}"
+                            tooltip="Ganti penguji"
+                            color="warning"
+                            size="sm"
+                            wire:click="openReplaceModal({{ $score->id }})"
+                        />
                         @if ($isChief)
                             <span class="inline-flex items-center rounded-full bg-success-100 dark:bg-success-900 px-2 py-0.5 text-xs font-semibold text-success-700 dark:text-success-300">★ Ketua</span>
                         @endif
@@ -222,4 +232,55 @@
         </tbody>
     </table>
 </div>
+
+@if ($replacingScore)
+<div
+    class="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
+    wire:click.self="closeReplaceModal"
+    wire:keydown.escape.window="closeReplaceModal"
+>
+    <div
+        class="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-900"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="replace-examiner-title"
+    >
+        <h3 id="replace-examiner-title" class="text-base font-semibold text-gray-900 dark:text-white">
+            Ganti Penguji
+        </h3>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Slot {{ $replacingScore->examiner_order }} —
+            <span class="font-medium text-gray-900 dark:text-white">{{ $replacingScore->lecture?->name ?: '(?)' }}</span>
+        </p>
+
+        <div class="mt-4">
+            <label for="newExaminerId" class="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Pengganti
+            </label>
+            <select
+                id="newExaminerId"
+                wire:model="newExaminerId"
+                class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            >
+                <option value="">— Pilih dosen —</option>
+                @foreach ($lecturers as $lecturer)
+                    <option value="{{ $lecturer->id }}">{{ $lecturer->name }}</option>
+                @endforeach
+            </select>
+            @error('newExaminerId')
+                <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
+            @enderror
+        </div>
+
+        <div class="mt-6 flex justify-end gap-2">
+            <x-filament::button color="gray" wire:click="closeReplaceModal">
+                Batal
+            </x-filament::button>
+            <x-filament::button wire:click="replaceExaminer" wire:loading.attr="disabled">
+                Simpan
+            </x-filament::button>
+        </div>
+    </div>
+</div>
+@endif
 </div>

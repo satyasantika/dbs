@@ -4,7 +4,7 @@ namespace App\Filament\Resources\ExamRegistrationResource\Pages;
 
 use App\Filament\Resources\ExamRegistrationResource;
 use App\Models\ExamScore;
-use App\Models\GuideExaminer;
+use App\Services\Examination\ExamRegistrationExaminerSync;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
@@ -56,50 +56,15 @@ class EditExamRegistration extends EditRecord
         ];
     }
 
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return app(ExamRegistrationExaminerSync::class)->resolveChiefIdForSave($this->record, $data);
+    }
+
     protected function afterSave(): void
     {
         $this->wasSaved = true;
 
-        $record = $this->record->fresh();
-
-        // Create or update exam_scores for all slots with correct examiner_order
-        $slots = [
-            1 => $record->examiner1_id,
-            2 => $record->examiner2_id,
-            3 => $record->examiner3_id,
-            4 => $record->guide1_id,
-            5 => $record->guide2_id,
-        ];
-
-        $activeUserIds = [];
-        foreach ($slots as $order => $userId) {
-            if (!$userId) continue;
-
-            ExamScore::updateOrCreate(
-                [
-                    'exam_registration_id' => $record->id,
-                    'user_id'              => $userId,
-                ],
-                ['examiner_order' => $order]
-            );
-
-            $activeUserIds[] = $userId;
-        }
-
-        // Delete orphaned scores (old examiners replaced) that have not been graded yet
-        ExamScore::where('exam_registration_id', $record->id)
-            ->whereNotIn('user_id', $activeUserIds ?: [0])
-            ->whereNull('grade')
-            ->delete();
-
-        // Sync guide_examiners for this student
-        GuideExaminer::where('user_id', $record->user_id)->update([
-            'guide1_id'    => $record->guide1_id,
-            'guide2_id'    => $record->guide2_id,
-            'examiner1_id' => $record->examiner1_id,
-            'examiner2_id' => $record->examiner2_id,
-            'examiner3_id' => $record->examiner3_id,
-            'chief_id'     => $record->chief_id,
-        ]);
+        app(ExamRegistrationExaminerSync::class)->syncFromRegistration($this->record->fresh());
     }
 }

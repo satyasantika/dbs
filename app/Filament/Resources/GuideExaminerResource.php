@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\GuideExaminerResource\Pages;
 use App\Models\GuideExaminer;
 use App\Models\User;
+use App\Support\ExaminerSlotSelectOptions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -15,6 +16,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\HtmlString;
 
 class GuideExaminerResource extends Resource
 {
@@ -33,26 +35,15 @@ class GuideExaminerResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $lecturerOptions = fn (): array => User::role('dosen')
-            ->orderBy('name')
-            ->pluck('name', 'id')
-            ->all();
+        $lecturerOptions = fn (Get $get, string $field): array => ExaminerSlotSelectOptions::optionsFor($get, $field);
 
-        $resetChiefIfInvalid = function (Set $set, Get $get): void {
-            $chiefId = $get('chief_id');
-
-            if (blank($chiefId)) {
+        $migrateChiefWhenSlotChanges = function (?string $state, Set $set, Get $get, ?string $old): void {
+            if (blank($old)) {
                 return;
             }
 
-            $validChiefIds = array_filter([
-                $get('examiner1_id'),
-                $get('examiner2_id'),
-                $get('examiner3_id'),
-            ]);
-
-            if (! in_array((int) $chiefId, array_map('intval', $validChiefIds), true)) {
-                $set('chief_id', null);
+            if ((int) $get('chief_id') === (int) $old) {
+                $set('chief_id', $state);
             }
         };
 
@@ -112,79 +103,157 @@ class GuideExaminerResource extends Resource
                             ->required(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Pembimbing')
+                Forms\Components\Grid::make()
+                    ->schema([
+                        Forms\Components\Section::make('Pembimbing')
+                            ->columnSpan(1)
+                    ->description('Gunakan ikon ⇅ di samping field untuk menukar Pembimbing 1 dan 2.')
                     ->schema([
                         Forms\Components\Select::make('guide1_id')
                             ->label('Pembimbing 1')
-                            ->options($lecturerOptions)
+                            ->options(fn (Get $get): array => $lecturerOptions($get, 'guide1_id'))
                             ->searchable()
-                            ->nullable(),
+                            ->live()
+                            ->nullable()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('swap_guides_from_1')
+                                    ->label('Tukar')
+                                    ->tooltip('Tukar Pembimbing 1 dan 2')
+                                    ->icon('heroicon-m-arrows-up-down')
+                                    ->color('gray')
+                                    ->action(function (Set $set, Get $get): void {
+                                        [$a, $b] = [$get('guide1_id'), $get('guide2_id')];
+                                        $set('guide1_id', $b);
+                                        $set('guide2_id', $a);
+                                    }),
+                            ]),
                         Forms\Components\Select::make('guide2_id')
                             ->label('Pembimbing 2')
-                            ->options($lecturerOptions)
+                            ->options(fn (Get $get): array => $lecturerOptions($get, 'guide2_id'))
                             ->searchable()
-                            ->nullable(),
-                    ])->columns(2),
+                            ->live()
+                            ->nullable()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('swap_guides_from_2')
+                                    ->label('Tukar')
+                                    ->tooltip('Tukar Pembimbing 1 dan 2')
+                                    ->icon('heroicon-m-arrows-up-down')
+                                    ->color('gray')
+                                    ->action(function (Set $set, Get $get): void {
+                                        [$a, $b] = [$get('guide1_id'), $get('guide2_id')];
+                                        $set('guide1_id', $b);
+                                        $set('guide2_id', $a);
+                                    }),
+                            ]),
+                    ])->columns(1),
 
-                Forms\Components\Section::make('Penguji')
+                        Forms\Components\Section::make('Penguji')
+                            ->columnSpan(1)
+                    ->description('Tombol ↑/↓ untuk menyusun ulang urutan. Tombol "Set Ketua" untuk menetapkan Ketua Penguji.')
                     ->schema([
+                        Forms\Components\Hidden::make('chief_id'),
+
                         Forms\Components\Select::make('examiner1_id')
-                            ->label('Penguji 1')
-                            ->options($lecturerOptions)
+                            ->label(fn (Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner1_id')
+                                ? new HtmlString('Penguji 1 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
+                                : 'Penguji 1')
+                            ->options(fn (Get $get): array => $lecturerOptions($get, 'examiner1_id'))
                             ->searchable()
                             ->live()
-                            ->afterStateUpdated($resetChiefIfInvalid)
-                            ->nullable(),
+                            ->nullable()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('set_chief_1')
+                                    ->label('Set Ketua')
+                                    ->icon('heroicon-m-star')
+                                    ->color('warning')
+                                    ->hidden(fn (Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner1_id'))
+                                    ->action(fn (Set $set, Get $get) => $set('chief_id', $get('examiner1_id'))),
+                                Forms\Components\Actions\Action::make('swap_down_1')
+                                    ->label('↓')
+                                    ->tooltip('Tukar dengan Penguji 2')
+                                    ->icon('heroicon-m-arrow-down')
+                                    ->color('gray')
+                                    ->action(function (Set $set, Get $get): void {
+                                        [$a, $b] = [$get('examiner1_id'), $get('examiner2_id')];
+                                        $set('examiner1_id', $b);
+                                        $set('examiner2_id', $a);
+                                    }),
+                            ]),
+
                         Forms\Components\Select::make('examiner2_id')
-                            ->label('Penguji 2')
-                            ->options($lecturerOptions)
+                            ->label(fn (Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner2_id')
+                                ? new HtmlString('Penguji 2 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
+                                : 'Penguji 2')
+                            ->options(fn (Get $get): array => $lecturerOptions($get, 'examiner2_id'))
                             ->searchable()
                             ->live()
-                            ->afterStateUpdated($resetChiefIfInvalid)
-                            ->nullable(),
+                            ->nullable()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('set_chief_2')
+                                    ->label('Set Ketua')
+                                    ->icon('heroicon-m-star')
+                                    ->color('warning')
+                                    ->hidden(fn (Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner2_id'))
+                                    ->action(fn (Set $set, Get $get) => $set('chief_id', $get('examiner2_id'))),
+                                Forms\Components\Actions\Action::make('swap_up_2')
+                                    ->label('↑')
+                                    ->tooltip('Tukar dengan Penguji 1')
+                                    ->icon('heroicon-m-arrow-up')
+                                    ->color('gray')
+                                    ->action(function (Set $set, Get $get): void {
+                                        [$a, $b] = [$get('examiner1_id'), $get('examiner2_id')];
+                                        $set('examiner1_id', $b);
+                                        $set('examiner2_id', $a);
+                                    }),
+                                Forms\Components\Actions\Action::make('swap_down_2')
+                                    ->label('↓')
+                                    ->tooltip('Tukar dengan Penguji 3')
+                                    ->icon('heroicon-m-arrow-down')
+                                    ->color('gray')
+                                    ->action(function (Set $set, Get $get): void {
+                                        [$a, $b] = [$get('examiner2_id'), $get('examiner3_id')];
+                                        $set('examiner2_id', $b);
+                                        $set('examiner3_id', $a);
+                                    }),
+                            ]),
+
                         Forms\Components\Select::make('examiner3_id')
-                            ->label('Penguji 3')
-                            ->options($lecturerOptions)
+                            ->label(fn (Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner3_id')
+                                ? new HtmlString('Penguji 3 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
+                                : 'Penguji 3')
+                            ->options(fn (Get $get): array => $lecturerOptions($get, 'examiner3_id'))
                             ->searchable()
                             ->live()
-                            ->afterStateUpdated($resetChiefIfInvalid)
-                            ->nullable(),
-                        Forms\Components\Select::make('chief_id')
-                            ->label('Ketua Penguji')
-                            ->options(function (Get $get) use ($lecturerOptions): array {
-                                $lecturers = $lecturerOptions();
-
-                                return collect([
-                                    $get('examiner1_id'),
-                                    $get('examiner2_id'),
-                                    $get('examiner3_id'),
-                                ])
-                                    ->filter(fn ($id) => filled($id))
-                                    ->unique()
-                                    ->mapWithKeys(fn ($id): array => [$id => $lecturers[$id] ?? User::find($id)?->name])
-                                    ->filter()
-                                    ->all();
-                            })
-                            ->searchable()
-                            ->rules([
-                                fn (Get $get) => function (string $attribute, mixed $value, \Closure $fail) use ($get): void {
-                                    if (blank($value)) {
-                                        return;
-                                    }
-
-                                    $validChiefIds = array_filter([
-                                        $get('examiner1_id'),
-                                        $get('examiner2_id'),
-                                        $get('examiner3_id'),
-                                    ]);
-
-                                    if (! in_array((int) $value, array_map('intval', $validChiefIds), true)) {
-                                        $fail('Ketua penguji harus dipilih dari Penguji 1, 2, atau 3.');
-                                    }
-                                },
-                            ])
-                            ->nullable(),
-                    ])->columns(2),
+                            ->nullable()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('set_chief_3')
+                                    ->label('Set Ketua')
+                                    ->icon('heroicon-m-star')
+                                    ->color('warning')
+                                    ->hidden(fn (Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner3_id'))
+                                    ->action(fn (Set $set, Get $get) => $set('chief_id', $get('examiner3_id'))),
+                                Forms\Components\Actions\Action::make('swap_up_3')
+                                    ->label('↑')
+                                    ->tooltip('Tukar dengan Penguji 2')
+                                    ->icon('heroicon-m-arrow-up')
+                                    ->color('gray')
+                                    ->action(function (Set $set, Get $get): void {
+                                        [$a, $b] = [$get('examiner2_id'), $get('examiner3_id')];
+                                        $set('examiner2_id', $b);
+                                        $set('examiner3_id', $a);
+                                    }),
+                            ]),
+                    ])->columns(1),
+                    ])
+                    ->columns([
+                        'default' => 1,
+                        'md' => 2,
+                    ]),
 
                 Forms\Components\Section::make('Jadwal Ujian')
                     ->schema([

@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Setting\Examination;
 
-use App\Models\User;
-use App\Models\ExamScore;
-use Illuminate\Http\Request;
-use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
+use App\Models\ExamRegistration;
+use App\Models\ExamScore;
+use App\Models\User;
+use App\Services\Examination\ExamRegistrationExaminerSync;
+use Illuminate\Http\Request;
 
 class ExamScoreController extends Controller
 {
@@ -36,31 +37,13 @@ class ExamScoreController extends Controller
 
     public function update(Request $request, ExamRegistration $examregistration, ExamScore $examscore)
     {
-        $examscore->user_id = $request->newexaminer_id;
-        $examscore->save();
+        app(ExamRegistrationExaminerSync::class)->replaceExaminer(
+            $examregistration,
+            $examscore,
+            (int) $request->newexaminer_id,
+        );
 
-        if ($examscore->examiner_order==1) {
-            $examregistration->examiner1_id = $request->newexaminer_id;
-        }
-        if ($examscore->examiner_order==2) {
-            $examregistration->examiner2_id = $request->newexaminer_id;
-        }
-        if ($examscore->examiner_order==3) {
-            $examregistration->examiner3_id = $request->newexaminer_id;
-        }
-        if ($examscore->examiner_order==4) {
-            $examregistration->guide1_id = $request->newexaminer_id;
-        }
-        if ($examscore->examiner_order==5) {
-            $examregistration->guide2_id = $request->newexaminer_id;
-        }
-        if ($request->oldexaminer_id==$examregistration->chief_id) {
-            $examregistration->chief_id = $request->newexaminer_id;
-        }
-
-        $examregistration->save();
-
-        return to_route('examregistrations.examscores.index',$examregistration)->with('success','data penguji telah diperbarui');
+        return to_route('examregistrations.examscores.index', $examregistration)->with('success', 'data penguji telah diperbarui');
     }
 
     public function markSent(ExamRegistration $examregistration): \Illuminate\Http\RedirectResponse

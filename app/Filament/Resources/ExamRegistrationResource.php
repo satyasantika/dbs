@@ -7,6 +7,7 @@ use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use App\Models\ExamType;
 use App\Models\User;
+use App\Support\ExaminerSlotSelectOptions;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
@@ -34,6 +35,18 @@ class ExamRegistrationResource extends Resource
 
     public static function form(Form $form): Form
     {
+        $migrateChiefWhenSlotChanges = function (?string $state, Forms\Set $set, Forms\Get $get, ?string $old): void {
+            if (blank($old)) {
+                return;
+            }
+
+            if ((int) $get('chief_id') === (int) $old) {
+                $set('chief_id', $state);
+            }
+        };
+
+        $slotOptions = fn (Forms\Get $get, string $field): array => ExaminerSlotSelectOptions::optionsFor($get, $field);
+
         return $form
             ->schema([
                 Forms\Components\Section::make('Data Ujian')
@@ -81,28 +94,60 @@ class ExamRegistrationResource extends Resource
                             ->hidden(fn (Forms\Get $get): bool => !$get('exam_type_id')),
                         Forms\Components\Select::make('room')
                             ->label('Ruangan')
-                            ->options([
-                                '1' => 'Ruang Ujian 1',
-                                '2' => 'Ruang Ujian 2',
-                                '3' => 'Ruang Ujian 3',
-                                '4' => 'Ruang Ujian 4',
-                            ])
+                            ->options(collect(range(1, 10))
+                                ->mapWithKeys(fn (int $n): array => [(string) $n => "Ruang Ujian {$n}"])
+                                ->all())
                             ->hidden(fn (Forms\Get $get): bool => !$get('exam_type_id')),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Pembimbing')
+                Forms\Components\Grid::make()
+                    ->schema([
+                        Forms\Components\Section::make('Pembimbing')
+                            ->columnSpan(1)
+                    ->description('Gunakan ikon ⇅ di samping field untuk menukar Pembimbing 1 dan 2.')
                     ->schema([
                         Forms\Components\Select::make('guide1_id')
                             ->label('Pembimbing 1')
-                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable(),
+                            ->options(fn (Forms\Get $get): array => $slotOptions($get, 'guide1_id'))
+                            ->searchable()
+                            ->nullable()
+                            ->live()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('swap_guides_from_1')
+                                    ->label('Tukar')
+                                    ->tooltip('Tukar Pembimbing 1 dan 2')
+                                    ->icon('heroicon-m-arrows-up-down')
+                                    ->color('gray')
+                                    ->action(function (Forms\Set $set, Forms\Get $get): void {
+                                        [$a, $b] = [$get('guide1_id'), $get('guide2_id')];
+                                        $set('guide1_id', $b);
+                                        $set('guide2_id', $a);
+                                    }),
+                            ]),
                         Forms\Components\Select::make('guide2_id')
                             ->label('Pembimbing 2')
-                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable(),
-                    ])->columns(2),
+                            ->options(fn (Forms\Get $get): array => $slotOptions($get, 'guide2_id'))
+                            ->searchable()
+                            ->nullable()
+                            ->live()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
+                            ->hintActions([
+                                Forms\Components\Actions\Action::make('swap_guides_from_2')
+                                    ->label('Tukar')
+                                    ->tooltip('Tukar Pembimbing 1 dan 2')
+                                    ->icon('heroicon-m-arrows-up-down')
+                                    ->color('gray')
+                                    ->action(function (Forms\Set $set, Forms\Get $get): void {
+                                        [$a, $b] = [$get('guide1_id'), $get('guide2_id')];
+                                        $set('guide1_id', $b);
+                                        $set('guide2_id', $a);
+                                    }),
+                            ]),
+                    ])->columns(1),
 
-                Forms\Components\Section::make('Penguji')
+                        Forms\Components\Section::make('Penguji')
+                            ->columnSpan(1)
                     ->description('Tombol ↑/↓ untuk menyusun ulang urutan. Tombol "Set Ketua" untuk menetapkan Ketua Penguji.')
                     ->schema([
                         Forms\Components\Hidden::make('chief_id'),
@@ -111,8 +156,11 @@ class ExamRegistrationResource extends Resource
                             ->label(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner1_id')
                                 ? new HtmlString('Penguji 1 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
                                 : 'Penguji 1')
-                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable()
+                            ->options(fn (Forms\Get $get): array => $slotOptions($get, 'examiner1_id'))
+                            ->searchable()
+                            ->nullable()
+                            ->live()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
                             ->hintActions([
                                 Forms\Components\Actions\Action::make('set_chief_1')
                                     ->label('Set Ketua')
@@ -134,8 +182,11 @@ class ExamRegistrationResource extends Resource
                             ->label(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner2_id')
                                 ? new HtmlString('Penguji 2 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
                                 : 'Penguji 2')
-                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable()
+                            ->options(fn (Forms\Get $get): array => $slotOptions($get, 'examiner2_id'))
+                            ->searchable()
+                            ->nullable()
+                            ->live()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
                             ->hintActions([
                                 Forms\Components\Actions\Action::make('set_chief_2')
                                     ->label('Set Ketua')
@@ -165,8 +216,11 @@ class ExamRegistrationResource extends Resource
                             ->label(fn (Forms\Get $get) => $get('chief_id') && $get('chief_id') == $get('examiner3_id')
                                 ? new HtmlString('Penguji 3 <span class="inline-flex items-center rounded-full bg-success-100 px-2 py-0.5 text-xs font-semibold text-success-700">★ Ketua</span>')
                                 : 'Penguji 3')
-                            ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
-                            ->searchable()->nullable()
+                            ->options(fn (Forms\Get $get): array => $slotOptions($get, 'examiner3_id'))
+                            ->searchable()
+                            ->nullable()
+                            ->live()
+                            ->afterStateUpdated($migrateChiefWhenSlotChanges)
                             ->hintActions([
                                 Forms\Components\Actions\Action::make('set_chief_3')
                                     ->label('Set Ketua')
@@ -184,6 +238,11 @@ class ExamRegistrationResource extends Resource
                                     }),
                             ]),
                     ])->columns(1),
+                    ])
+                    ->columns([
+                        'default' => 1,
+                        'md' => 2,
+                    ]),
 
                 Forms\Components\Section::make('Detail Skripsi')
                     ->schema([
@@ -191,20 +250,44 @@ class ExamRegistrationResource extends Resource
                             ->label('Judul Skripsi')
                             ->rows(3)
                             ->columnSpanFull(),
+                        Forms\Components\Hidden::make('_show_additional_details')
+                            ->default(false)
+                            ->dehydrated(false)
+                            ->live(),
+                        Forms\Components\Actions::make([
+                            Forms\Components\Actions\Action::make('toggleAdditionalDetails')
+                                ->label(fn (Forms\Get $get): string => $get('_show_additional_details')
+                                    ? 'Sembunyikan IPK & detail online'
+                                    : 'Lainnya (IPK, link online, meeting)')
+                                ->icon(fn (Forms\Get $get): string => $get('_show_additional_details')
+                                    ? 'heroicon-m-chevron-up'
+                                    : 'heroicon-m-ellipsis-horizontal')
+                                ->color('gray')
+                                ->action(fn (Forms\Set $set, Forms\Get $get) => $set(
+                                    '_show_additional_details',
+                                    ! (bool) $get('_show_additional_details'),
+                                )),
+                        ])
+                            ->visible(fn (?ExamRegistration $record): bool => (bool) $record?->exists)
+                            ->columnSpanFull(),
                         Forms\Components\TextInput::make('ipk')
                             ->label('IPK')
                             ->numeric()
-                            ->step(0.01),
+                            ->step(0.01)
+                            ->hidden(fn (Forms\Get $get, ?ExamRegistration $record): bool => (bool) $record?->exists && ! $get('_show_additional_details')),
                         Forms\Components\Textarea::make('online_link')
                             ->label('Link Online')
                             ->rows(2)
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->hidden(fn (Forms\Get $get, ?ExamRegistration $record): bool => (bool) $record?->exists && ! $get('_show_additional_details')),
                         Forms\Components\TextInput::make('online_user')
                             ->label('User Meeting')
-                            ->maxLength(100),
+                            ->maxLength(100)
+                            ->hidden(fn (Forms\Get $get, ?ExamRegistration $record): bool => (bool) $record?->exists && ! $get('_show_additional_details')),
                         Forms\Components\TextInput::make('online_password')
                             ->label('Password Meeting')
-                            ->maxLength(100),
+                            ->maxLength(100)
+                            ->hidden(fn (Forms\Get $get, ?ExamRegistration $record): bool => (bool) $record?->exists && ! $get('_show_additional_details')),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Hasil Ujian')
