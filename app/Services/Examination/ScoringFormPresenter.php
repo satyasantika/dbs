@@ -27,11 +27,14 @@ class ScoringFormPresenter
                 : Carbon::now()->startOfDay()->lt($examRegistration->exam_date->startOfDay());
         }
 
+        $adminUnlockedEdit = $this->isDosenScoringEditUnlocked($scoring);
+
         $availableCheck = ($examRegistration->exam_date < $tanggalSekarang && $examRegistration->pass_exam)
-            && ! Auth::user()->can('force edit score');
+            && ! Auth::user()->can('force edit score')
+            && ! $adminUnlockedEdit;
 
         $dosenScoringLocked = $forDosenPanel
-            && $this->isDosenScoringLocked($scoring, $examStartAt);
+            && $this->isDosenScoringEditBlocked($scoring, $examRegistration, $examStartAt);
 
         $scoreCols = ['score01', 'score02', 'score03', 'score04', 'score05'];
         $filledScores = [];
@@ -75,7 +78,8 @@ class ScoringFormPresenter
             'exam_not_started_yet' => $examNotStartedYet,
             'available_check' => $availableCheck,
             'dosen_scoring_locked' => $dosenScoringLocked,
-            'form_disabled' => $availableCheck || $dosenScoringLocked,
+            'dosen_scoring_unlocked_by_admin' => $forDosenPanel && $adminUnlockedEdit,
+            'form_disabled' => $forDosenPanel ? $dosenScoringLocked : $availableCheck,
             'save_button_label' => $dosenScoringLocked ? 'Dikunci' : 'Simpan Penilaian',
             'has_scores' => $hasScores,
             'init_grade' => $initGrade,
@@ -104,11 +108,47 @@ class ScoringFormPresenter
             return false;
         }
 
+        return $this->isDosenScoringTimeLocked($scoring, $examStartAt);
+    }
+
+    public function isDosenScoringEditBlocked(
+        ExamScore $scoring,
+        ExamRegistration $examRegistration,
+        Carbon $examStartAt,
+    ): bool {
+        if (Auth::user()->can('force edit score')) {
+            return false;
+        }
+
+        if ($this->isDosenScoringEditUnlocked($scoring)) {
+            return false;
+        }
+
+        if ($this->isDosenScoringTimeLocked($scoring, $examStartAt)) {
+            return true;
+        }
+
+        $tanggalSekarang = Carbon::now()->isoFormat('Y-MM-DD');
+
+        return $examRegistration->exam_date < $tanggalSekarang && $examRegistration->pass_exam;
+    }
+
+    public function isDosenScoringTimeLocked(ExamScore $scoring, Carbon $examStartAt): bool
+    {
         if (! filled($scoring->grade)) {
             return false;
         }
 
+        if (filled($scoring->scoring_edit_unlocked_at)) {
+            return false;
+        }
+
         return Carbon::now()->gte($examStartAt->copy()->addHours(24));
+    }
+
+    public function isDosenScoringEditUnlocked(ExamScore $scoring): bool
+    {
+        return filled($scoring->scoring_edit_unlocked_at);
     }
 
     private function gradesMap(): array

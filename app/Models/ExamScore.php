@@ -15,6 +15,7 @@ class ExamScore extends Model
     protected $casts = [
         'revision' => 'boolean',
         'pass_approved' => 'boolean',
+        'scoring_edit_unlocked_at' => 'datetime',
     ];
 
     public function registration()

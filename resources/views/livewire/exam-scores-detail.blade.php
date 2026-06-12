@@ -125,6 +125,12 @@
             @php
                 $scored  = !is_null($score->grade);
                 $isChief = $record->chief_id && $score->user_id == $record->chief_id;
+                $scoringPresenter = app(\App\Services\Examination\ScoringFormPresenter::class);
+                $examStartAt = \Carbon\Carbon::parse(
+                    $record->exam_date->format('Y-m-d').' '.trim((string) $record->exam_time)
+                );
+                $isTimeLocked = $scoringPresenter->isDosenScoringTimeLocked($score, $examStartAt);
+                $isEditUnlocked = $scoringPresenter->isDosenScoringEditUnlocked($score);
                 $waUrl   = $score->lecture?->phone
                     ? 'https://api.whatsapp.com/send/?phone=62' . $score->lecture->phone
                         . '&text=' . rawurlencode(
@@ -165,6 +171,10 @@
                         @endif
                         @if (!$scored)
                             <span class="inline-flex items-center rounded-full bg-warning-100 dark:bg-warning-900 px-2 py-0.5 text-xs text-warning-600 dark:text-warning-400">Belum menilai</span>
+                        @elseif ($isEditUnlocked)
+                            <span class="inline-flex items-center rounded-full bg-primary-100 dark:bg-primary-900 px-2 py-0.5 text-xs font-semibold text-primary-700 dark:text-primary-300">Edit dibuka</span>
+                        @elseif ($isTimeLocked)
+                            <span class="inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-semibold text-gray-600 dark:text-gray-300">Dikunci</span>
                         @endif
                     </div>
                 </td>
@@ -185,6 +195,31 @@
                             color="primary"
                             size="sm"
                         />
+                        @if ($isTimeLocked)
+                            <x-filament::icon-button
+                                tag="button"
+                                type="button"
+                                icon="heroicon-m-lock-open"
+                                label="Buka edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                                tooltip="Buka edit penilaian {{ $score->lecture?->name ?? 'penguji' }} (hingga submit ulang)"
+                                color="warning"
+                                size="sm"
+                                wire:click="unlockScoringEdit({{ $score->id }})"
+                                wire:confirm="Izinkan {{ $score->lecture?->name ?? 'penguji' }} mengubah nilai hingga submit ulang?"
+                            />
+                        @elseif ($isEditUnlocked)
+                            <x-filament::icon-button
+                                tag="button"
+                                type="button"
+                                icon="heroicon-m-lock-closed"
+                                label="Kunci penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                                tooltip="Kunci penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                                color="danger"
+                                size="sm"
+                                wire:click="lockScoringEdit({{ $score->id }})"
+                                wire:confirm="Kunci kembali penilaian {{ $score->lecture?->name ?? 'penguji' }}? Dosen tidak dapat mengubah nilai lagi."
+                            />
+                        @endif
                     </div>
                 </td>
                 <td class="px-3 py-2 text-center font-bold">

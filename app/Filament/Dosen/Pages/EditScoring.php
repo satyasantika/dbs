@@ -52,6 +52,7 @@ class EditScoring extends Page
             return;
         }
 
+        $record->refresh();
         $record->loadMissing(['registration.student', 'registration.examtype', 'lecture']);
 
         $examRegistration = ExamRegistration::query()->findOrFail($record->exam_registration_id);

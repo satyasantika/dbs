@@ -96,6 +96,12 @@
             </div>
         </x-filament::section>
     @else
+        @if ($dosen_scoring_unlocked_by_admin ?? false)
+            <div class="rounded-lg border border-primary-300 bg-primary-50 px-4 py-3 text-sm text-primary-800 dark:border-primary-500/30 dark:bg-primary-500/10 dark:text-primary-300">
+                Admin telah membuka edit penilaian ini. Perubahan akan dikunci kembali setelah Anda menyimpan.
+            </div>
+        @endif
+
         @if ($errors->has('revision_note'))
             <div class="rounded-lg border border-danger-300 bg-danger-50 px-4 py-3 text-sm font-semibold text-danger-700 dark:border-danger-500/30 dark:bg-danger-500/10 dark:text-danger-400">
                 {{ $errors->first('revision_note') }}

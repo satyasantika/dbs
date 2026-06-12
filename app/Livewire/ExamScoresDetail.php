@@ -5,7 +5,9 @@ namespace App\Livewire;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use App\Services\Examination\ExamRegistrationExaminerSync;
+use App\Services\Examination\ScoringFormPresenter;
 use App\Support\ExaminerSlotSelectOptions;
+use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 
@@ -62,6 +64,62 @@ class ExamScoresDetail extends Component
             ->send();
 
         $this->closeReplaceModal();
+    }
+
+    public function unlockScoringEdit(int $scoreId, ScoringFormPresenter $presenter): void
+    {
+        $record = ExamRegistration::findOrFail($this->recordId);
+        $score = ExamScore::query()
+            ->where('exam_registration_id', $record->id)
+            ->findOrFail($scoreId);
+
+        $examStartAt = Carbon::parse(
+            $record->exam_date->format('Y-m-d').' '.trim((string) $record->exam_time)
+        );
+
+        if (! $presenter->isDosenScoringTimeLocked($score, $examStartAt)) {
+            Notification::make()
+                ->warning()
+                ->title('Penilaian tidak dikunci')
+                ->body('Hanya penilaian yang sudah dikunci yang dapat dibuka untuk diedit.')
+                ->send();
+
+            return;
+        }
+
+        $score->update(['scoring_edit_unlocked_at' => now()]);
+
+        Notification::make()
+            ->success()
+            ->title('Edit penilaian dibuka')
+            ->body(($score->lecture?->name ?: 'Penguji').' dapat mengubah nilai hingga submit ulang.')
+            ->send();
+    }
+
+    public function lockScoringEdit(int $scoreId, ScoringFormPresenter $presenter): void
+    {
+        $record = ExamRegistration::findOrFail($this->recordId);
+        $score = ExamScore::query()
+            ->where('exam_registration_id', $record->id)
+            ->findOrFail($scoreId);
+
+        if (! $presenter->isDosenScoringEditUnlocked($score)) {
+            Notification::make()
+                ->warning()
+                ->title('Penilaian tidak terbuka')
+                ->body('Hanya penilaian yang sedang dibuka yang dapat dikunci kembali.')
+                ->send();
+
+            return;
+        }
+
+        $score->update(['scoring_edit_unlocked_at' => null]);
+
+        Notification::make()
+            ->success()
+            ->title('Edit penilaian dikunci')
+            ->body(($score->lecture?->name ?: 'Penguji').' tidak dapat mengubah nilai lagi.')
+            ->send();
     }
 
     public function render()

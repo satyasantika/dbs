@@ -58,6 +58,8 @@ class ExamScoreUpdater
             $data['revision_note'] = null;
         }
 
+        $data['scoring_edit_unlocked_at'] = null;
+
         $scoring->fill($data)->save();
 
         $examRegistration = ExamRegistration::find($scoring->exam_registration_id);

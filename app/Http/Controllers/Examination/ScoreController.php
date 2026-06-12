@@ -85,12 +85,14 @@ class ScoreController extends Controller
         $returnUrl = $this->scoringReturnUrl($request);
 
         if (auth()->user()->hasRole('dosen')) {
+            $scoring->refresh();
+
             $examRegistration = ExamRegistration::query()->findOrFail($scoring->exam_registration_id);
             $examStartAt = Carbon::parse(
                 $examRegistration->exam_date->format('Y-m-d').' '.trim((string) $examRegistration->exam_time)
             );
 
-            if ($presenter->isDosenScoringLocked($scoring, $examStartAt)) {
+            if ($presenter->isDosenScoringEditBlocked($scoring, $examRegistration, $examStartAt)) {
                 return redirect($returnUrl)
                     ->with('warning', 'Penilaian sudah dikunci dan tidak dapat diubah.');
             }
