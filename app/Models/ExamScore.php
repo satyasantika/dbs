@@ -13,7 +13,7 @@ class ExamScore extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'revision' => 'boolean',
+        'revision' => 'integer',
         'pass_approved' => 'boolean',
         'scoring_edit_unlocked_at' => 'datetime',
     ];

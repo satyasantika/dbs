@@ -121,22 +121,27 @@
     {{-- ══ Keputusan Revisi ══ --}}
     <div class="dbs-section-label">Keputusan Revisi</div>
     <div class="revision-card">
-        <div class="revision-card-title">Perlu direvisi?</div>
+        <div class="revision-card-title">Tingkat revisi</div>
         <div class="rev-toggle-group">
-            <input type="radio" class="btn-check" name="revision" id="revisi2"
-                autocomplete="off" @checked($scoring->revision==0) value=0 @disabled($formDisabled)
-                onClick='toggleRevisionNotes(false, true)' @required(true)>
-            <label for="revisi2" class="rev-pill rev-pill-tidak">✓ Tidak Perlu Revisi</label>
+            <input type="radio" class="btn-check" name="revision" id="revision_none"
+                autocomplete="off" @checked((int) $scoring->revision === 0) value="0" @disabled($formDisabled)
+                onClick="toggleRevisionNotes(false, true)" @required(true)>
+            <label for="revision_none" class="rev-pill rev-pill-tidak">✓ Tidak Perlu Revisi</label>
 
-            <input type="radio" class="btn-check" name="revision" id="revisi1"
-                autocomplete="off" @checked($scoring->revision==1) value=1 @disabled($formDisabled)
-                onClick='toggleRevisionNotes(true, false)' @required(true)>
-            <label for="revisi1" class="rev-pill rev-pill-ya">✎ Perlu Revisi</label>
+            <input type="radio" class="btn-check" name="revision" id="revision_minor"
+                autocomplete="off" @checked((int) $scoring->revision === 1) value="1" @disabled($formDisabled)
+                onClick="toggleRevisionNotes(true, false)" @required(true)>
+            <label for="revision_minor" class="rev-pill rev-pill-minor">✎ Perlu Revisi Minor</label>
+
+            <input type="radio" class="btn-check" name="revision" id="revision_major"
+                autocomplete="off" @checked((int) $scoring->revision === 2) value="2" @disabled($formDisabled)
+                onClick="toggleRevisionNotes(true, false)" @required(true)>
+            <label for="revision_major" class="rev-pill rev-pill-mayor">⚠ Perlu Revisi Mayor</label>
         </div>
     </div>
 
     {{-- ── Revision notes (expandable) ── --}}
-    <div id="revision_row" @style($scoring->revision==1 ? "display:block" : "display:none")>
+    <div id="revision_row" @style((int) $scoring->revision > 0 ? "display:block" : "display:none")>
         {{-- Draft restore banner --}}
         <div id="draftBanner" class="draft-banner" style="display:none">
             <div>
@@ -158,10 +163,10 @@
             </div>
             <textarea name="revision_note" rows="7" class="form-control {{ ($for_filament_panel ?? false) ? 'fi-scoring-textarea' : '' }}"
                 id="revision_note" @disabled($formDisabled)
-                @required($scoring->revision == 1)
+                @required((int) $scoring->revision > 0)
                 oninput="onRevisionInput()" onblur="saveRevisionDraft()">{{ old('revision_note', $scoring->revision_note) }}</textarea>
             <div class="notes-hint" id="revisionNoteHint">
-                @if ($scoring->revision == 1)
+                @if ((int) $scoring->revision > 0)
                     Wajib diisi jika mahasiswa perlu revisi.
                 @else
                     Diabaikan jika tidak perlu revisi.

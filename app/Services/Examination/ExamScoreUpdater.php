@@ -54,7 +54,7 @@ class ExamScoreUpdater
         $data['grade'] = $finalGrade;
         $data['letter'] = $this->convertToLetter($finalGrade);
 
-        if (! (bool) ($data['revision'] ?? false)) {
+        if ((int) ($data['revision'] ?? 0) === 0) {
             $data['revision_note'] = null;
         }
 

@@ -291,9 +291,17 @@
     }
 
     .fi-dosen-edit-scoring-page .rev-toggle-group {
-        display: flex;
-        gap: 0.5rem;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.875rem;
         position: relative;
+    }
+
+    @media (max-width: 640px) {
+        .fi-dosen-edit-scoring-page .rev-toggle-group {
+            grid-template-columns: 1fr;
+        }
     }
 
     .fi-dosen-edit-scoring-page .btn-check {
@@ -303,11 +311,11 @@
     }
 
     .fi-dosen-edit-scoring-page .rev-pill {
-        flex: 1;
+        width: 100%;
         text-align: center;
         cursor: pointer;
         border-radius: 0.625rem;
-        padding: 0.625rem 0.875rem;
+        padding: 0.75rem 1rem;
         font-weight: 700;
         font-size: 0.875rem;
         border: 1px solid rgb(209 213 219);
@@ -329,9 +337,15 @@
         color: #fff;
     }
 
-    .fi-dosen-edit-scoring-page .btn-check:checked + .rev-pill-ya {
-        background: rgb(234 88 12);
-        border-color: rgb(234 88 12);
+    .fi-dosen-edit-scoring-page .btn-check:checked + .rev-pill-minor {
+        background: rgb(217 119 6);
+        border-color: rgb(217 119 6);
+        color: #fff;
+    }
+
+    .fi-dosen-edit-scoring-page .btn-check:checked + .rev-pill-mayor {
+        background: rgb(220 38 38);
+        border-color: rgb(220 38 38);
         color: #fff;
     }
 

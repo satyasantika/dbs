@@ -78,11 +78,12 @@ class StudentExamScoringHistory
             return '—';
         }
 
-        if (! $score->revision) {
-            return 'Tidak perlu revisi';
-        }
-
-        return filled($score->revision_note) ? $score->revision_note : 'belum diisi';
+        return match ((int) $score->revision) {
+            0 => 'Tidak perlu revisi',
+            1 => filled($score->revision_note) ? $score->revision_note : 'Revisi minor — belum diisi',
+            2 => filled($score->revision_note) ? $score->revision_note : 'Revisi mayor — belum diisi',
+            default => '—',
+        };
     }
 
     protected static function finalDecisionLabel(ExamRegistration $registration, ?ExamScore $score): string

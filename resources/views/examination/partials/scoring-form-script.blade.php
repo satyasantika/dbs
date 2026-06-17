@@ -138,11 +138,39 @@
     }
 
     // ══ Auto revision based on grade ════════════
+    const MAJOR_REVISION_LETTERS = ['B-', 'C+', 'C'];
+
+    function getSelectedRevisionValue() {
+        return parseInt(document.querySelector('input[name="revision"]:checked')?.value ?? '0', 10);
+    }
+
+    function needsRevisionNotes() {
+        return getSelectedRevisionValue() > 0;
+    }
+
     function autoSetRevision(ltr) {
         if (!ltr) return;
-        const needsRevision = ltr !== 'A';
-        document.getElementById(needsRevision ? 'revisi1' : 'revisi2').checked = true;
-        toggleRevisionNotes(needsRevision, !needsRevision);
+
+        let revisionValue = 0;
+
+        if (MAJOR_REVISION_LETTERS.includes(ltr)) {
+            revisionValue = 2;
+        } else if (ltr !== 'A') {
+            revisionValue = 1;
+        }
+
+        const inputId = {
+            0: 'revision_none',
+            1: 'revision_minor',
+            2: 'revision_major',
+        }[revisionValue];
+
+        const input = document.getElementById(inputId);
+
+        if (input) {
+            input.checked = true;
+            toggleRevisionNotes(revisionValue > 0, revisionValue === 0);
+        }
     }
 
     // ══ Revision notes toggle ════════════════════
@@ -262,8 +290,7 @@
         autoSetDecision(avg);
 
         // Sync revision field UI on load without clearing saved note.
-        const needsRevisionOnLoad = document.getElementById('revisi1')?.checked;
-        toggleRevisionNotes(!!needsRevisionOnLoad, false);
+        toggleRevisionNotes(needsRevisionNotes(), false);
 
         // Check localStorage for revision draft
         const revRow = document.getElementById('revision_row');
@@ -279,7 +306,7 @@
 
     // Clear draft from localStorage on successful form submit
     document.getElementById('formAction')?.addEventListener('submit', function (event) {
-        const needsRevision = document.getElementById('revisi1')?.checked;
+        const needsRevision = needsRevisionNotes();
         const noteField = document.getElementById('revision_note');
         const note = noteField?.value.trim() ?? '';
 

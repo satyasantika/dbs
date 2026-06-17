@@ -159,11 +159,20 @@
         border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
     }
     .revision-card-title { font-size: .9rem; font-weight: 700; color: #334155; margin-bottom: 12px; }
-    .rev-toggle-group { display: flex; gap: 8px; position: relative; }
+    .rev-toggle-group {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.875rem;
+        position: relative;
+    }
+    @media (max-width: 640px) {
+        .rev-toggle-group { grid-template-columns: 1fr; }
+    }
     .btn-check { position: absolute; clip: rect(0,0,0,0); pointer-events: none; }
     .rev-pill {
-        flex: 1; text-align: center; cursor: pointer; border-radius: 10px;
-        padding: 10px 14px; font-weight: 800; font-size: .88rem;
+        width: 100%; text-align: center; cursor: pointer; border-radius: 10px;
+        padding: 12px 16px; font-weight: 800; font-size: .88rem;
         border: 2px solid #e2e8f0; background: #fff; color: #64748b;
         transition: all .2s; user-select: none;
     }
@@ -173,10 +182,15 @@
         border-color: transparent; color: #fff;
         box-shadow: 0 4px 14px rgba(34,197,94,.3);
     }
-    .btn-check:checked + .rev-pill-ya {
-        background: linear-gradient(135deg, #c2410c, #f97316);
+    .btn-check:checked + .rev-pill-minor {
+        background: linear-gradient(135deg, #b45309, #f59e0b);
         border-color: transparent; color: #fff;
-        box-shadow: 0 4px 14px rgba(249,115,22,.3);
+        box-shadow: 0 4px 14px rgba(245,158,11,.35);
+    }
+    .btn-check:checked + .rev-pill-mayor {
+        background: linear-gradient(135deg, #b91c1c, #ef4444);
+        border-color: transparent; color: #fff;
+        box-shadow: 0 4px 14px rgba(239,68,68,.35);
     }
 
     /* ── Revision notes & autosave ── */
