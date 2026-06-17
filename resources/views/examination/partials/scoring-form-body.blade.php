@@ -153,21 +153,38 @@
                 <button type="button" class="draft-btn-dismiss" onclick="dismissDraft()">Abaikan</button>
             </div>
         </div>
-        <div class="notes-card">
+        <div class="notes-card @if ((int) $scoring->revision === 2) notes-card-mayor @elseif ((int) $scoring->revision === 1) notes-card-minor @endif" id="revisionNotesCard">
             <div class="notes-header">
-                <div class="notes-title">Catatan Revisi</div>
+                <div class="notes-title" id="revisionNoteTitle">
+                    @if ((int) $scoring->revision === 2)
+                        Catatan Revisi Mayor
+                    @elseif ((int) $scoring->revision === 1)
+                        Catatan Revisi Minor
+                    @else
+                        Catatan Revisi
+                    @endif
+                </div>
                 <div class="autosave-pill" id="autosavePill">
                     <span class="autosave-dot"></span>
                     <span id="autosaveText">belum ada perubahan</span>
                 </div>
             </div>
-            <textarea name="revision_note" rows="7" class="form-control {{ ($for_filament_panel ?? false) ? 'fi-scoring-textarea' : '' }}"
+            @php
+                $revisionNoteRows = match ((int) $scoring->revision) {
+                    2 => 10,
+                    1 => 4,
+                    default => 4,
+                };
+            @endphp
+            <textarea name="revision_note" rows="{{ $revisionNoteRows }}" class="form-control {{ ($for_filament_panel ?? false) ? 'fi-scoring-textarea' : '' }}"
                 id="revision_note" @disabled($formDisabled)
                 @required((int) $scoring->revision > 0)
                 oninput="onRevisionInput()" onblur="saveRevisionDraft()">{{ old('revision_note', $scoring->revision_note) }}</textarea>
             <div class="notes-hint" id="revisionNoteHint">
-                @if ((int) $scoring->revision > 0)
-                    Wajib diisi jika mahasiswa perlu revisi.
+                @if ((int) $scoring->revision === 2)
+                    Wajib diisi — revisi mayor memerlukan catatan yang lebih lengkap.
+                @elseif ((int) $scoring->revision === 1)
+                    Wajib diisi jika mahasiswa perlu revisi minor.
                 @else
                     Diabaikan jika tidak perlu revisi.
                 @endif

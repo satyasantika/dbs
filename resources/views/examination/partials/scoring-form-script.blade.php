@@ -138,7 +138,7 @@
     }
 
     // ══ Auto revision based on grade ════════════
-    const MAJOR_REVISION_LETTERS = ['B-', 'C+', 'C'];
+    const MAJOR_REVISION_LETTERS = ['B-', 'C+', 'C', 'C-', 'D', 'E'];
 
     function getSelectedRevisionValue() {
         return parseInt(document.querySelector('input[name="revision"]:checked')?.value ?? '0', 10);
@@ -146,6 +146,39 @@
 
     function needsRevisionNotes() {
         return getSelectedRevisionValue() > 0;
+    }
+
+    function revisionNoteRowsFor(value) {
+        return value === 2 ? 10 : 4;
+    }
+
+    function syncRevisionNoteField() {
+        const ta = document.getElementById('revision_note');
+        const hint = document.getElementById('revisionNoteHint');
+        const title = document.getElementById('revisionNoteTitle');
+        const card = document.getElementById('revisionNotesCard');
+        const value = getSelectedRevisionValue();
+
+        if (!ta || value === 0) {
+            return;
+        }
+
+        ta.rows = revisionNoteRowsFor(value);
+
+        if (title) {
+            title.textContent = value === 2 ? 'Catatan Revisi Mayor' : 'Catatan Revisi Minor';
+        }
+
+        if (hint) {
+            hint.textContent = value === 2
+                ? 'Wajib diisi — revisi mayor memerlukan catatan yang lebih lengkap.'
+                : 'Wajib diisi jika mahasiswa perlu revisi minor.';
+        }
+
+        if (card) {
+            card.classList.toggle('notes-card-mayor', value === 2);
+            card.classList.toggle('notes-card-minor', value === 1);
+        }
     }
 
     function autoSetRevision(ltr) {
@@ -194,13 +227,14 @@
 
         if (show) {
             ta.setAttribute('required', 'required');
-            if (hint) {
-                hint.textContent = 'Wajib diisi jika mahasiswa perlu revisi.';
-            }
+            syncRevisionNoteField();
         } else {
             ta.removeAttribute('required');
             if (hint) {
                 hint.textContent = 'Diabaikan jika tidak perlu revisi.';
+            }
+            if (document.getElementById('revisionNotesCard')) {
+                document.getElementById('revisionNotesCard').classList.remove('notes-card-minor', 'notes-card-mayor');
             }
         }
     }

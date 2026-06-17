@@ -358,6 +358,14 @@
         border-left: 3px solid rgb(249 115 22);
     }
 
+    .fi-dosen-edit-scoring-page .notes-card-minor {
+        border-left-color: rgb(245 158 11);
+    }
+
+    .fi-dosen-edit-scoring-page .notes-card-mayor {
+        border-left-color: rgb(239 68 68);
+    }
+
     .dark .fi-dosen-edit-scoring-page .notes-card {
         background: rgb(255 255 255 / 0.03);
         border-color: rgb(255 255 255 / 0.1);

@@ -199,6 +199,8 @@
         border-radius: 12px; padding: 16px 18px; margin-bottom: 10px;
         border-left: 3px solid #f97316;
     }
+    .notes-card-minor { border-left-color: #f59e0b; }
+    .notes-card-mayor { border-left-color: #ef4444; }
     .notes-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
     .notes-title { font-size: .88rem; font-weight: 700; color: #334155; }
     .notes-hint { font-size: .77rem; color: #94a3b8; margin-top: 8px; font-style: italic; }
