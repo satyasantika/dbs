@@ -15,7 +15,27 @@
         <span class="font-semibold text-gray-950 dark:text-white">{{ auth()->user()->name }}</span>
     </x-slot>
 
-    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <style>
+        .scoring-exam-type-recap-grid {
+            display: grid;
+            gap: 0.75rem;
+            grid-template-columns: repeat(1, minmax(0, 1fr));
+        }
+
+        @media (min-width: 640px) {
+            .scoring-exam-type-recap-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .scoring-exam-type-recap-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+    </style>
+
+    <div class="scoring-exam-type-recap-grid">
         @foreach ($recapTypes as $type)
             <div class="rounded-xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-white/5">
                 <x-filament::badge :color="$type['color']">

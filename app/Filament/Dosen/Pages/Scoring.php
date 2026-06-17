@@ -82,8 +82,13 @@ class Scoring extends Page implements HasTable
 
         foreach ($this->extractTableSearchWords($search) as $searchWord) {
             $query->where(function (Builder $query) use ($searchWord): void {
-                $query->whereHas('registration.student', fn (Builder $q) => $q->where('name', 'like', "%{$searchWord}%"))
-                    ->orWhereHas('registration.examtype', fn (Builder $q) => $q->where('name', 'like', "%{$searchWord}%"));
+                $query->whereHas('registration.student', fn (Builder $q) => $q
+                    ->where('name', 'like', "%{$searchWord}%")
+                    ->orWhere('username', 'like', "%{$searchWord}%"));
+
+                foreach (['examiner1', 'examiner2', 'examiner3', 'guide1', 'guide2', 'chief'] as $relation) {
+                    $query->orWhereHas('registration.'.$relation, fn (Builder $q) => $q->where('name', 'like', "%{$searchWord}%"));
+                }
             });
         }
 
@@ -95,7 +100,7 @@ class Scoring extends Page implements HasTable
         return $table
             ->query(fn (): Builder => $this->getTableQuery())
             ->searchable()
-            ->searchPlaceholder('Cari mahasiswa atau jenis ujian...')
+            ->searchPlaceholder('Cari mahasiswa, NPM, atau penguji...')
             ->columns([
                 View::make('filament.dosen.pages.scoring-card'),
             ])
