@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use App\Services\Examination\ExamRegistrationExaminerSync;
+use App\Services\Examination\ExamScoreUpdater;
 use App\Services\Examination\ScoringFormPresenter;
 use App\Support\ExaminerSlotSelectOptions;
 use Carbon\Carbon;
@@ -19,8 +20,28 @@ class ExamScoresDetail extends Component
 
     public ?int $newExaminerId = null;
 
+    public ?int $editingScoreId = null;
+
+    public ?string $editingGrade = null;
+
+    public ?int $expandedScoreActionsId = null;
+
+    public function toggleScoreActions(int $scoreId): void
+    {
+        $this->expandedScoreActionsId = $this->expandedScoreActionsId === $scoreId
+            ? null
+            : $scoreId;
+    }
+
+    public function closeScoreActions(): void
+    {
+        $this->expandedScoreActionsId = null;
+    }
+
     public function openReplaceModal(int $scoreId): void
     {
+        $this->closeGradeEdit();
+        $this->closeScoreActions();
         $this->replacingScoreId = $scoreId;
         $this->newExaminerId = null;
         $this->resetErrorBag();
@@ -120,6 +141,51 @@ class ExamScoresDetail extends Component
             ->title('Edit penilaian dikunci')
             ->body(($score->lecture?->name ?: 'Penguji').' tidak dapat mengubah nilai lagi.')
             ->send();
+    }
+
+    public function openGradeEdit(int $scoreId): void
+    {
+        $this->closeReplaceModal();
+        $this->closeScoreActions();
+
+        $score = ExamScore::query()
+            ->where('exam_registration_id', $this->recordId)
+            ->findOrFail($scoreId);
+
+        $this->editingScoreId = $scoreId;
+        $this->editingGrade = $score->grade !== null ? (string) (int) round($score->grade) : '';
+        $this->resetErrorBag('editingGrade');
+    }
+
+    public function closeGradeEdit(): void
+    {
+        $this->editingScoreId = null;
+        $this->editingGrade = null;
+        $this->resetErrorBag('editingGrade');
+        $this->closeScoreActions();
+    }
+
+    public function saveGrade(ExamScoreUpdater $updater): void
+    {
+        $this->validate([
+            'editingGrade' => ['required', 'integer', 'min:0', 'max:100'],
+        ], [], [
+            'editingGrade' => 'nilai',
+        ]);
+
+        $score = ExamScore::query()
+            ->where('exam_registration_id', $this->recordId)
+            ->findOrFail($this->editingScoreId);
+
+        $updater->applyAdminFinalGrade($score, (int) $this->editingGrade);
+
+        Notification::make()
+            ->success()
+            ->title('Nilai diperbarui')
+            ->body('Nilai akhir dan score01–score05 penguji telah disesuaikan.')
+            ->send();
+
+        $this->closeGradeEdit();
     }
 
     public function render()

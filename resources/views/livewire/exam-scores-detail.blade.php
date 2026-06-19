@@ -179,48 +179,103 @@
                     </div>
                 </td>
                 <td class="px-3 py-2 text-center">
-                    <div style="display:inline-flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;">
-                        @if (!is_null($score->grade))
-                            <span style="display:inline-flex;align-items:center;border-radius:9999px;background:#1f2937;padding:1px 8px;font-size:11px;font-weight:700;color:#fff;">{{ $score->grade }}</span>
-                        @else
-                            <span style="color:#9ca3af">—</span>
-                        @endif
-                        <x-filament::icon-button
-                            tag="a"
-                            :href="route('scoring.edit', ['scoring' => $score])"
-                            target="_blank"
-                            icon="heroicon-m-pencil-square"
-                            label="Edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
-                            tooltip="Edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
-                            color="primary"
-                            size="sm"
-                        />
-                        @if ($isTimeLocked)
+                    @if ($editingScoreId === $score->id)
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;min-width:140px;">
+                            <input
+                                type="number"
+                                step="1"
+                                min="0"
+                                max="100"
+                                inputmode="numeric"
+                                wire:model="editingGrade"
+                                wire:keydown.enter="saveGrade"
+                                wire:keydown.escape="closeGradeEdit"
+                                style="width:72px;border-radius:8px;border:1px solid #d1d5db;padding:6px 10px;font-size:14px;font-weight:700;text-align:center;"
+                                placeholder="0–100"
+                                autofocus
+                            />
+                            @error('editingGrade')
+                                <p style="margin:0;font-size:11px;color:#dc2626;">{{ $message }}</p>
+                            @enderror
+                            <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+                                <x-filament::button size="sm" wire:click="saveGrade" wire:loading.attr="disabled">
+                                    Simpan
+                                </x-filament::button>
+                                <x-filament::button size="sm" color="gray" wire:click="closeGradeEdit">
+                                    Batal
+                                </x-filament::button>
+                            </div>
+                        </div>
+                    @else
+                        <div style="display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:nowrap;white-space:nowrap;line-height:1;">
+                            @if (!is_null($score->grade))
+                                <span style="display:inline-block;min-width:2ch;font-size:14px;font-weight:700;color:#111827;">{{ (int) round($score->grade) }}</span>
+                            @else
+                                <span style="display:inline-block;min-width:2ch;font-size:14px;color:#9ca3af;">—</span>
+                            @endif
+
                             <x-filament::icon-button
                                 tag="button"
                                 type="button"
-                                icon="heroicon-m-lock-open"
-                                label="Buka edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
-                                tooltip="Buka edit penilaian {{ $score->lecture?->name ?? 'penguji' }} (hingga submit ulang)"
-                                color="warning"
+                                icon="heroicon-m-ellipsis-vertical"
+                                label="Aksi nilai {{ $score->lecture?->name ?? 'penguji' }}"
+                                tooltip="{{ $expandedScoreActionsId === $score->id ? 'Sembunyikan aksi' : 'Tampilkan aksi nilai' }}"
+                                color="gray"
                                 size="sm"
-                                wire:click="unlockScoringEdit({{ $score->id }})"
-                                wire:confirm="Izinkan {{ $score->lecture?->name ?? 'penguji' }} mengubah nilai hingga submit ulang?"
+                                wire:click="toggleScoreActions({{ $score->id }})"
                             />
-                        @elseif ($isEditUnlocked)
-                            <x-filament::icon-button
-                                tag="button"
-                                type="button"
-                                icon="heroicon-m-lock-closed"
-                                label="Kunci penilaian {{ $score->lecture?->name ?? 'penguji' }}"
-                                tooltip="Kunci penilaian {{ $score->lecture?->name ?? 'penguji' }}"
-                                color="danger"
-                                size="sm"
-                                wire:click="lockScoringEdit({{ $score->id }})"
-                                wire:confirm="Kunci kembali penilaian {{ $score->lecture?->name ?? 'penguji' }}? Dosen tidak dapat mengubah nilai lagi."
-                            />
-                        @endif
-                    </div>
+
+                            @if ($expandedScoreActionsId === $score->id)
+                                <div style="display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap;flex-shrink:0;">
+                                    <x-filament::icon-button
+                                        tag="button"
+                                        type="button"
+                                        icon="heroicon-m-pencil"
+                                        label="Ubah nilai {{ $score->lecture?->name ?? 'penguji' }}"
+                                        tooltip="Ubah nilai akhir"
+                                        color="warning"
+                                        size="sm"
+                                        wire:click="openGradeEdit({{ $score->id }})"
+                                    />
+                                    <x-filament::icon-button
+                                        tag="a"
+                                        :href="route('scoring.edit', ['scoring' => $score])"
+                                        target="_blank"
+                                        icon="heroicon-m-pencil-square"
+                                        label="Edit penilaian lengkap {{ $score->lecture?->name ?? 'penguji' }}"
+                                        tooltip="Edit penilaian lengkap"
+                                        color="primary"
+                                        size="sm"
+                                    />
+                                    @if ($isTimeLocked)
+                                        <x-filament::icon-button
+                                            tag="button"
+                                            type="button"
+                                            icon="heroicon-m-lock-open"
+                                            label="Buka edit penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                                            tooltip="Buka edit penilaian {{ $score->lecture?->name ?? 'penguji' }} (hingga submit ulang)"
+                                            color="warning"
+                                            size="sm"
+                                            wire:click="unlockScoringEdit({{ $score->id }})"
+                                            wire:confirm="Izinkan {{ $score->lecture?->name ?? 'penguji' }} mengubah nilai hingga submit ulang?"
+                                        />
+                                    @elseif ($isEditUnlocked)
+                                        <x-filament::icon-button
+                                            tag="button"
+                                            type="button"
+                                            icon="heroicon-m-lock-closed"
+                                            label="Kunci penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                                            tooltip="Kunci penilaian {{ $score->lecture?->name ?? 'penguji' }}"
+                                            color="danger"
+                                            size="sm"
+                                            wire:click="lockScoringEdit({{ $score->id }})"
+                                            wire:confirm="Kunci kembali penilaian {{ $score->lecture?->name ?? 'penguji' }}? Dosen tidak dapat mengubah nilai lagi."
+                                        />
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </td>
                 <td class="px-3 py-2 text-center font-bold">
                     @php

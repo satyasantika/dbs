@@ -62,9 +62,41 @@ class ExamScoreUpdater
 
         $scoring->fill($data)->save();
 
-        $examRegistration = ExamRegistration::find($scoring->exam_registration_id);
-        $gradeSum = ExamScore::where('exam_registration_id', $scoring->exam_registration_id)->sum('grade');
-        $passApprovedSum = ExamScore::where('exam_registration_id', $scoring->exam_registration_id)->sum('pass_approved');
+        $this->recalculateExamRegistration($scoring->exam_registration_id);
+
+        return $scoring->fresh();
+    }
+
+    public function applyAdminFinalGrade(ExamScore $scoring, float|int $finalGrade): ExamScore
+    {
+        $finalGrade = (int) max(0, min(100, round($finalGrade)));
+
+        $scoring->fill([
+            'score01' => $finalGrade,
+            'score02' => $finalGrade,
+            'score03' => $finalGrade,
+            'score04' => $finalGrade,
+            'score05' => $finalGrade,
+            'grade' => $finalGrade,
+            'letter' => $this->convertToLetter((float) $finalGrade),
+            'pass_approved' => $finalGrade >= 37 ? 1 : 0,
+        ])->save();
+
+        $this->recalculateExamRegistration($scoring->exam_registration_id);
+
+        return $scoring->fresh();
+    }
+
+    protected function recalculateExamRegistration(int $examRegistrationId): void
+    {
+        $examRegistration = ExamRegistration::find($examRegistrationId);
+
+        if (! $examRegistration) {
+            return;
+        }
+
+        $gradeSum = ExamScore::where('exam_registration_id', $examRegistrationId)->sum('grade');
+        $passApprovedSum = ExamScore::where('exam_registration_id', $examRegistrationId)->sum('pass_approved');
         $registrationGrade = round($gradeSum / 5, 2);
 
         $examRegistration->grade = $registrationGrade;
@@ -75,7 +107,5 @@ class ExamScoreUpdater
         }
 
         $examRegistration->save();
-
-        return $scoring->fresh();
     }
 }
