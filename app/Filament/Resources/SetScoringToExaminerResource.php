@@ -53,6 +53,11 @@ class SetScoringToExaminerResource extends Resource
         return false;
     }
 
+    public static function pendingCount(): int
+    {
+        return static::getEloquentQuery()->count();
+    }
+
     public static function getEloquentQuery(): Builder
     {
         $assignedRegistrationIds = ExamScore::query()

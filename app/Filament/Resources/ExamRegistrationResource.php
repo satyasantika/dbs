@@ -671,9 +671,10 @@ class ExamRegistrationResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListExamRegistrations::route('/'),
+            'index'  => Pages\ListExamRegistrations::route('/'),
             'create' => Pages\CreateExamRegistration::route('/create'),
-            'edit' => Pages\EditExamRegistration::route('/{record}/edit'),
+            'edit'   => Pages\EditExamRegistration::route('/{record}/edit'),
+            'import' => Pages\ImportExamRegistrations::route('/import'),
         ];
     }
 }
