@@ -12,6 +12,7 @@ use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use App\DataTables\ExamRegistrationsDataTable;
+use App\Services\Examination\ExamRegistrationExaminerSync;
 
 class ExamRegistrationController extends Controller
 {
@@ -298,7 +299,7 @@ class ExamRegistrationController extends Controller
                 }
 
                 // ── 8. Buat exam_registration ─────────────────────────────
-                ExamRegistration::create([
+                $registration = ExamRegistration::create([
                     'user_id'            => $student->id,
                     'exam_type_id'       => $examType->id,
                     'registration_order' => $order,
@@ -318,6 +319,8 @@ class ExamRegistrationController extends Controller
                     'online_link'        => $row['link_room'] ?? null,
                     'exam_file'          => $row['file_ujian'] ?? null,
                 ]);
+
+                app(ExamRegistrationExaminerSync::class)->syncFromRegistration($registration->fresh());
 
                 $student->givePermissionTo('join exam');
 
