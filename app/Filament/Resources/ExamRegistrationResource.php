@@ -363,11 +363,11 @@ class ExamRegistrationResource extends Resource
     public static function getTableColumns(): array
     {
         return [
-                Tables\Columns\TextColumn::make('student.name')
+                Tables\Columns\ViewColumn::make('student.name')
                     ->label('Mahasiswa')
+                    ->view('filament.tables.columns.exam-registration-student')
                     ->searchable()
                     ->sortable()
-                    ->wrap()
                     ->wrapHeader()
                     ->extraCellAttributes(['class' => 'exam-registrations-wrap-cell exam-registrations-student-cell'])
                     ->extraHeaderAttributes(['class' => 'exam-registrations-wrap-cell exam-registrations-student-cell']),

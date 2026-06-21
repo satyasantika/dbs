@@ -5,10 +5,7 @@
                 white-space: normal;
             }
 
-            .fi-resource-exam-registrations .exam-registrations-student-cell {
-                max-width: 11rem;
-                min-width: 6rem;
-            }
+            @include('filament.partials.exam-registration-student-column-styles')
 
             .fi-resource-exam-registrations .exam-registrations-date-cell {
                 max-width: 6.5rem;

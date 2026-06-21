@@ -39,6 +39,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/setting/examregistrations/paste-import-check-duplicates', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImportCheckDuplicates'])->name('examregistrations.paste-import-check-duplicates');
         Route::post('/setting/examregistrations/paste-bulk-edit-resolve', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEditResolve'])->name('examregistrations.paste-bulk-edit-resolve');
         Route::post('/setting/examregistrations/paste-bulk-edit', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEdit'])->name('examregistrations.paste-bulk-edit');
+        Route::get('/setting/examregistrations/{examregistration}/whatsapp/invite', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'whatsappInvite'])->name('examregistrations.whatsapp-invite');
+        Route::get('/setting/examregistrations/{examregistration}/whatsapp/ralat', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'whatsappRalat'])->name('examregistrations.whatsapp-ralat');
         Route::get('/admin/scoring-yet', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
         Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
         Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');

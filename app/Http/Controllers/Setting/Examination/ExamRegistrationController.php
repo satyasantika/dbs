@@ -12,7 +12,9 @@ use App\Models\ExamRegistration;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use App\DataTables\ExamRegistrationsDataTable;
+use App\Filament\Resources\ExamRegistrationResource;
 use App\Services\Examination\ExamRegistrationExaminerSync;
+use App\Support\ExamRegistrationWhatsappLinks;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -738,6 +740,38 @@ class ExamRegistrationController extends Controller
         $guideExaminer->fill($geAttributes)->save();
 
         return $guideExaminer;
+    }
+
+    public function whatsappInvite(ExamRegistration $examregistration)
+    {
+        $examregistration->update(['invited_at' => now()]);
+        $examregistration->syncInvitedScheduleSnapshot();
+
+        $url = ExamRegistrationWhatsappLinks::inviteUrl($examregistration->fresh());
+
+        if (!$url) {
+            return redirect()->to(ExamRegistrationResource::getUrl('index'));
+        }
+
+        return redirect()->away($url);
+    }
+
+    public function whatsappRalat(ExamRegistration $examregistration)
+    {
+        if (!$examregistration->hasScheduleChangedSinceInvite()) {
+            return redirect()->to(ExamRegistrationResource::getUrl('index'));
+        }
+
+        $examregistration->update(['corrected_at' => now()]);
+        $examregistration->syncInvitedScheduleSnapshot();
+
+        $url = ExamRegistrationWhatsappLinks::ralatUrl($examregistration->fresh());
+
+        if (!$url) {
+            return redirect()->to(ExamRegistrationResource::getUrl('index'));
+        }
+
+        return redirect()->away($url);
     }
 
     public function destroy(ExamRegistration $examregistration)

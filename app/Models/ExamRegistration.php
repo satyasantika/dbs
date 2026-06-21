@@ -16,10 +16,58 @@ class ExamRegistration extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'exam_date' => 'date',
-        'pass_exam' => 'boolean',
-        'sent_at'   => 'datetime',
+        'exam_date'         => 'date',
+        'pass_exam'         => 'boolean',
+        'sent_at'           => 'datetime',
+        'invited_at'        => 'datetime',
+        'corrected_at'      => 'datetime',
+        'invited_exam_date' => 'date',
     ];
+
+    public function syncInvitedScheduleSnapshot(): void
+    {
+        $this->forceFill([
+            'invited_exam_date' => $this->exam_date,
+            'invited_exam_time' => $this->exam_time,
+            'invited_room'      => $this->room,
+        ])->save();
+    }
+
+    public function hasScheduleChangedSinceInvite(): bool
+    {
+        if (!$this->invited_at) {
+            return false;
+        }
+
+        return $this->normalizedScheduleDate($this->exam_date) !== $this->normalizedScheduleDate($this->invited_exam_date)
+            || $this->normalizedScheduleTime($this->exam_time) !== $this->normalizedScheduleTime($this->invited_exam_time)
+            || $this->normalizedScheduleRoom($this->room) !== $this->normalizedScheduleRoom($this->invited_room);
+    }
+
+    protected function normalizedScheduleDate(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return \Illuminate\Support\Carbon::parse($value)->format('Y-m-d');
+    }
+
+    protected function normalizedScheduleTime(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return \Illuminate\Support\Carbon::parse($value)->format('H:i');
+    }
+
+    protected function normalizedScheduleRoom(mixed $value): ?string
+    {
+        $room = trim((string) ($value ?? ''));
+
+        return $room !== '' ? $room : null;
+    }
 
     public function resolveRouteBinding($value, $field = null)
     {
