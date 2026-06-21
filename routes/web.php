@@ -36,6 +36,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/setting/examregistrations/{examregistration}/mark-sent', [App\Http\Controllers\Setting\Examination\ExamScoreController::class, 'markSent'])->name('examregistrations.examscores.mark-sent');
         Route::get('/setting/examregistrations/date/{id}', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'index2'])->name('examregistrations.date');
         Route::post('/setting/examregistrations/paste-import', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImport'])->name('examregistrations.paste-import');
+        Route::post('/setting/examregistrations/paste-import-check-duplicates', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImportCheckDuplicates'])->name('examregistrations.paste-import-check-duplicates');
         Route::get('/admin/scoring-yet', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
         Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
         Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');
