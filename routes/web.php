@@ -37,6 +37,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/setting/examregistrations/date/{id}', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'index2'])->name('examregistrations.date');
         Route::post('/setting/examregistrations/paste-import', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImport'])->name('examregistrations.paste-import');
         Route::post('/setting/examregistrations/paste-import-check-duplicates', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImportCheckDuplicates'])->name('examregistrations.paste-import-check-duplicates');
+        Route::post('/setting/examregistrations/paste-bulk-edit-resolve', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEditResolve'])->name('examregistrations.paste-bulk-edit-resolve');
+        Route::post('/setting/examregistrations/paste-bulk-edit', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEdit'])->name('examregistrations.paste-bulk-edit');
         Route::get('/admin/scoring-yet', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
         Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
         Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');

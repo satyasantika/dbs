@@ -29,6 +29,11 @@ class ListExamRegistrations extends ListRecords
                 ->icon('heroicon-o-clipboard-document-list')
                 ->color('success')
                 ->url(ExamRegistrationResource::getUrl('import')),
+            Actions\Action::make('bulkEdit')
+                ->label('Edit Banyak')
+                ->icon('heroicon-o-pencil-square')
+                ->color('info')
+                ->url(ExamRegistrationResource::getUrl('bulk-edit')),
             Actions\CreateAction::make(),
         ];
     }

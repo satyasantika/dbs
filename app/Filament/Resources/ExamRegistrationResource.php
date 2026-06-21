@@ -674,7 +674,8 @@ class ExamRegistrationResource extends Resource
             'index'  => Pages\ListExamRegistrations::route('/'),
             'create' => Pages\CreateExamRegistration::route('/create'),
             'edit'   => Pages\EditExamRegistration::route('/{record}/edit'),
-            'import' => Pages\ImportExamRegistrations::route('/import'),
+            'import'     => Pages\ImportExamRegistrations::route('/import'),
+            'bulk-edit'  => Pages\BulkEditExamRegistrations::route('/bulk-edit'),
         ];
     }
 }

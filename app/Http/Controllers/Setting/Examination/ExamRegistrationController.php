@@ -15,6 +15,7 @@ use App\DataTables\ExamRegistrationsDataTable;
 use App\Services\Examination\ExamRegistrationExaminerSync;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Throwable;
@@ -429,6 +430,314 @@ class ExamRegistrationController extends Controller
         }
 
         return response()->json(['checks' => $checks]);
+    }
+
+    public function pasteBulkEditResolve(Request $request)
+    {
+        $request->validate(['rows' => 'required|array|min:1|max:200']);
+
+        $resolves = [];
+
+        foreach ($request->rows as $row) {
+            if (!$this->importRowHasRequiredFields($row)) {
+                continue;
+            }
+
+            $resolves[] = $this->resolveBulkEditRow($row);
+        }
+
+        return response()->json(['resolves' => $resolves]);
+    }
+
+    public function pasteBulkEdit(Request $request)
+    {
+        $request->validate(['rows' => 'required|array|min:1|max:200']);
+
+        $results = [];
+
+        foreach ($request->rows as $row) {
+            $rowNum = $row['_rowNum'] ?? '?';
+
+            if (!empty($row['_invalid'])) {
+                continue;
+            }
+
+            if (($row['_editAction'] ?? null) === 'skip') {
+                $results[] = ['row' => $rowNum, 'status' => 'skip', 'message' => 'Baris dilewati'];
+                continue;
+            }
+
+            try {
+                $results[] = DB::transaction(fn () => $this->bulkEditPasteRow($row));
+            } catch (Throwable $e) {
+                Log::error('pasteBulkEdit row failed', [
+                    'row' => $rowNum,
+                    'npm' => $row['npm'] ?? null,
+                    'message' => $e->getMessage(),
+                ]);
+
+                $results[] = [
+                    'row'     => $rowNum,
+                    'status'  => 'error',
+                    'message' => 'Baris ' . $rowNum . ' gagal: ' . $e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
+    /**
+     * @return array{row: int|string, status: string, message: string|null, matches?: array<int, array<string, mixed>>, selected_order?: int|null, registration_id?: int|null, student_name?: string|null, exam_type_name?: string|null}
+     */
+    private function resolveBulkEditRow(array $row): array
+    {
+        $rowNum = $row['_rowNum'] ?? '?';
+        $npm    = trim($row['npm'] ?? '');
+
+        $base = [
+            'row'             => $rowNum,
+            'status'          => 'error',
+            'message'         => null,
+            'matches'         => [],
+            'selected_order'  => null,
+            'registration_id' => null,
+            'student_name'    => null,
+            'exam_type_name'  => null,
+        ];
+
+        $student = User::where('username', $npm)->first();
+        if (!$student) {
+            return array_merge($base, [
+                'status'  => 'not_found',
+                'message' => "NPM {$npm} tidak ditemukan di sistem",
+            ]);
+        }
+
+        $examType = $this->resolveExamType($row['jenis_ujian'] ?? '');
+        if (!$examType) {
+            $available = ExamType::pluck('name')->join(', ');
+
+            return array_merge($base, [
+                'status'  => 'error',
+                'message' => "Jenis ujian '{$row['jenis_ujian']}' tidak dikenali. Tersedia: {$available}",
+            ]);
+        }
+
+        $registrations = ExamRegistration::query()
+            ->where('user_id', $student->id)
+            ->where('exam_type_id', $examType->id)
+            ->orderBy('registration_order')
+            ->get(['id', 'registration_order', 'exam_date', 'title']);
+
+        if ($registrations->isEmpty()) {
+            return array_merge($base, [
+                'status'       => 'not_found',
+                'student_name' => strtoupper($student->name),
+                'exam_type_name' => $examType->name,
+                'message'      => strtoupper($student->name) . " — belum ada pendaftaran {$examType->name}",
+            ]);
+        }
+
+        $matches = $registrations->map(fn (ExamRegistration $reg) => [
+            'registration_id'    => $reg->id,
+            'registration_order' => (int) $reg->registration_order,
+            'exam_date'          => $reg->exam_date?->format('d M Y') ?? '—',
+            'title'              => Str::limit((string) $reg->title, 80),
+        ])->values()->all();
+
+        $shared = [
+            'student_name'   => strtoupper($student->name),
+            'exam_type_name' => $examType->name,
+            'matches'        => $matches,
+        ];
+
+        if ($registrations->count() === 1) {
+            $only = $registrations->first();
+
+            return array_merge($base, $shared, [
+                'status'          => 'ready',
+                'selected_order'  => (int) $only->registration_order,
+                'registration_id' => (int) $only->id,
+                'message'         => strtoupper($student->name) . " — {$examType->name} ke-{$only->registration_order} siap diupdate",
+            ]);
+        }
+
+        return array_merge($base, $shared, [
+            'status'  => 'pick_order',
+            'message' => strtoupper($student->name) . " — punya {$registrations->count()} pendaftaran {$examType->name}, pilih ujian ke-",
+        ]);
+    }
+
+    /**
+     * @return array{row: int|string, status: string, message: string}
+     */
+    private function bulkEditPasteRow(array $row): array
+    {
+        $rowNum = $row['_rowNum'] ?? '?';
+        $npm    = trim($row['npm'] ?? '');
+
+        if (!$npm) {
+            return ['row' => $rowNum, 'status' => 'error', 'message' => 'Kolom NPM kosong'];
+        }
+
+        $student = User::where('username', $npm)->first();
+        if (!$student) {
+            return ['row' => $rowNum, 'status' => 'error', 'message' => "NPM {$npm} tidak ditemukan"];
+        }
+
+        $payload = $this->parsePasteRowExamPayload($row);
+        if ($payload['error']) {
+            return ['row' => $rowNum, 'status' => 'error', 'message' => $payload['error']];
+        }
+
+        $order = (int) ($row['_registration_order'] ?? 0);
+        if ($order < 1 || $order > 3) {
+            return ['row' => $rowNum, 'status' => 'error',
+                'message' => strtoupper($student->name) . ' — pilih ujian ke- (1–3) terlebih dahulu'];
+        }
+
+        $registration = ExamRegistration::query()
+            ->where('user_id', $student->id)
+            ->where('exam_type_id', $payload['examType']->id)
+            ->where('registration_order', $order)
+            ->first();
+
+        if (!$registration) {
+            return ['row' => $rowNum, 'status' => 'error',
+                'message' => strtoupper($student->name) . " — pendaftaran {$payload['examType']->name} ke-{$order} tidak ditemukan"];
+        }
+
+        if (!empty($row['nama_mahasiswa'])) {
+            $student->update(['name' => strtoupper(trim($row['nama_mahasiswa']))]);
+        }
+
+        if (!empty($row['kontak'])) {
+            $phone = ltrim(preg_replace('/\D/', '', $row['kontak']), '0');
+            if ($phone) {
+                $student->update(['phone' => $phone]);
+            }
+        }
+
+        $guideExaminer = $this->persistGuideExaminerFromPaste($student, $payload['examType'], $payload);
+
+        $registration->update([
+            'exam_date'       => $payload['examDate'],
+            'exam_time'       => $payload['examTime'],
+            'room'            => $row['ruang'] ?? null,
+            'title'           => $row['judul'] ?? null,
+            'ipk'             => $payload['ipk'],
+            'chief_id'        => $payload['chiefId'],
+            'examiner1_id'    => $guideExaminer->examiner1_id,
+            'examiner2_id'    => $guideExaminer->examiner2_id,
+            'examiner3_id'    => $guideExaminer->examiner3_id,
+            'guide1_id'       => $guideExaminer->guide1_id,
+            'guide2_id'       => $guideExaminer->guide2_id,
+            'online_user'     => $row['meeting_id'] ?? null,
+            'online_password' => $row['passcode'] ?? null,
+            'online_link'     => $row['link_room'] ?? null,
+            'exam_file'       => $row['file_ujian'] ?? null,
+        ]);
+
+        app(ExamRegistrationExaminerSync::class)->syncFromRegistration($registration->fresh());
+
+        return ['row' => $rowNum, 'status' => 'success',
+            'message' => strtoupper($student->name) . " — {$payload['examType']->name} ke-{$order} diperbarui (guide_examiners & exam_scores disinkronkan)"];
+    }
+
+    /**
+     * @return array{
+     *     error: ?string,
+     *     examType: ?ExamType,
+     *     examDate: ?string,
+     *     examTime: ?string,
+     *     ipk: ?float,
+     *     examiner1Id: ?int,
+     *     examiner2Id: ?int,
+     *     examiner3Id: ?int,
+     *     guide1Id: ?int,
+     *     guide2Id: ?int,
+     *     chiefId: ?int
+     * }
+     */
+    private function parsePasteRowExamPayload(array $row): array
+    {
+        $examType = $this->resolveExamType($row['jenis_ujian'] ?? '');
+        if (!$examType) {
+            $available = ExamType::pluck('name')->join(', ');
+
+            return ['error' => "Jenis ujian '{$row['jenis_ujian']}' tidak dikenali. Tersedia: {$available}"];
+        }
+
+        try {
+            $examDate = Carbon::parse($row['tanggal_ujian'] ?? null)->format('Y-m-d');
+        } catch (\Exception) {
+            return ['error' => "Format tanggal tidak valid: {$row['tanggal_ujian']}"];
+        }
+
+        $examTime = str_replace('.', ':', explode(' - ', $row['waktu'] ?? '')[0]);
+        $ipk      = !empty($row['ipk']) ? (float) str_replace(',', '.', $row['ipk']) : null;
+
+        $resolveInitial = fn (?string $init) => filled($init)
+            ? User::where('initial', strtoupper(trim($init)))->value('id')
+            : null;
+
+        return [
+            'error'       => null,
+            'examType'    => $examType,
+            'examDate'    => $examDate,
+            'examTime'    => $examTime,
+            'ipk'         => $ipk,
+            'examiner1Id' => $resolveInitial($row['penguji1'] ?? null),
+            'examiner2Id' => $resolveInitial($row['penguji2'] ?? null),
+            'examiner3Id' => $resolveInitial($row['penguji3'] ?? null),
+            'guide1Id'    => $resolveInitial($row['pembimbing1'] ?? null),
+            'guide2Id'    => $resolveInitial($row['pembimbing2'] ?? null),
+            'chiefId'     => $resolveInitial($row['ketua_penguji'] ?? null),
+        ];
+    }
+
+    /**
+     * @param  array{examDate: string, examiner1Id: ?int, examiner2Id: ?int, examiner3Id: ?int, guide1Id: ?int, guide2Id: ?int, chiefId: ?int}  $payload
+     */
+    private function persistGuideExaminerFromPaste(User $student, ExamType $examType, array $payload): GuideExaminer
+    {
+        $tanggalField = match ($examType->id) {
+            1       => 'proposal_date',
+            2       => 'seminar_date',
+            3       => 'thesis_date',
+            default => null,
+        };
+
+        $guideExaminer = GuideExaminer::firstOrNew(['user_id' => $student->id]);
+
+        if (!$guideExaminer->exists) {
+            $username = (string) $student->username;
+            if (preg_match('/^(20\d{2})/', $username, $m)) {
+                $guideExaminer->year_generation = $m[1];
+            } elseif (preg_match('/^(\d{2})/', $username, $m)) {
+                $guideExaminer->year_generation = '20' . $m[1];
+            } else {
+                $guideExaminer->year_generation = (string) date('Y');
+            }
+        }
+
+        $geAttributes = array_filter([
+            'examiner1_id' => $payload['examiner1Id'],
+            'examiner2_id' => $payload['examiner2Id'],
+            'examiner3_id' => $payload['examiner3Id'],
+            'guide1_id'    => $payload['guide1Id'],
+            'guide2_id'    => $payload['guide2Id'],
+            'chief_id'     => $payload['chiefId'],
+        ], fn ($v) => $v !== null);
+
+        if ($tanggalField) {
+            $geAttributes[$tanggalField] = $payload['examDate'];
+        }
+
+        $guideExaminer->fill($geAttributes)->save();
+
+        return $guideExaminer;
     }
 
     public function destroy(ExamRegistration $examregistration)
