@@ -262,7 +262,24 @@ class GuideExaminerResource extends Resource
                         Forms\Components\DatePicker::make('seminar_date')
                             ->label('Tanggal Seminar Hasil'),
                         Forms\Components\DatePicker::make('thesis_date')
-                            ->label('Tanggal Sidang Skripsi'),
+                            ->label('Tanggal Sidang Skripsi')
+                            ->live(),
+                        Forms\Components\TextInput::make('doc')
+                            ->label('Link Bukti Kelulusan')
+                            ->url()
+                            ->maxLength(2048)
+                            ->columnSpanFull()
+                            ->visible(fn (Get $get): bool => filled($get('thesis_date')))
+                            ->placeholder('https://...')
+                            ->helperText('URL dokumen bukti kelulusan, misalnya tautan Google Drive.')
+                            ->suffixAction(
+                                Forms\Components\Actions\Action::make('open_doc')
+                                    ->label('Buka')
+                                    ->icon('heroicon-m-arrow-top-right-on-square')
+                                    ->url(fn (Get $get): ?string => filled($get('doc')) ? $get('doc') : null)
+                                    ->openUrlInNewTab()
+                                    ->visible(fn (Get $get): bool => filled($get('doc'))),
+                            ),
                     ])->columns(3)
                     ->collapsed(fn (?GuideExaminer $record): bool => ! $record?->exists),
             ]);
@@ -310,6 +327,15 @@ class GuideExaminerResource extends Resource
                     ->options(fn () => GuideExaminer::distinct()->pluck('year_generation', 'year_generation')),
             ])
             ->actions([
+                Tables\Actions\Action::make('doc')
+                    ->label('Bukti')
+                    ->icon('heroicon-o-document')
+                    ->iconButton()
+                    ->tooltip('Bukti Kelulusan')
+                    ->color('primary')
+                    ->url(fn (GuideExaminer $record): ?string => filled($record->doc) ? $record->doc : null)
+                    ->openUrlInNewTab()
+                    ->visible(fn (GuideExaminer $record): bool => filled($record->doc)),
                 Tables\Actions\DeleteAction::make()
                     ->iconButton()
                     ->tooltip('Hapus')
