@@ -50,6 +50,24 @@ class AcademicSemester
             ->whereMonth($column, '<=', 7);
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public static function semesterOptionsFromThesisDates(Builder $query, string $column = 'thesis_date'): array
+    {
+        return $query
+            ->clone()
+            ->whereNotNull($column)
+            ->distinct()
+            ->pluck($column)
+            ->map(fn ($date) => self::codeFromDate($date))
+            ->unique()
+            ->sort()
+            ->values()
+            ->mapWithKeys(fn (string $code): array => [$code => self::label($code)])
+            ->all();
+    }
+
     public static function applyUserRoleFilter(
         Builder $query,
         int $userId,

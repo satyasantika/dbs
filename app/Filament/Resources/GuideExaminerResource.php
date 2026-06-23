@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\GuideExaminerResource\Pages;
 use App\Models\GuideExaminer;
 use App\Models\User;
+use App\Services\Information\AcademicSemester;
 use App\Support\ExaminerSlotSelectOptions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -325,6 +326,20 @@ class GuideExaminerResource extends Resource
                 Tables\Filters\SelectFilter::make('year_generation')
                     ->label('Angkatan')
                     ->options(fn () => GuideExaminer::distinct()->pluck('year_generation', 'year_generation')),
+                Tables\Filters\SelectFilter::make('graduation_semester')
+                    ->label('Semester Kelulusan')
+                    ->options(fn (): array => AcademicSemester::semesterOptionsFromThesisDates(static::getEloquentQuery()))
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (blank($data['value'])) {
+                            return $query;
+                        }
+
+                        return AcademicSemester::applySemesterFilter(
+                            $query,
+                            (string) $data['value'],
+                            'thesis_date',
+                        );
+                    }),
             ])
             ->actions([
                 Tables\Actions\Action::make('doc')
