@@ -188,7 +188,6 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
-        'Debugbar' => Barryvdh\Debugbar\Facade::class,
         'PDF' => Barryvdh\DomPDF\Facade\Pdf::class,
         'Datatables' => Yajra\Datatables\Facades\Datatables::class,
         // 'PDF' => Barryvdh\Snappy\Facades\SnappyPdf::class,

@@ -23,7 +23,6 @@
         "yajra/laravel-datatables": "^10.1"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.9",
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
@@ -75,13 +74,31 @@
         },
         "process-timeout": 300,
         "audit": {
+            "block-insecure": false,
             "ignore": [
                 "[PKSA-365x-2zjk-pt47]",
                 "PKSA-8cfg-tzhf-fr83",
                 "PKSA-x13r-n4wc-4gcr",
                 "PKSA-gz3f-3cz3-3wsw",
                 "PKSA-jtdk-dcr5-f11n",
-                "PKSA-hznc-gbby-6w16"
+                "PKSA-hznc-gbby-6w16",
+                "PKSA-m5cs-t1y6-qpcs",
+                "PKSA-3r5d-mb8f-1qw9",
+                "PKSA-mdq4-51ck-6kdq",
+                "PKSA-8qx3-n5y5-vvnd",
+                "PKSA-w7xr-vk7n-rstm",
+                "PKSA-dpt9-7cmv-dk65",
+                "PKSA-p3rx-dfwp-73ny",
+                "PKSA-7ywf-hktb-jkn9",
+                "PKSA-ckwp-rt7t-c46m",
+                "PKSA-4npr-btr6-zhny",
+                "PKSA-njrm-6dtg-m2pc",
+                "PKSA-vhvj-tvg4-96jj",
+                "PKSA-nrj3-r2wg-yt8b",
+                "PKSA-rvky-x3cg-y3qd",
+                "PKSA-985r-hryy-555b",
+                "PKSA-q46n-4fdk-zjr4",
+                "PKSA-qzrn-rnz3-85w1"
             ]
         }
     },

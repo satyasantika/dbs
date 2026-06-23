@@ -2,12 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\ExamRegistration;
+use App\Models\ExamType;
 use App\Models\GuideExaminer;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Collection;
 
 /**
- * Factory sementara untuk pengujian / seeding lokal.
+ * Factory untuk guide_examiners — dapat memicu exam_registrations & exam_scores terkait.
  *
  * @extends Factory<GuideExaminer>
  */
@@ -53,9 +56,37 @@ class GuideExaminerFactory extends Factory
 
     public function forStudent(User $student): static
     {
-        return $this->state(fn () => [
-            'user_id' => $student->id,
-        ]);
+        return $this->state(function () use ($student) {
+            $username = (string) $student->username;
+            $yearGeneration = (string) date('Y');
+
+            if (preg_match('/^(20\d{2})/', $username, $matches)) {
+                $yearGeneration = $matches[1];
+            } elseif (preg_match('/^(\d{2})/', $username, $matches)) {
+                $yearGeneration = '20'.$matches[1];
+            }
+
+            return [
+                'user_id' => $student->id,
+                'year_generation' => $yearGeneration,
+            ];
+        });
+    }
+
+    /**
+     * @param  Collection<int, ExamType>|array<int, ExamType>|null  $examTypes
+     */
+    public function withExamRegistrations(Collection|array|null $examTypes = null): static
+    {
+        return $this->afterCreating(function (GuideExaminer $guideExaminer) use ($examTypes) {
+            $examTypes = collect($examTypes ?? ExamType::all());
+
+            foreach ($examTypes as $examType) {
+                ExamRegistration::factory()
+                    ->forGuideExaminer($guideExaminer, $examType)
+                    ->create();
+            }
+        });
     }
 
     public function withProposal(?string $date = null): static
