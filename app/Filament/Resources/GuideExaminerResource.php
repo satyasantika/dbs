@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\GuideExaminerResource\Pages;
 use App\Models\GuideExaminer;
 use App\Models\User;
-use App\Services\Information\AcademicSemester;
 use App\Support\ExaminerSlotSelectOptions;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -13,6 +12,7 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Tables;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -311,7 +311,17 @@ class GuideExaminerResource extends Resource
                         return filled($schedule) ? $schedule : null;
                     })
                     ->html()
+                    ->wrap()
                     ->placeholder('—'),
+                Tables\Columns\TextColumn::make('proposal_date')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('seminar_date')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('thesis_date')
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('examiner1.name')
                     ->label('Penguji 1')
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -326,20 +336,25 @@ class GuideExaminerResource extends Resource
                 Tables\Filters\SelectFilter::make('year_generation')
                     ->label('Angkatan')
                     ->options(fn () => GuideExaminer::distinct()->pluck('year_generation', 'year_generation')),
-                Tables\Filters\SelectFilter::make('graduation_semester')
-                    ->label('Semester Kelulusan')
-                    ->options(fn (): array => AcademicSemester::semesterOptionsFromThesisDates(static::getEloquentQuery()))
-                    ->query(function (Builder $query, array $data): Builder {
-                        if (blank($data['value'])) {
-                            return $query;
-                        }
-
-                        return AcademicSemester::applySemesterFilter(
-                            $query,
-                            (string) $data['value'],
-                            'thesis_date',
-                        );
-                    }),
+                Tables\Filters\TernaryFilter::make('doc')
+                    ->label('Bukti Kelulusan')
+                    ->placeholder('Semua')
+                    ->trueLabel('Sudah ada link')
+                    ->falseLabel('Belum ada link')
+                    ->queries(
+                        true: fn (Builder $query): Builder => $query
+                            ->whereNotNull('doc')
+                            ->where('doc', '!=', ''),
+                        false: fn (Builder $query): Builder => $query->where(function (Builder $query): void {
+                            $query->whereNull('doc')->orWhere('doc', '');
+                        }),
+                    ),
+            ])
+            ->filtersLayout(FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns([
+                'default' => 1,
+                'sm' => 2,
+                'lg' => 5,
             ])
             ->actions([
                 Tables\Actions\Action::make('doc')
@@ -358,6 +373,15 @@ class GuideExaminerResource extends Resource
             ])
             ->bulkActions([])
             ->defaultSort('student.name');
+    }
+
+    public static function normalizeExamScheduleFilterValue(mixed $value): ?string
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        return (string) $value;
     }
 
     public static function buildExamScheduleHtml(GuideExaminer $record): string
@@ -379,14 +403,14 @@ class GuideExaminerResource extends Resource
         $html = $items
             ->map(function (string $formattedDate, string $label): string {
                 return sprintf(
-                    '<div class="flex items-center gap-2 text-sm leading-6"><span>%s</span><span class="text-gray-950 dark:text-white">%s</span></div>',
+                    '<span class="inline-flex items-center gap-2 text-sm leading-6 whitespace-nowrap"><span>%s</span><span class="text-gray-950 dark:text-white">%s</span></span>',
                     static::examScheduleLabelBadge($label),
                     e($formattedDate),
                 );
             })
             ->implode('');
 
-        return '<div class="flex flex-col gap-1">'.$html.'</div>';
+        return '<div class="flex flex-wrap items-center gap-x-3 gap-y-1">'.$html.'</div>';
     }
 
     public static function examScheduleLabelBadge(string $label): string

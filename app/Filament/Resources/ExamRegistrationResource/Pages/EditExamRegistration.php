@@ -51,8 +51,7 @@ class EditExamRegistration extends EditRecord
                 }),
 
             Actions\DeleteAction::make()
-                ->hidden(fn () => $this->record && ExamScore::where('exam_registration_id', $this->record->id)
-                    ->whereNotNull('grade')->exists()),
+                ->hidden(fn () => $this->record && $this->record->examScores()->exists()),
         ];
     }
 

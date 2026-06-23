@@ -34,22 +34,6 @@ class AcademicSemester
         return sprintf('%s (%s %d/%d)', $code, $period, $startYear, $startYear + 1);
     }
 
-    public static function applySemesterFilter(Builder $query, string $code, string $column = 'thesis_date'): Builder
-    {
-        $startYear = (int) substr($code, 0, -1);
-        $semester = (int) substr($code, -1);
-
-        if ($semester === 1) {
-            return $query
-                ->whereYear($column, $startYear)
-                ->whereMonth($column, '>=', 8);
-        }
-
-        return $query
-            ->whereYear($column, $startYear + 1)
-            ->whereMonth($column, '<=', 7);
-    }
-
     /**
      * @return array<string, string>
      */
@@ -64,8 +48,27 @@ class AcademicSemester
             ->unique()
             ->sort()
             ->values()
-            ->mapWithKeys(fn (string $code): array => [$code => self::label($code)])
+            ->mapWithKeys(fn (string $code): array => [(string) $code => self::label($code)])
             ->all();
+    }
+
+    public static function applySemesterFilter(Builder $query, string $code, string $column = 'thesis_date'): Builder
+    {
+        $code = (string) $code;
+        $startYear = (int) substr($code, 0, -1);
+        $semester = (int) substr($code, -1);
+
+        if ($semester === 1) {
+            return $query
+                ->whereNotNull($column)
+                ->whereYear($column, $startYear)
+                ->whereMonth($column, '>=', 8);
+        }
+
+        return $query
+            ->whereNotNull($column)
+            ->whereYear($column, $startYear + 1)
+            ->whereMonth($column, '<=', 7);
     }
 
     public static function applyUserRoleFilter(
