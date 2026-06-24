@@ -275,5 +275,18 @@ class PermissionSeeder extends Seeder
                 'order' => 'M0'.($mahaNavProposal->children()->count() + 1),
             ]);
         }
+
+        Permission::create(['name' => 'respond nuir proposal'])->assignRole('dosen');
+        Permission::where('name', 'read nuir proposal')->first()?->assignRole('dosen');
+        Permission::create(['name' => 'access nuir/dosen'])->assignRole('dosen');
+
+        $dosenNav = Navigation::where('order', 'D00')->first();
+        if ($dosenNav) {
+            $dosenNav->children()->create([
+                'name' => 'usulan NUIR masuk',
+                'url' => 'nuir/dosen',
+                'order' => 'D0'.($dosenNav->children()->count() + 1),
+            ]);
+        }
     }
 }
