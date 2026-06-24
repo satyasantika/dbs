@@ -14,42 +14,66 @@ use Illuminate\Support\Collection;
 
 class NuirSeeder extends Seeder
 {
-    private const YEAR = '2021';
+    private const LEGACY_YEAR = '2021';
 
     private const MIN_REFS = 10;
+
+    private string $year = self::LEGACY_YEAR;
 
     private User $dbs;
 
     /** @var Collection<int, User> */
     private Collection $lecturers;
 
+    private ?User $pembimbing1 = null;
+
+    private ?User $pembimbing2 = null;
+
+    private ?User $penguji1 = null;
+
+    private ?User $penguji2 = null;
+
+    private ?User $penguji3 = null;
+
+    private bool $simulationMode = false;
+
     public function run(): void
     {
-        $dbs = User::role('dbs')->first();
-        $lecturers = User::role('dosen')->get();
+        $this->simulationMode = User::where('username', 'mahasiswa1')->exists();
+        $this->year = $this->simulationMode
+            ? NuirSimulationAccountSeeder::SIMULATION_YEAR
+            : self::LEGACY_YEAR;
 
-        if (! $dbs || $lecturers->count() < 4) {
-            $this->command?->warn('NuirSeeder: butuh akun DBS dan minimal 4 dosen, dilewati.');
+        $dbs = User::where('username', 'dbs')->role('dbs')->first()
+            ?? User::role('dbs')->first();
+
+        if (! $dbs) {
+            $this->command?->warn('NuirSeeder: butuh akun DBS, dilewati.');
 
             return;
         }
 
-        $students = User::role('mahasiswa')
-            ->orderBy('id')
-            ->skip(8)
-            ->take(8)
-            ->get();
+        if ($this->simulationMode) {
+            $students = $this->simulationStudents();
+            $this->loadSimulationGuides();
+        } else {
+            $students = User::role('mahasiswa')->orderBy('id')->skip(8)->take(8)->get();
+            $this->lecturers = User::role('dosen')->get();
+
+            if ($this->lecturers->count() < 4) {
+                $this->command?->warn('NuirSeeder: butuh minimal 4 dosen, dilewati.');
+
+                return;
+            }
+        }
 
         if ($students->count() < 8) {
-            $this->command?->warn('NuirSeeder: butuh minimal 8 mahasiswa (setelah 8 pertama ExamRegistrationSeeder), dilewati.');
+            $this->command?->warn('NuirSeeder: butuh 8 mahasiswa simulasi, dilewati.');
 
             return;
         }
 
         $this->dbs = $dbs;
-        $this->lecturers = $lecturers;
-
-        $this->seedSettings();
         $students->each(fn (User $student) => $this->ensureGuideExaminer($student));
 
         [
@@ -63,6 +87,7 @@ class NuirSeeder extends Seeder
             $finalizedStudent,
         ] = $students->all();
 
+        $this->seedSettings();
         $this->seedDraftSubmission($draftStudent);
         $this->seedSubmittedSubmission($submittedStudent);
         $this->seedSubmittedReadyForReview($reviewReadyStudent);
@@ -73,19 +98,45 @@ class NuirSeeder extends Seeder
         $this->seedFinalizedFlow($finalizedStudent);
 
         $this->command?->info(sprintf(
-            'NuirSeeder: %d setting, %d submission, %d referensi, %d proposal untuk angkatan %s.',
+            'NuirSeeder: %d setting, %d submission, %d referensi, %d proposal untuk angkatan %s%s.',
             NuirSetting::count(),
             NuirSubmission::count(),
             NuirReference::count(),
             NuirProposal::count(),
-            self::YEAR,
+            $this->year,
+            $this->simulationMode ? ' (mode simulasi)' : '',
         ));
+    }
+
+    private function simulationStudents(): Collection
+    {
+        return collect(range(1, 8))
+            ->map(fn (int $number) => User::where('username', "mahasiswa{$number}")->first())
+            ->filter()
+            ->values();
+    }
+
+    private function loadSimulationGuides(): void
+    {
+        $this->pembimbing1 = User::where('username', 'pembimbing1')->first();
+        $this->pembimbing2 = User::where('username', 'pembimbing2')->first();
+        $this->penguji1 = User::where('username', 'penguji1')->first();
+        $this->penguji2 = User::where('username', 'penguji2')->first();
+        $this->penguji3 = User::where('username', 'penguji3')->first();
+
+        $this->lecturers = collect([
+            $this->pembimbing1,
+            $this->pembimbing2,
+            $this->penguji1,
+            $this->penguji2,
+            $this->penguji3,
+        ])->filter()->values();
     }
 
     private function seedSettings(): void
     {
         NuirSetting::updateOrCreate(
-            ['year_generation' => self::YEAR],
+            ['year_generation' => $this->year],
             [
                 'stage' => 1,
                 'active' => true,
@@ -96,6 +147,21 @@ class NuirSeeder extends Seeder
                 'max_chars_impact' => 5000,
             ],
         );
+
+        if (! $this->simulationMode) {
+            NuirSetting::updateOrCreate(
+                ['year_generation' => self::LEGACY_YEAR],
+                [
+                    'stage' => 1,
+                    'active' => true,
+                    'deadline' => now()->addMonths(2)->toDateString(),
+                    'min_references_approved' => self::MIN_REFS,
+                    'max_chars_novelty' => 5000,
+                    'max_chars_urgency' => 5000,
+                    'max_chars_impact' => 5000,
+                ],
+            );
+        }
 
         NuirSetting::updateOrCreate(
             ['year_generation' => '2020'],
@@ -120,25 +186,31 @@ class NuirSeeder extends Seeder
 
     private function ensureGuideExaminer(User $student): GuideExaminer
     {
-        return GuideExaminer::firstOrCreate(
-            ['user_id' => $student->id],
-            [
-                'year_generation' => self::YEAR,
-                'examiner1_id' => null,
-                'examiner2_id' => null,
-                'examiner3_id' => null,
-                'guide1_id' => null,
-                'guide2_id' => null,
-                'chief_id' => null,
-            ],
-        );
+        $attributes = [
+            'year_generation' => $this->year,
+            'examiner1_id' => null,
+            'examiner2_id' => null,
+            'examiner3_id' => null,
+            'guide1_id' => null,
+            'guide2_id' => null,
+            'chief_id' => null,
+        ];
+
+        if ($this->simulationMode) {
+            $attributes['examiner1_id'] = $this->penguji1?->id;
+            $attributes['examiner2_id'] = $this->penguji2?->id;
+            $attributes['examiner3_id'] = $this->penguji3?->id;
+            $attributes['chief_id'] = $this->penguji1?->id;
+        }
+
+        return GuideExaminer::firstOrCreate(['user_id' => $student->id], $attributes);
     }
 
     private function seedDraftSubmission(User $student): void
     {
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
-            'year_generation' => self::YEAR,
+            'year_generation' => $this->year,
             'title' => 'Draft NUIR — '.$student->name,
             'novelty' => 'Novelty draft simulasi untuk pengujian alur mahasiswa.',
             'urgency' => 'Urgency draft simulasi untuk pengujian alur mahasiswa.',
@@ -153,7 +225,7 @@ class NuirSeeder extends Seeder
     {
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
-            'year_generation' => self::YEAR,
+            'year_generation' => $this->year,
             'title' => 'Submitted NUIR — '.$student->name,
             'novelty' => 'Novelty submitted simulasi menunggu review DBS.',
             'urgency' => 'Urgency submitted simulasi menunggu review DBS.',
@@ -168,7 +240,7 @@ class NuirSeeder extends Seeder
     {
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
-            'year_generation' => self::YEAR,
+            'year_generation' => $this->year,
             'title' => 'Siap Review Konten — '.$student->name,
             'novelty' => 'Novelty siap disetujui DBS setelah referensi lengkap.',
             'urgency' => 'Urgency siap disetujui DBS setelah referensi lengkap.',
@@ -183,7 +255,7 @@ class NuirSeeder extends Seeder
     {
         $versionOne = NuirSubmission::create([
             'user_id' => $student->id,
-            'year_generation' => self::YEAR,
+            'year_generation' => $this->year,
             'title' => 'Revisi v1 — '.$student->name,
             'novelty' => 'Novelty versi 1 yang diminta revisi DBS.',
             'urgency' => 'Urgency versi 1 yang diminta revisi DBS.',
@@ -198,7 +270,7 @@ class NuirSeeder extends Seeder
 
         $versionTwo = NuirSubmission::create([
             'user_id' => $student->id,
-            'year_generation' => self::YEAR,
+            'year_generation' => $this->year,
             'parent_submission_id' => $versionOne->id,
             'version' => 2,
             'title' => 'Revisi v2 — '.$student->name,
@@ -226,7 +298,7 @@ class NuirSeeder extends Seeder
     private function seedContentOkWithPartialAcceptance(User $student): void
     {
         $submission = $this->createContentOkSubmission($student, 'Proposal Sebagian Diterima');
-        [$guide1, $guide2] = $this->pickGuidePair(1);
+        [$guide1, $guide2] = $this->pickGuidePair(0);
 
         NuirProposal::create([
             'nuir_submission_id' => $submission->id,
@@ -241,7 +313,7 @@ class NuirSeeder extends Seeder
     {
         $submission = $this->createContentOkSubmission($student, 'Proposal Ulang');
         [$rejectedGuide1, $rejectedGuide2] = $this->pickGuidePair(2);
-        [$pendingGuide1, $pendingGuide2] = $this->pickGuidePair(3);
+        [$pendingGuide1, $pendingGuide2] = $this->pickGuidePair(0);
 
         NuirProposal::create([
             'nuir_submission_id' => $submission->id,
@@ -265,7 +337,7 @@ class NuirSeeder extends Seeder
     private function seedFinalizedFlow(User $student): void
     {
         $submission = $this->createContentOkSubmission($student, 'Finalized');
-        [$guide1, $guide2] = $this->pickGuidePair(4);
+        [$guide1, $guide2] = $this->pickGuidePair(0);
 
         $proposal = NuirProposal::create([
             'nuir_submission_id' => $submission->id,
@@ -289,7 +361,7 @@ class NuirSeeder extends Seeder
     {
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
-            'year_generation' => self::YEAR,
+            'year_generation' => $this->year,
             'title' => "{$label} — {$student->name}",
             'novelty' => "Novelty {$label} simulasi alur proposal pembimbing.",
             'urgency' => "Urgency {$label} simulasi alur proposal pembimbing.",
@@ -309,6 +381,13 @@ class NuirSeeder extends Seeder
      */
     private function pickGuidePair(int $offset): array
     {
+        if ($this->simulationMode) {
+            return match ($offset) {
+                2 => [$this->penguji1, $this->penguji2],
+                default => [$this->pembimbing1, $this->pembimbing2],
+            };
+        }
+
         $count = $this->lecturers->count();
         $first = $this->lecturers->get($offset % $count);
         $second = $this->lecturers->get(($offset + 1) % $count);

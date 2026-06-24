@@ -1,0 +1,72 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+
+class NuirSimulationAccountSeeder extends Seeder
+{
+    public const SIMULATION_YEAR = '2099';
+
+    public const PASSWORD = 'simulasi';
+
+    /**
+     * Akun sementara untuk uji coba alur NUIR per role.
+     * Password semua akun: {@see self::PASSWORD}
+     */
+    public function run(): void
+    {
+        $this->seedAccount('dbs', 'DBS Simulasi', 'dbs@simulasi.test', 'dbs', active: false);
+
+        foreach (['pembimbing1', 'pembimbing2', 'penguji1', 'penguji2', 'penguji3'] as $index => $username) {
+            $labels = [
+                'pembimbing1' => 'Pembimbing Satu',
+                'pembimbing2' => 'Pembimbing Dua',
+                'penguji1' => 'Penguji Satu',
+                'penguji2' => 'Penguji Dua',
+                'penguji3' => 'Penguji Tiga',
+            ];
+            $this->seedAccount($username, $labels[$username], "{$username}@simulasi.test", 'dosen');
+        }
+
+        foreach (range(1, 8) as $number) {
+            $this->seedAccount(
+                "mahasiswa{$number}",
+                'Mahasiswa Simulasi '.$number,
+                "mahasiswa{$number}@simulasi.test",
+                'mahasiswa',
+            );
+        }
+
+        $this->command?->info('NuirSimulationAccountSeeder: akun simulasi NUIR siap (password: '.self::PASSWORD.').');
+    }
+
+    private function seedAccount(
+        string $username,
+        string $name,
+        string $email,
+        string $role,
+        bool $active = true,
+    ): User {
+        $user = User::updateOrCreate(
+            ['username' => $username],
+            [
+                'name' => $name,
+                'email' => $email,
+                'password' => Hash::make(self::PASSWORD),
+            ],
+        );
+
+        if (! $user->hasRole($role)) {
+            $user->assignRole($role);
+        }
+
+        if ($active && ! $user->can('active')) {
+            $user->givePermissionTo('active');
+        }
+
+        return $user;
+    }
+}

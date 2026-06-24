@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\ExamType;
 use App\Models\ExamFormItem;
+use App\Models\ExamType;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class ExamSeeder extends Seeder
 {
@@ -14,23 +13,30 @@ class ExamSeeder extends Seeder
      */
     public function run(): void
     {
-        // Tipe Ujian
-        $exam_types = [
-            ['name'=>'Ujian Proposal','code'=>'sempro'],
-            ['name'=>'Ujian Hasil Penelitian','code'=>'semhas'],
-            ['name'=>'Ujian Skripsi','code'=>'skripsi']
-            ];
+        $examTypes = [
+            ['name' => 'Ujian Proposal', 'code' => 'sempro'],
+            ['name' => 'Ujian Hasil Penelitian', 'code' => 'semhas'],
+            ['name' => 'Ujian Skripsi', 'code' => 'skripsi'],
+        ];
 
-        foreach ($exam_types as $type_key => $type) {
-            ExamType::create($type);
-            $form_items = ['Orisinalitas ','Tata tulis ','Kemampuan menjelaskan ','Penguasaan materi ','Bobot ilmiah '];
+        $formItems = [
+            'Orisinalitas ',
+            'Tata tulis ',
+            'Kemampuan menjelaskan ',
+            'Penguasaan materi ',
+            'Bobot ilmiah ',
+        ];
 
-            foreach ($form_items as $item_key => $item) {
+        foreach ($examTypes as $type) {
+            $examType = ExamType::create($type);
+            $suffix = $type['code'] === 'sempro' ? 'Proposal' : 'Skripsi';
+
+            foreach ($formItems as $itemKey => $item) {
                 ExamFormItem::create([
-                    'exam_type_id'=>$type_key+1,
-                    'item_order'=>$item_key+1,
-                    'name'=>$item.($type=='Proposal'?'Proposal':'Skripsi'),
-                    'active'=>1,
+                    'exam_type_id' => $examType->id,
+                    'item_order' => $itemKey + 1,
+                    'name' => $item.$suffix,
+                    'active' => 1,
                 ]);
             }
         }

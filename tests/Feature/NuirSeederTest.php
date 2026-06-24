@@ -9,6 +9,7 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\NuirSimulationAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -20,7 +21,8 @@ class NuirSeederTest extends TestCase
     {
         $this->seed(DatabaseSeeder::class);
 
-        $setting = NuirSetting::where('year_generation', '2021')->first();
+        $year = NuirSimulationAccountSeeder::SIMULATION_YEAR;
+        $setting = NuirSetting::where('year_generation', $year)->first();
         $this->assertNotNull($setting);
         $this->assertTrue($setting->active);
         $this->assertSame(1, $setting->stage);
@@ -64,13 +66,13 @@ class NuirSeederTest extends TestCase
         $this->assertNotNull($partialProposal);
 
         $nuirStudents = NuirSubmission::pluck('user_id')->unique();
-        $nuirStudents->each(function (int $userId) {
+        $nuirStudents->each(function (int $userId) use ($year) {
             $student = User::find($userId);
             $this->assertTrue($student?->hasRole('mahasiswa'));
 
             $ge = GuideExaminer::where('user_id', $userId)->first();
             $this->assertNotNull($ge);
-            $this->assertSame('2021', $ge->year_generation);
+            $this->assertSame($year, $ge->year_generation);
         });
 
         NuirReference::all()->each(function (NuirReference $reference) {
@@ -84,5 +86,18 @@ class NuirSeederTest extends TestCase
             $this->assertTrue($proposal->guide2?->hasRole('dosen'));
             $this->assertNotSame($proposal->guide1_id, $proposal->guide2_id);
         });
+
+        $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
+        $this->assertNotNull($mahasiswa1);
+        $this->assertTrue(
+            NuirSubmission::where('user_id', $mahasiswa1->id)->where('status', 'draft')->exists()
+        );
+
+        $pembimbing1 = User::where('username', 'pembimbing1')->first();
+        $this->assertTrue(
+            NuirProposal::where('guide1_id', $pembimbing1?->id)
+                ->orWhere('guide2_id', $pembimbing1?->id)
+                ->exists()
+        );
     }
 }
