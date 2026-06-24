@@ -81,7 +81,7 @@ class NuirSeederTest extends TestCase
         });
 
         NuirProposal::all()->each(function (NuirProposal $proposal) {
-            $this->assertContains($proposal->submission?->status, ['content_ok', 'finalized']);
+            $this->assertContains($proposal->submission?->status, ['submitted', 'revision', 'content_ok', 'finalized']);
             $this->assertTrue($proposal->guide1?->hasRole('dosen'));
             $this->assertTrue($proposal->guide2?->hasRole('dosen'));
             $this->assertNotSame($proposal->guide1_id, $proposal->guide2_id);

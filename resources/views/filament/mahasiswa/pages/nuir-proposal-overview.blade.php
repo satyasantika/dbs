@@ -22,7 +22,7 @@
             <x-slot name="heading">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <span>Usulan Calon Pembimbing NUIR</span>
-                    @if (!$this->finalProposal && $this->contentOkSubmission)
+                    @if (!$this->finalProposal && $this->proposableSubmission)
                         @can('create nuir proposal')
                             <x-filament::button
                                 tag="a"

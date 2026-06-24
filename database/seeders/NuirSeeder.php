@@ -35,6 +35,10 @@ class NuirSeeder extends Seeder
 
     private ?User $penguji3 = null;
 
+    private ?User $manajer = null;
+
+    private ?User $validator = null;
+
     private bool $simulationMode = false;
 
     public function run(): void
@@ -97,6 +101,10 @@ class NuirSeeder extends Seeder
         $this->seedContentOkWithRetriedProposal($proposalRetriedStudent);
         $this->seedFinalizedFlow($finalizedStudent);
 
+        if ($this->simulationMode) {
+            $this->seedValidatorAssignments();
+        }
+
         $this->command?->info(sprintf(
             'NuirSeeder: %d setting, %d submission, %d referensi, %d proposal untuk angkatan %s%s.',
             NuirSetting::count(),
@@ -123,6 +131,8 @@ class NuirSeeder extends Seeder
         $this->penguji1 = User::where('username', 'penguji1')->first();
         $this->penguji2 = User::where('username', 'penguji2')->first();
         $this->penguji3 = User::where('username', 'penguji3')->first();
+        $this->manajer = User::where('username', 'manajer1')->first();
+        $this->validator = User::where('username', 'validator1')->first();
 
         $this->lecturers = collect([
             $this->pembimbing1,
@@ -234,6 +244,14 @@ class NuirSeeder extends Seeder
         ]);
 
         $this->seedReferences($submission, total: self::MIN_REFS, approved: 5, rejected: 2);
+
+        if ($this->simulationMode && $this->pembimbing1 && $this->pembimbing2) {
+            NuirProposal::create([
+                'nuir_submission_id' => $submission->id,
+                'guide1_id' => $this->pembimbing1->id,
+                'guide2_id' => $this->pembimbing2->id,
+            ]);
+        }
     }
 
     private function seedSubmittedReadyForReview(User $student): void
@@ -267,6 +285,14 @@ class NuirSeeder extends Seeder
         ]);
 
         $this->seedReferences($versionOne, total: self::MIN_REFS, approved: 4, rejected: 3);
+
+        if ($this->simulationMode && $this->pembimbing1 && $this->pembimbing2) {
+            NuirProposal::create([
+                'nuir_submission_id' => $versionOne->id,
+                'guide1_id' => $this->pembimbing1->id,
+                'guide2_id' => $this->pembimbing2->id,
+            ]);
+        }
 
         $versionTwo = NuirSubmission::create([
             'user_id' => $student->id,
@@ -429,5 +455,26 @@ class NuirSeeder extends Seeder
                 'ref_note' => $refNote,
             ]);
         }
+    }
+
+    private function seedValidatorAssignments(): void
+    {
+        if (! $this->manajer || ! $this->validator) {
+            return;
+        }
+
+        NuirSubmission::query()
+            ->where('year_generation', $this->year)
+            ->where('status', '!=', 'draft')
+            ->each(function (NuirSubmission $submission): void {
+                \App\Models\NuirAssignment::updateOrCreate(
+                    ['nuir_submission_id' => $submission->id],
+                    [
+                        'validator_id' => $this->validator->id,
+                        'assigned_by' => $this->manajer->id,
+                        'assigned_at' => now(),
+                    ],
+                );
+            });
     }
 }

@@ -29,6 +29,8 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | `penguji2` | Dosen (penguji) | `simulasi` | `/home` |
 | `penguji3` | Dosen (penguji) | `simulasi` | `/home` |
 | `mahasiswa1` … `mahasiswa8` | Mahasiswa | `simulasi` | `/mahasiswa` |
+| `manajer1` | Manajer NUIR | `simulasi` | `/nuir-manajer` |
+| `validator1` | Validator NUIR | `simulasi` | `/nuir-validator` |
 
 > **Catatan:** Akun ini hanya untuk lingkungan development/staging. Jangan dipakai di production.
 
@@ -39,15 +41,57 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | Akun | Status NUIR | Kegunaan uji |
 |---|---|---|
 | `mahasiswa1` | `draft` | Isi/edit draft, simpan referensi, submit |
-| `mahasiswa2` | `submitted` | DBS review referensi (sebagian sudah diproses) |
+| `mahasiswa2` | `submitted` + proposal awal | Validator review referensi; pembimbing lihat usulan |
 | `mahasiswa3` | `submitted` + 10 ref approved | DBS setujui konten (`content_ok`) |
-| `mahasiswa4` | revisi v1 + draft v2 | Mahasiswa lanjut revisi, DBS lihat riwayat versi |
+| `mahasiswa4` | revisi v1 + draft v2 + proposal | Mahasiswa lanjut revisi; pembimbing lihat permintaan revisi |
 | `mahasiswa5` | `content_ok` + proposal pending | Mahasiswa lihat proposal; pembimbing1 & pembimbing2 terima/tolak |
 | `mahasiswa6` | `content_ok` + pembimbing1 accepted | pembimbing2 masih bisa terima/tolak |
 | `mahasiswa7` | `content_ok` + proposal ditolak penguji + ulang ke pembimbing | Uji riwayat penolakan + proposal baru |
 | `mahasiswa8` | `finalized` | Pembimbing sudah terisi di `guide_examiners` |
 
 Proposal simulasi memakai pasangan pembimbing **`pembimbing1`** + **`pembimbing2`**. Proposal ditolak pada `mahasiswa7` memakai **`penguji1`** + **`penguji2`**.
+
+---
+
+## Role: Manajer NUIR
+
+**Login:** `manajer1` / `simulasi` → otomatis masuk **`/nuir-manajer`**
+
+### Fitur Filament
+
+| Menu | URL | Kegunaan |
+|---|---|---|
+| Dashboard | `/nuir-manajer` | Ringkasan panel |
+| Submission NUIR | `/nuir-manajer/nuir-submissions` | Daftar submission (bukan draft) |
+| Detail submission | `/nuir-manajer/nuir-submissions/{id}` | Delegasi validator, setujui konten, minta revisi |
+
+### Langkah uji cepat
+
+1. Buka submission `mahasiswa2` → **Delegasikan Validator** ke `validator1`.
+2. Buka submission `mahasiswa3` (10 ref approved) → **Setujui Konten**.
+3. Buka submission `mahasiswa2` → **Minta Revisi** + catatan (calon pembimbing & mahasiswa melihat feedback).
+
+---
+
+## Role: Validator NUIR
+
+**Login:** `validator1` / `simulasi` → otomatis masuk **`/nuir-validator`**
+
+Hanya melihat submission yang sudah didelegasikan manajer. Submission **draft** tidak muncul.
+
+### Fitur Filament
+
+| Menu | URL | Kegunaan |
+|---|---|---|
+| Dashboard | `/nuir-validator` | Ringkasan panel |
+| Validasi Referensi | `/nuir-validator/nuir-submissions` | Daftar submission ditugaskan |
+| Detail + tab Referensi | `/nuir-validator/nuir-submissions/{id}` | Setujui/tolak referensi |
+
+### Langkah uji cepat
+
+1. Login `validator1` → buka submission `mahasiswa2`.
+2. Tab **Referensi** → setujui/tolak referensi (feedback langsung tampil di mahasiswa).
+3. Pastikan submission draft (`mahasiswa1`) **tidak** muncul di daftar validator.
 
 ---
 
@@ -131,14 +175,14 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 |---|---|---|
 | Dashboard | `/mahasiswa` | Ujian, seleksi tahap 2, shortcut NUIR |
 | NUIR Saya | `/mahasiswa/nuir-submission` | Draft, submit, revisi |
-| Usulan Calon Pembimbing | `/mahasiswa/nuir-proposal` | Ajukan calon pembimbing setelah `content_ok` |
+| Usulan calon pembimbing | `/mahasiswa/nuir-proposal` | Ajukan calon pembimbing setelah submit (sebelum/sambil review) |
 
 ### Langkah uji per akun
 
 | Akun | Yang bisa dicoba |
 |---|---|
 | `mahasiswa1` | Edit draft → submit ke DBS |
-| `mahasiswa2` | Lihat status submitted (menunggu DBS) |
+| `mahasiswa2` | Lihat feedback validator; usulan calon pembimbing sudah masuk ke pembimbing |
 | `mahasiswa3` | Tunggu DBS setujui konten, lalu buat usulan calon pembimbing |
 | `mahasiswa4` | Buka form revisi v2 (parent v1 status `revision`) |
 | `mahasiswa5` | Lihat usulan pending ke pembimbing1 & pembimbing2 |
@@ -151,10 +195,12 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 ## Alur End-to-End (Recommended)
 
 1. **`mahasiswa1`** — lengkapi draft → submit.
-2. **`dbs`** — review referensi & konten submission `mahasiswa3` → setujui konten.
-3. **`mahasiswa3`** — buat usulan calon pembimbing ke `pembimbing1` + `pembimbing2`.
-4. **`pembimbing1`** & **`pembimbing2`** — terima usulan.
-5. **`dbs`** — Monitor Usulan Calon Pembimbing → verifikasi status finalized / force finalize bila perlu.
+2. **`manajer1`** — delegasikan submission ke `validator1`.
+3. **`validator1`** — review referensi submission `mahasiswa2`.
+4. **`manajer1`** — setujui konten submission `mahasiswa3`.
+5. **`mahasiswa3`** — buat usulan calon pembimbing ke `pembimbing1` + `pembimbing2`.
+6. **`pembimbing1`** & **`pembimbing2`** — review referensi; terima usulan setelah NUIR `content_ok`.
+7. **`dbs`** — Monitor Usulan Calon Pembimbing → verifikasi status finalized bila perlu.
 
 ---
 
@@ -165,7 +211,8 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 | Card NUIR tidak muncul | Setting angkatan tidak aktif / stage 3 | Jalankan ulang seed; pastikan setting 2099 aktif |
 | Tidak bisa buat submission baru | Sudah ada submission `finalized` | Login `mahasiswa8` hanya lihat; gunakan akun lain |
 | Pembimbing tidak melihat usulan | Bukan guide1/guide2 pada proposal | Pastikan login `pembimbing1`/`pembimbing2` |
-| DBS tidak masuk panel | Role bukan `dbs` | Login dengan akun `dbs` |
+| Validator tidak melihat submission | Belum didelegasikan manajer | Login `manajer1` → delegasikan validator |
+| Manajer/validator tidak masuk panel | Role salah | Login `manajer1` / `validator1` |
 
 ---
 
@@ -174,3 +221,4 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 - Seeder akun: `database/seeders/NuirSimulationAccountSeeder.php`
 - Seeder data NUIR: `database/seeders/NuirSeeder.php`
 - Test akses: `tests/Feature/NuirSimulationAccessTest.php`
+- Test panel Filament: `tests/Feature/Filament/NuirManajerPanelSmokeTest.php`, `tests/Feature/Filament/NuirValidatorPanelSmokeTest.php`

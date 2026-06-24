@@ -42,6 +42,21 @@ class NuirSubmission extends Model
         return $this->hasMany(NuirProposal::class);
     }
 
+    public function assignment(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(NuirAssignment::class);
+    }
+
+    public function isValidatorReviewable(): bool
+    {
+        return ! in_array($this->status, ['draft'], true);
+    }
+
+    public function isContentFinalForPembimbing(): bool
+    {
+        return $this->status === 'content_ok';
+    }
+
     public function isEditable(): bool
     {
         return in_array($this->status, ['draft', 'revision'], true);

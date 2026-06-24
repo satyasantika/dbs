@@ -72,6 +72,26 @@ class NuirDosenResponseTest extends TestCase
         $this->assertNotNull($this->proposal->fresh()->guide1_responded_at);
     }
 
+    public function test_dosen_tidak_dapat_terima_proposal_sebelum_content_ok(): void
+    {
+        $submitted = NuirSubmission::factory()->submitted()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $submitted->id,
+            'guide1_id' => $this->dosen1->id,
+            'guide2_id' => $this->dosen2->id,
+        ]);
+
+        $this->actingAs($this->dosen1)
+            ->put("/nuir/dosen/{$proposal->id}/accept")
+            ->assertRedirect()
+            ->assertSessionHas('warning');
+
+        $this->assertEquals('pending', $proposal->fresh()->guide1_status);
+    }
+
     public function test_dosen_tidak_dapat_respond_dua_kali(): void
     {
         $this->proposal->update(['guide1_status' => 'accepted']);

@@ -70,7 +70,7 @@ class NuirProposalTest extends TestCase
             ->assertSessionHasErrors('guide2_id');
     }
 
-    public function test_tidak_dapat_proposal_jika_submission_bukan_content_ok(): void
+    public function test_tidak_dapat_proposal_jika_submission_masih_draft(): void
     {
         $draft = NuirSubmission::factory()->create([
             'user_id' => $this->mahasiswa->id, 'year_generation' => '2022', 'status' => 'draft',
@@ -83,6 +83,21 @@ class NuirProposalTest extends TestCase
                 'guide2_id' => $this->dosen2->id,
             ])
             ->assertSessionHasErrors('nuir_submission_id');
+    }
+
+    public function test_dapat_proposal_jika_submission_submitted(): void
+    {
+        $submitted = NuirSubmission::factory()->submitted()->create([
+            'user_id' => $this->mahasiswa->id, 'year_generation' => '2022',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->post('/nuir/proposal', [
+                'nuir_submission_id' => $submitted->id,
+                'guide1_id' => $this->dosen1->id,
+                'guide2_id' => $this->dosen2->id,
+            ])
+            ->assertRedirect(route('nuir.proposal.index'));
     }
 
     public function test_tidak_dapat_buat_proposal_jika_sudah_ada_final(): void
