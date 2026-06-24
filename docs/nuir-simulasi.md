@@ -28,7 +28,7 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | `penguji1` | Dosen (penguji) | `simulasi` | `/home` |
 | `penguji2` | Dosen (penguji) | `simulasi` | `/home` |
 | `penguji3` | Dosen (penguji) | `simulasi` | `/home` |
-| `mahasiswa1` … `mahasiswa8` | Mahasiswa | `simulasi` | `/dashboard` |
+| `mahasiswa1` … `mahasiswa8` | Mahasiswa | `simulasi` | `/mahasiswa` |
 
 > **Catatan:** Akun ini hanya untuk lingkungan development/staging. Jangan dipakai di production.
 
@@ -121,7 +121,7 @@ Slot penguji (`penguji1`–`penguji3`) sudah terhubung ke `guide_examiners` maha
 
 ## Role: Mahasiswa
 
-**Login:** `mahasiswa1` … `mahasiswa8` / `simulasi` → **`/dashboard`**
+**Login:** `mahasiswa1` … `mahasiswa8` / `simulasi` → **`/mahasiswa`**
 
 Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 
@@ -129,8 +129,9 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 
 | Fitur | URL | Permission |
 |---|---|---|
-| NUIR Saya | `/nuir/submission` | Draft, submit, revisi |
-| Proposal Pembimbing | `/nuir/proposal` | Ajukan calon pembimbing setelah `content_ok` |
+| Dashboard | `/mahasiswa` | Ujian, seleksi tahap 2, shortcut NUIR |
+| NUIR Saya | `/mahasiswa/nuir-submission` | Draft, submit, revisi |
+| Proposal Pembimbing | `/mahasiswa/nuir-proposal` | Ajukan calon pembimbing setelah `content_ok` |
 
 ### Langkah uji per akun
 
