@@ -3,7 +3,7 @@
 @section('content')
 <div class="container">
     <div class="col-md-8 mx-auto card">
-        <div class="card-header">Usulkan Pembimbing</div>
+        <div class="card-header">Usulan Calon Pembimbing</div>
         <div class="card-body">
             <div class="alert alert-info">
                 NUIR: {{ $submission->title }} (v{{ $submission->version }})
@@ -38,7 +38,7 @@
                     @error('guide2_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-sm">Kirim Proposal</button>
+                <button type="submit" class="btn btn-primary btn-sm">Kirim Usulan</button>
                 <a href="{{ route('nuir.proposal.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
             </form>
         </div>

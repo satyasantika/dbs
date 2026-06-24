@@ -79,6 +79,6 @@ class SubmissionController extends Controller
     {
         $this->reviewService->forceFinalize($nuirProposal);
 
-        return back()->with('success', 'Proposal berhasil di-finalize.');
+        return back()->with('success', 'Usulan calon pembimbing berhasil di-finalize.');
     }
 }

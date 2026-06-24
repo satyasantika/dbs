@@ -128,7 +128,7 @@ class NuirSubmissionService
                 'status' => 'content_ok',
             ]);
 
-            return to_route('nuir.proposal.create')->with('success', 'Judul tersimpan. Lanjutkan proposal pembimbing.');
+            return to_route('nuir.proposal.create')->with('success', 'Judul tersimpan. Lanjutkan usulan calon pembimbing.');
         }
 
         $data = $this->validateSubmission($request, $setting);

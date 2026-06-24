@@ -68,7 +68,7 @@
     <div class="card-header">Pengajuan NUIR</div>
     <div class="card-body">
         <a href="{{ route('nuir.submission.index') }}" class="btn btn-sm btn-primary">NUIR Saya</a>
-        <a href="{{ route('nuir.proposal.index') }}" class="btn btn-sm btn-outline-primary">Proposal Pembimbing</a>
+        <a href="{{ route('nuir.proposal.index') }}" class="btn btn-sm btn-outline-primary">Usulan Calon Pembimbing</a>
     </div>
 </div>
 @endif

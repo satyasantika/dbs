@@ -21,7 +21,7 @@
         <x-filament::section>
             <x-slot name="heading">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <span>Proposal Pembimbing NUIR</span>
+                    <span>Usulan Calon Pembimbing NUIR</span>
                     @if (!$this->finalProposal && $this->contentOkSubmission)
                         @can('create nuir proposal')
                             <x-filament::button
@@ -29,7 +29,7 @@
                                 href="{{ \App\Filament\Mahasiswa\Pages\CreateNuirProposal::getUrl(panel: 'mahasiswa') }}"
                                 size="sm"
                             >
-                                Usulkan ke Dosen
+                                Buat Usulan
                             </x-filament::button>
                         @endcan
                     @endif
@@ -61,7 +61,7 @@
                                 <td class="px-2 py-1">{{ $proposal->created_at?->format('d-m-Y') }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="7" class="px-2 py-3 text-gray-500">Belum ada proposal.</td></tr>
+                            <tr><td colspan="7" class="px-2 py-3 text-gray-500">Belum ada usulan calon pembimbing.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

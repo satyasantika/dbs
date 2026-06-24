@@ -23,9 +23,9 @@ class NuirProposalResource extends Resource
 
     protected static ?string $navigationGroup = 'Manajemen NUIR';
 
-    protected static ?string $modelLabel = 'Monitor Proposal';
+    protected static ?string $modelLabel = 'Monitor Usulan Calon Pembimbing';
 
-    protected static ?string $pluralModelLabel = 'Monitor Proposal';
+    protected static ?string $pluralModelLabel = 'Monitor Usulan Calon Pembimbing';
 
     protected static ?int $navigationSort = 3;
 
@@ -84,7 +84,7 @@ class NuirProposalResource extends Resource
                     ->requiresConfirmation()
                     ->action(function (NuirProposal $record): void {
                         app(NuirReviewService::class)->forceFinalize($record);
-                        Notification::make()->success()->title('Proposal berhasil di-finalize.')->send();
+                        Notification::make()->success()->title('Usulan calon pembimbing berhasil di-finalize.')->send();
                     }),
             ])
             ->defaultSort('created_at', 'desc');

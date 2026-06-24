@@ -13,7 +13,7 @@ class CreateNuirProposal extends Page
 {
     use AuthorizesMahasiswaPanelAccess;
 
-    protected static ?string $title = 'Usulkan Pembimbing';
+    protected static ?string $title = 'Buat Usulan Calon Pembimbing';
 
     protected static ?string $slug = 'nuir-proposal/create';
 
