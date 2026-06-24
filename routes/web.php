@@ -93,6 +93,18 @@ Route::middleware('auth')->group(function () {
                 ->name('nuir.proposal.store')
                 ->middleware('can:create nuir proposal');
         });
+        Route::middleware(['can:read nuir proposal'])->group(function () {
+            Route::get('nuir/dosen', [App\Http\Controllers\Dosen\NuirProposalController::class, 'index'])
+                ->name('nuir.dosen.index');
+            Route::get('nuir/dosen/{nuirProposal}', [App\Http\Controllers\Dosen\NuirProposalController::class, 'show'])
+                ->name('nuir.dosen.show');
+            Route::put('nuir/dosen/{nuirProposal}/accept', [App\Http\Controllers\Dosen\NuirProposalController::class, 'accept'])
+                ->name('nuir.dosen.accept')
+                ->middleware('can:respond nuir proposal');
+            Route::put('nuir/dosen/{nuirProposal}/reject', [App\Http\Controllers\Dosen\NuirProposalController::class, 'reject'])
+                ->name('nuir.dosen.reject')
+                ->middleware('can:respond nuir proposal');
+        });
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
