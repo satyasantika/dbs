@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesAdminPanelAccess;
 use App\Filament\Resources\RoleResource\Pages;
 use App\Models\Role;
 use Filament\Forms;
@@ -14,6 +15,8 @@ use Illuminate\Validation\Rules\Unique;
 
 class RoleResource extends Resource
 {
+    use AuthorizesAdminPanelAccess;
+
     protected static ?string $model = Role::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';

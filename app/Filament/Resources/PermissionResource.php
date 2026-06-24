@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesAdminPanelAccess;
 use App\Filament\Resources\PermissionResource\Pages;
 use App\Models\Permission;
 use Filament\Forms;
@@ -17,6 +18,8 @@ use Illuminate\Validation\Rules\Unique;
 
 class PermissionResource extends Resource
 {
+    use AuthorizesAdminPanelAccess;
+
     protected static ?string $model = Permission::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-lock-closed';

@@ -12,14 +12,12 @@ class SettingController extends Controller
 {
     public function index(NuirSettingsDataTable $dataTable)
     {
-        return $dataTable->render('layouts.setting');
+        return redirect(\App\Filament\Dbs\Resources\NuirSettingResource::getUrl('index', panel: 'dbs'));
     }
 
     public function create()
     {
-        return view('setting.nuir.setting-form', [
-            'nuirSetting' => new NuirSetting(),
-        ]);
+        return redirect(\App\Filament\Dbs\Resources\NuirSettingResource::getUrl('create', panel: 'dbs'));
     }
 
     public function store(Request $request)
@@ -32,9 +30,9 @@ class SettingController extends Controller
 
     public function edit(NuirSetting $nuirSetting)
     {
-        return view('setting.nuir.setting-form', [
-            'nuirSetting' => $nuirSetting,
-        ]);
+        return redirect(\App\Filament\Dbs\Resources\NuirSettingResource::getUrl('edit', [
+            'record' => $nuirSetting,
+        ], panel: 'dbs'));
     }
 
     public function update(Request $request, NuirSetting $nuirSetting)

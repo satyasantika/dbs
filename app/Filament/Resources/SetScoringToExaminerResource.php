@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesDbsPanelAccess;
 use App\Filament\Resources\SetScoringToExaminerResource\Pages;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class SetScoringToExaminerResource extends Resource
 {
+    use AuthorizesDbsPanelAccess;
+
     protected static ?string $model = ExamRegistration::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-user-plus';
@@ -32,6 +35,11 @@ class SetScoringToExaminerResource extends Resource
     protected static ?string $slug = 'set-scoring-to-examiner-yet';
 
     protected static ?int $navigationSort = 2;
+
+    protected static function dbsAccessPermission(): string
+    {
+        return 'access exam/examiners';
+    }
 
     public static function form(Form $form): Form
     {

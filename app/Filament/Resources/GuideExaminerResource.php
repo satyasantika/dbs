@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesDbsPanelAccess;
 use App\Filament\Resources\GuideExaminerResource\Pages;
 use App\Models\GuideExaminer;
 use App\Models\User;
@@ -21,6 +22,8 @@ use Illuminate\Support\HtmlString;
 
 class GuideExaminerResource extends Resource
 {
+    use AuthorizesDbsPanelAccess;
+
     protected static ?string $model = GuideExaminer::class;
 
 
@@ -33,6 +36,11 @@ class GuideExaminerResource extends Resource
     protected static ?string $pluralModelLabel = 'Pembimbing & Penguji';
 
     protected static ?int $navigationSort = 3;
+
+    protected static function dbsAccessPermission(): string
+    {
+        return 'access exam/examiners';
+    }
 
     public static function form(Form $form): Form
     {

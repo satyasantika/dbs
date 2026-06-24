@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesDbsPanelAccess;
 use App\Filament\Resources\ExamRegistrationResource\Pages;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
@@ -20,6 +21,8 @@ use Illuminate\Support\Js;
 
 class ExamRegistrationResource extends Resource
 {
+    use AuthorizesDbsPanelAccess;
+
     protected static ?string $model = ExamRegistration::class;
 
 
@@ -32,6 +35,11 @@ class ExamRegistrationResource extends Resource
     protected static ?string $pluralModelLabel = 'Pendaftaran Ujian';
 
     protected static ?int $navigationSort = 4;
+
+    protected static function dbsAccessPermission(): string
+    {
+        return 'access exam/registration/lists';
+    }
 
     public static function form(Form $form): Form
     {

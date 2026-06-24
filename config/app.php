@@ -169,6 +169,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\Filament\AdminPanelProvider::class,
         App\Providers\Filament\DosenPanelProvider::class,
+        App\Providers\Filament\DbsPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         Lab404\Impersonate\ImpersonateServiceProvider::class,

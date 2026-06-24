@@ -33,6 +33,10 @@ class HomeController extends Controller
             return redirect('/home');
         }
 
+        if ($user->hasRole('dbs')) {
+            return redirect('/dbs');
+        }
+
         return view('home');
     }
 }

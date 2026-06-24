@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesDbsPanelAccess;
 use App\Filament\Resources\GuideAllocationResource\Pages;
 use App\Models\GuideAllocation;
 use App\Models\User;
@@ -13,6 +14,8 @@ use Filament\Tables\Table;
 
 class GuideAllocationResource extends Resource
 {
+    use AuthorizesDbsPanelAccess;
+
     protected static ?string $model = GuideAllocation::class;
 
 
@@ -25,6 +28,11 @@ class GuideAllocationResource extends Resource
     protected static ?string $pluralModelLabel = 'Kuota Pembimbing';
 
     protected static ?int $navigationSort = 2;
+
+    protected static function dbsAccessPermission(): string
+    {
+        return 'access selection/guide/allocations';
+    }
 
     public static function form(Form $form): Form
     {
