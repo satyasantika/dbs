@@ -156,6 +156,10 @@ Route::get('/go-home', function () {
         return redirect('/dbs');
     }
 
+    if ($user->hasRole('mahasiswa')) {
+        return redirect('/mahasiswa');
+    }
+
     return redirect()->route('dashboard');
 })->middleware('auth')->name('home');
 

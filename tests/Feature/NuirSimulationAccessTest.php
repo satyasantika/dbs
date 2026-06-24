@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Dbs\Resources\NuirProposalResource;
 use App\Filament\Dbs\Resources\NuirSettingResource;
 use App\Filament\Dbs\Resources\NuirSubmissionResource;
+use App\Filament\Mahasiswa\Pages\Dashboard;
 use App\Models\User;
 use Database\Seeders\NuirSeeder;
 use Database\Seeders\NuirSimulationAccountSeeder;
@@ -64,11 +65,16 @@ class NuirSimulationAccessTest extends TestCase
         $mahasiswa5 = User::where('username', 'mahasiswa5')->first();
 
         $this->actingAs($mahasiswa1)
-            ->get('/nuir/submission')
+            ->get(Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk();
+
+        $this->actingAs($mahasiswa1)
+            ->get(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
             ->assertOk();
 
         $this->actingAs($mahasiswa5)
-            ->get('/nuir/proposal')
+            ->followingRedirects()
+            ->get(\App\Filament\Mahasiswa\Pages\NuirProposalOverview::getUrl(panel: 'mahasiswa'))
             ->assertOk();
     }
 

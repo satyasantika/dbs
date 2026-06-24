@@ -170,7 +170,8 @@ class NuirGuardTest extends TestCase
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
 
         $this->actingAs($this->mahasiswa)
-            ->get('/dashboard')
+            ->get(\App\Filament\Mahasiswa\Pages\Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
             ->assertSeeText('Pengajuan NUIR');
     }
 
@@ -179,7 +180,8 @@ class NuirGuardTest extends TestCase
         NuirSetting::factory()->stage3()->create(['year_generation' => '2022', 'active' => true]);
 
         $this->actingAs($this->mahasiswa)
-            ->get('/dashboard')
+            ->get(\App\Filament\Mahasiswa\Pages\Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
             ->assertDontSeeText('Pengajuan NUIR');
     }
 }

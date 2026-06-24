@@ -105,6 +105,7 @@ class NuirStageTest extends TestCase
         NuirSetting::factory()->stage3()->create(['year_generation' => '2022', 'active' => true]);
 
         $this->actingAs($this->mahasiswa)
+            ->followingRedirects()
             ->get('/nuir/submission')
             ->assertOk()
             ->assertSeeText('tidak memerlukan pengajuan NUIR');

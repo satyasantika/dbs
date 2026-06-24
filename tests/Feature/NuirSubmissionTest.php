@@ -36,6 +36,7 @@ class NuirSubmissionTest extends TestCase
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
 
         $this->actingAs($this->mahasiswa)
+            ->followingRedirects()
             ->get('/nuir/submission')
             ->assertOk();
     }
@@ -45,6 +46,7 @@ class NuirSubmissionTest extends TestCase
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => false]);
 
         $this->actingAs($this->mahasiswa)
+            ->followingRedirects()
             ->get('/nuir/submission')
             ->assertOk()
             ->assertSeeText('belum dibuka');
@@ -56,6 +58,7 @@ class NuirSubmissionTest extends TestCase
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1]);
 
         $this->actingAs($mahasiswaBaru)
+            ->followingRedirects()
             ->get('/nuir/submission')
             ->assertSeeText('belum dibuka');
     }

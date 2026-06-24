@@ -36,6 +36,7 @@ class NuirRevisionTest extends TestCase
     public function test_mahasiswa_dapat_akses_form_revisi(): void
     {
         $this->actingAs($this->mahasiswa)
+            ->followingRedirects()
             ->get("/nuir/submission/{$this->v1->id}/revise")
             ->assertOk();
     }
@@ -110,6 +111,7 @@ class NuirRevisionTest extends TestCase
         ]);
 
         $this->actingAs($this->mahasiswa)
+            ->followingRedirects()
             ->get("/nuir/submission/{$this->v1->id}/revise")
             ->assertSeeText('Link tidak valid');
     }
