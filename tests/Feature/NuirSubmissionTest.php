@@ -97,6 +97,46 @@ class NuirSubmissionTest extends TestCase
         ]);
     }
 
+    public function test_mahasiswa_dapat_perbarui_draft_dan_referensi(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $sub = NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'status' => 'draft',
+            'title' => 'Judul Lama',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->put("/nuir/submission/{$sub->id}", [
+                'title' => 'Judul Diperbarui',
+                'novelty' => str_repeat('a', 100),
+                'urgency' => str_repeat('b', 100),
+                'impact' => str_repeat('c', 100),
+                'references' => [
+                    2 => [
+                        'link_ojs' => 'https://ojs.example.com/2',
+                        'indexer_name' => 'WoS',
+                        'link_index' => 'https://wos.example.com',
+                        'link_drive' => 'https://drive.google.com/2',
+                        'quote' => 'Kutipan referensi kedua',
+                        'relevance' => 'Sangat relevan',
+                    ],
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('nuir_submissions', [
+            'id' => $sub->id,
+            'title' => 'Judul Diperbarui',
+        ]);
+        $this->assertDatabaseHas('nuir_references', [
+            'nuir_submission_id' => $sub->id,
+            'ref_order' => 2,
+            'quote' => 'Kutipan referensi kedua',
+        ]);
+    }
+
     public function test_novelty_melebihi_batas_karakter_ditolak(): void
     {
         NuirSetting::factory()->create([

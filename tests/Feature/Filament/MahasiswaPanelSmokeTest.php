@@ -3,13 +3,15 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Dbs\Resources\NuirSettingResource;
-use App\Filament\Mahasiswa\Pages\CreateNuirProposal;
 use App\Filament\Mahasiswa\Pages\CreateNuirSubmission;
 use App\Filament\Mahasiswa\Pages\Dashboard;
+use App\Filament\Mahasiswa\Pages\EditNuirSubmission;
 use App\Filament\Mahasiswa\Pages\NuirProposalOverview;
 use App\Filament\Mahasiswa\Pages\NuirSubmissionOverview;
 use App\Models\GuideExaminer;
+use App\Models\NuirReference;
 use App\Models\NuirSetting;
+use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -67,7 +69,32 @@ class MahasiswaPanelSmokeTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->get(CreateNuirSubmission::getUrl(panel: 'mahasiswa'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Tambah Referensi')
+            ->assertSee('Simpan Referensi');
+    }
+
+    public function test_nuir_submission_edit_menampilkan_form_card_dan_modal_referensi(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $submission = NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'status' => 'draft',
+        ]);
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 1,
+            'indexer_name' => 'Scopus',
+            'quote' => 'Kutipan contoh referensi',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->get(EditNuirSubmission::getUrl(['record' => $submission], panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Tambah Referensi')
+            ->assertSee('Kutipan contoh referensi')
+            ->assertSee('data-nui-autoresize');
     }
 
     public function test_old_nuir_proposal_route_redirects_to_filament(): void
