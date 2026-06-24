@@ -66,6 +66,12 @@ Route::middleware('auth')->group(function () {
             Route::put('nuir/submission/{nuirSubmission}/submit', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'submit'])
                 ->name('nuir.submission.submit')
                 ->middleware('can:update nuir submission');
+            Route::get('nuir/submission/{nuirSubmission}/revise', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'createRevision'])
+                ->name('nuir.submission.revise')
+                ->middleware('can:update nuir submission');
+            Route::post('nuir/submission/{nuirSubmission}/revise', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'storeRevision'])
+                ->name('nuir.submission.store-revision')
+                ->middleware('can:update nuir submission');
         });
         Route::middleware('can:review nuir submission')->group(function () {
             Route::get('setting/nuir/submissions', [App\Http\Controllers\Setting\Nuir\SubmissionController::class, 'index'])

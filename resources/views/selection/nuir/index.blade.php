@@ -29,6 +29,29 @@
                             <div class="alert alert-warning">{{ $submission->dbs_note }}</div>
                         @endif
 
+                        @if ($submission->status === 'revision')
+                            <div class="alert alert-warning">
+                                <strong>Diminta Revisi</strong>
+                                <div>{{ $submission->dbs_note }}</div>
+                            </div>
+                            @php($rejected = $submission->references()->where('ref_approved', false)->get())
+                            @if ($rejected->isNotEmpty())
+                                <table class="table table-sm table-bordered">
+                                    <thead><tr><th>#</th><th>Catatan DBS</th></tr></thead>
+                                    <tbody>
+                                        @foreach ($rejected as $ref)
+                                            <tr><td>{{ $ref->ref_order }}</td><td>{{ $ref->ref_note }}</td></tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            @endif
+                            @if (!\App\Models\NuirSubmission::where('parent_submission_id', $submission->id)->exists())
+                                <a href="{{ route('nuir.submission.revise', $submission) }}" class="btn btn-warning btn-sm">
+                                    Buat Revisi (v{{ $submission->version + 1 }})
+                                </a>
+                            @endif
+                        @endif
+
                         <div class="mb-3">
                             @if ($submission->isEditable())
                                 <a href="{{ route('nuir.submission.edit', $submission) }}" class="btn btn-outline-primary btn-sm">Edit</a>

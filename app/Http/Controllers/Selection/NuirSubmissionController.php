@@ -123,6 +123,58 @@ class NuirSubmissionController extends Controller
         return to_route('nuir.submission.index')->with('success', 'NUIR berhasil diajukan ke DBS.');
     }
 
+    public function createRevision(NuirSubmission $nuirSubmission)
+    {
+        $this->authorizeRevision($nuirSubmission);
+        $setting = $this->requireStageOneSetting(auth()->user());
+        $rejectedRefs = $nuirSubmission->references()
+            ->where('ref_approved', false)
+            ->pluck('ref_note', 'ref_order')
+            ->all();
+
+        return view('selection.nuir.form', [
+            'setting' => $setting,
+            'submission' => $nuirSubmission->load('references'),
+            'stage' => 1,
+            'rejectedRefs' => $rejectedRefs,
+            'revisionParent' => $nuirSubmission,
+        ]);
+    }
+
+    public function storeRevision(Request $request, NuirSubmission $nuirSubmission)
+    {
+        $this->authorizeRevision($nuirSubmission);
+        $setting = $this->requireStageOneSetting(auth()->user());
+        $data = $this->validateSubmission($request, $setting);
+
+        $newSubmission = NuirSubmission::create([
+            'user_id' => auth()->id(),
+            'year_generation' => $nuirSubmission->year_generation,
+            'parent_submission_id' => $nuirSubmission->id,
+            'version' => $nuirSubmission->version + 1,
+            'title' => $data['title'],
+            'novelty' => $data['novelty'],
+            'urgency' => $data['urgency'],
+            'impact' => $data['impact'],
+            'status' => 'draft',
+        ]);
+
+        $this->syncReferences($newSubmission, $request->input('references', []));
+
+        return to_route('nuir.submission.index')->with('success', 'Revisi NUIR berhasil dibuat.');
+    }
+
+    private function authorizeRevision(NuirSubmission $submission): void
+    {
+        if ($submission->user_id !== auth()->id() || $submission->status !== 'revision') {
+            abort(403);
+        }
+
+        if (NuirSubmission::where('parent_submission_id', $submission->id)->exists()) {
+            abort(403);
+        }
+    }
+
     private function requireStageOneSetting(User $user): NuirSetting
     {
         $setting = $this->nuirService->getActiveSetting($user);

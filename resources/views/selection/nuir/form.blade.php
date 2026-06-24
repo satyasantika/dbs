@@ -9,7 +9,7 @@
                 <div class="card-body">
                     <p><strong>Mahasiswa:</strong> {{ auth()->user()->name }} ({{ auth()->user()->username }})</p>
 
-                    <form method="POST" action="{{ $submission->id ? route('nuir.submission.update', $submission) : route('nuir.submission.store') }}">
+                    <form method="POST" action="{{ isset($revisionParent) ? route('nuir.submission.store-revision', $revisionParent) : ($submission->id ? route('nuir.submission.update', $submission) : route('nuir.submission.store')) }}">
                         @csrf
                         @if ($submission->id)
                             @method('PUT')
@@ -41,8 +41,12 @@
                                     @php($indexers = ['WoS', 'Scopus', 'Thomson', 'Elsevier', 'Springer', 'Wiley', 'Taylor&Francis', 'DOAJ', 'Sinta 2'])
                                     @for ($i = 1; $i <= 10; $i++)
                                         @php($ref = $submission->references->firstWhere('ref_order', $i))
-                                        <tr>
-                                            <td>{{ $i }}</td>
+                                        <tr @class(['table-danger' => isset($rejectedRefs[$i])])>
+                                            <td>{{ $i }}
+                                                @if (isset($rejectedRefs[$i]))
+                                                    <div class="small text-danger">ditolak DBS: {{ $rejectedRefs[$i] }}</div>
+                                                @endif
+                                            </td>
                                             <td><input type="text" class="form-control form-control-sm" name="references[{{ $i }}][link_ojs]" value="{{ old("references.$i.link_ojs", $ref->link_ojs ?? '') }}"></td>
                                             <td>
                                                 <select class="form-control form-control-sm" name="references[{{ $i }}][indexer_name]">
