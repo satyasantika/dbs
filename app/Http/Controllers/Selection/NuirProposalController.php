@@ -71,6 +71,11 @@ class NuirProposalController extends Controller
             return to_route('nuir.proposal.index')->with('warning', 'Pembimbing sudah ditetapkan.');
         }
 
+        $setting = $this->nuirService->getActiveSetting(auth()->user());
+        if ($setting && ! $this->nuirService->checkDeadline($setting)) {
+            return back()->with('warning', 'Batas pengajuan NUIR telah berakhir.')->withInput();
+        }
+
         $data = $request->validate([
             'nuir_submission_id' => [
                 'required',

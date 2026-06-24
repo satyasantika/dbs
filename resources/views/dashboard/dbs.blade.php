@@ -25,4 +25,15 @@
             </div>
         </div>
     </div>
+    <div class="col-auto">
+        <div class="card">
+            <div class="card-header">Manajemen NUIR</div>
+            <div class="card-body">
+                <a href="{{ route('nuir-settings.index') }}" class="btn btn-sm btn-primary d-block mb-2">Konfigurasi NUIR</a>
+                <a href="{{ route('nuir.review.index') }}" class="btn btn-sm btn-primary d-block mb-2">Review Submission</a>
+                <a href="{{ route('nuir.proposals.index') }}" class="btn btn-sm btn-primary d-block mb-2">Monitor Proposal</a>
+                <a href="{{ \App\Filament\Resources\GuideExaminerResource::getUrl('index') }}" class="btn btn-sm btn-outline-primary d-block">Penjadwalan Filament</a>
+            </div>
+        </div>
+    </div>
 </div>

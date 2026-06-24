@@ -55,3 +55,20 @@
     @includeWhen(auth()->user()->can('read selection stages'), 'selection.stage-submission')
 
 @endif --}}
+
+@php
+    $guideExaminer = App\Models\GuideExaminer::where('user_id', auth()->id())->first();
+    $nuirSetting = $guideExaminer
+        ? App\Models\NuirSetting::where('year_generation', $guideExaminer->year_generation)
+            ->where('active', true)->first()
+        : null;
+@endphp
+@if ($nuirSetting && in_array($nuirSetting->stage, [1, 2]))
+<div class="card mt-3">
+    <div class="card-header">Pengajuan NUIR</div>
+    <div class="card-body">
+        <a href="{{ route('nuir.submission.index') }}" class="btn btn-sm btn-primary">NUIR Saya</a>
+        <a href="{{ route('nuir.proposal.index') }}" class="btn btn-sm btn-outline-primary">Proposal Pembimbing</a>
+    </div>
+</div>
+@endif

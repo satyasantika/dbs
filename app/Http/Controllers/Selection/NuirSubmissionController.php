@@ -58,6 +58,14 @@ class NuirSubmissionController extends Controller
         $user = auth()->user();
         $setting = $this->requireWritableSetting($user);
 
+        if ($this->nuirService->hasFinalizedSubmission($user)) {
+            return to_route('nuir.submission.index')->with('info', 'Pembimbing Anda sudah ditetapkan.');
+        }
+
+        if ($response = $this->deadlineResponse($setting)) {
+            return $response;
+        }
+
         if ($this->nuirService->activeSubmission($user)) {
             abort(403);
         }
@@ -74,6 +82,14 @@ class NuirSubmissionController extends Controller
     {
         $user = auth()->user();
         $setting = $this->requireWritableSetting($user);
+
+        if ($this->nuirService->hasFinalizedSubmission($user)) {
+            return to_route('nuir.submission.index')->with('info', 'Pembimbing Anda sudah ditetapkan.');
+        }
+
+        if ($response = $this->deadlineResponse($setting)) {
+            return $response;
+        }
 
         if ($this->nuirService->activeSubmission($user)) {
             abort(403);
@@ -143,6 +159,10 @@ class NuirSubmissionController extends Controller
         $this->authorizeSubmission($nuirSubmission, status: 'draft');
         $setting = $this->nuirService->getActiveSetting(auth()->user());
 
+        if ($setting && ! $this->nuirService->checkDeadline($setting)) {
+            return back()->with('warning', 'Batas pengajuan NUIR telah berakhir.');
+        }
+
         if ($setting?->stage === 2) {
             return to_route('nuir.proposal.create');
         }
@@ -174,6 +194,11 @@ class NuirSubmissionController extends Controller
     {
         $this->authorizeRevision($nuirSubmission);
         $setting = $this->requireStageOneSetting(auth()->user());
+
+        if ($response = $this->deadlineResponse($setting)) {
+            return $response;
+        }
+
         $data = $this->validateSubmission($request, $setting);
 
         $newSubmission = NuirSubmission::create([
@@ -309,5 +334,14 @@ class NuirSubmissionController extends Controller
         return NuirSubmission::where('user_id', $user->id)
             ->orderByDesc('version')
             ->get();
+    }
+
+    private function deadlineResponse(NuirSetting $setting)
+    {
+        if (! $this->nuirService->checkDeadline($setting)) {
+            return back()->with('warning', 'Batas pengajuan NUIR telah berakhir.');
+        }
+
+        return null;
     }
 }
