@@ -42,6 +42,12 @@ Route::middleware('auth')->group(function () {
         Route::resource('setting/selectionelementcomments', App\Http\Controllers\Setting\Selection\ElementCommentController::class)->except('show');
         Route::resource('setting/selectionguidegroups', App\Http\Controllers\Setting\Selection\GuideGroupController::class)->except('show');
         Route::resource('setting/selectionguides', App\Http\Controllers\Setting\Selection\GuideController::class)->except('show');
+        Route::resource('setting/nuir-settings', App\Http\Controllers\Setting\Nuir\SettingController::class)
+            ->except('show')
+            ->middleware('can:manage nuir settings');
+        Route::put('setting/nuir-settings/{nuirSetting}/toggle', [App\Http\Controllers\Setting\Nuir\SettingController::class, 'toggle'])
+            ->name('nuir-settings.toggle')
+            ->middleware('can:manage nuir settings');
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');

@@ -15,6 +15,7 @@ class PermissionSeeder extends Seeder
      */
     public function run(): void
     {
+        Role::create(['name' => 'admin']);
         Role::create(['name' => 'kajur']);
         Role::create(['name' => 'dbs']);
         Role::create(['name' => 'dosen']);
@@ -220,5 +221,19 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'join stage 3']);
         Permission::create(['name' => 'join exam']);
         Permission::create(['name' => 'force edit score'])->assignRole('admin');
+
+        Permission::firstOrCreate(['name' => 'active'])->syncRoles(['dbs', 'dosen', 'mahasiswa', 'kajur']);
+
+        Permission::create(['name' => 'manage nuir settings'])->assignRole('dbs');
+        Permission::create(['name' => 'access setting/nuir-settings'])->assignRole('dbs');
+
+        $dbsNav = Navigation::where('order', 'C00')->first();
+        if ($dbsNav) {
+            $dbsNav->children()->create([
+                'name' => 'konfigurasi NUIR',
+                'url' => 'setting/nuir-settings',
+                'order' => 'C0'.($dbsNav->children()->count() + 1),
+            ]);
+        }
     }
 }
