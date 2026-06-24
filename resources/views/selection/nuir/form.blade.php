@@ -16,13 +16,16 @@
                         @endif
 
                         @foreach (['title' => 'Judul', 'novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'] as $field => $label)
+                            @if ($field === 'title' || ($stage ?? 1) === 1)
                             <div class="mb-3">
                                 <label class="form-label" for="{{ $field }}">{{ $label }}</label>
-                                <textarea id="{{ $field }}" name="{{ $field }}" rows="{{ $field === 'title' ? 2 : 4 }}" class="form-control @error($field) is-invalid @enderror" required>{{ old($field, $submission->{$field}) }}</textarea>
+                                <textarea id="{{ $field }}" name="{{ $field }}" rows="{{ $field === 'title' ? 2 : 4 }}" class="form-control @error($field) is-invalid @enderror" @if(($stage ?? 1) === 1 || $field === 'title') required @endif>{{ old($field, $submission->{$field}) }}</textarea>
                                 @error($field)<div class="invalid-feedback">{{ $message }}</div>@enderror
                             </div>
+                            @endif
                         @endforeach
 
+                        @if (($stage ?? 1) === 1)
                         <h6>Referensi (1-10)</h6>
                         <div class="table-responsive">
                             <table class="table table-sm">
@@ -65,8 +68,9 @@
                                 </tbody>
                             </table>
                         </div>
+                        @endif
 
-                        <button type="submit" class="btn btn-primary btn-sm">Simpan Draft</button>
+                        <button type="submit" class="btn btn-primary btn-sm">{{ ($stage ?? 1) === 2 ? 'Simpan' : 'Simpan Draft' }}</button>
                         <a href="{{ route('nuir.submission.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
                     </form>
                 </div>

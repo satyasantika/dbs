@@ -34,6 +34,12 @@ class NuirProposalController extends Controller
 
     public function create()
     {
+        $setting = $this->nuirService->getActiveSetting(auth()->user());
+
+        if (! $setting || $setting->stage === 3) {
+            abort(403);
+        }
+
         if ($this->hasFinalProposal()) {
             return to_route('nuir.proposal.index')->with('warning', 'Pembimbing sudah ditetapkan.');
         }

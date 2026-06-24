@@ -21,12 +21,23 @@ class NuirSubmissionController extends Controller
         $user = auth()->user();
         $setting = $this->nuirService->getActiveSetting($user);
 
-        if (! $setting || $setting->stage !== 1 || ! $setting->active) {
+        if (! $setting || ! $setting->active) {
             return view('selection.nuir.index', [
                 'setting' => $setting,
                 'submission' => null,
                 'versions' => collect(),
                 'closed' => true,
+                'stage3' => false,
+            ]);
+        }
+
+        if ($setting->stage === 3) {
+            return view('selection.nuir.index', [
+                'setting' => $setting,
+                'submission' => null,
+                'versions' => collect(),
+                'closed' => false,
+                'stage3' => true,
             ]);
         }
 
@@ -38,13 +49,14 @@ class NuirSubmissionController extends Controller
             'submission' => $submission,
             'versions' => $versions,
             'closed' => false,
+            'stage3' => false,
         ]);
     }
 
     public function create()
     {
         $user = auth()->user();
-        $setting = $this->requireStageOneSetting($user);
+        $setting = $this->requireWritableSetting($user);
 
         if ($this->nuirService->activeSubmission($user)) {
             abort(403);
@@ -53,7 +65,7 @@ class NuirSubmissionController extends Controller
         return view('selection.nuir.form', [
             'setting' => $setting,
             'submission' => new NuirSubmission(),
-            'stage' => 1,
+            'stage' => $setting->stage,
             'rejectedRefs' => [],
         ]);
     }
@@ -61,10 +73,22 @@ class NuirSubmissionController extends Controller
     public function store(Request $request)
     {
         $user = auth()->user();
-        $setting = $this->requireStageOneSetting($user);
+        $setting = $this->requireWritableSetting($user);
 
         if ($this->nuirService->activeSubmission($user)) {
             abort(403);
+        }
+
+        if ($setting->stage === 2) {
+            $data = $request->validate(['title' => ['required', 'string']]);
+            NuirSubmission::create([
+                'user_id' => $user->id,
+                'year_generation' => $setting->year_generation,
+                'title' => $data['title'],
+                'status' => 'content_ok',
+            ]);
+
+            return to_route('nuir.proposal.create')->with('success', 'Judul tersimpan. Lanjutkan proposal pembimbing.');
         }
 
         $data = $this->validateSubmission($request, $setting);
@@ -117,6 +141,11 @@ class NuirSubmissionController extends Controller
     public function submit(NuirSubmission $nuirSubmission)
     {
         $this->authorizeSubmission($nuirSubmission, status: 'draft');
+        $setting = $this->nuirService->getActiveSetting(auth()->user());
+
+        if ($setting?->stage === 2) {
+            return to_route('nuir.proposal.create');
+        }
 
         $nuirSubmission->update(['status' => 'submitted']);
 
@@ -180,6 +209,17 @@ class NuirSubmissionController extends Controller
         $setting = $this->nuirService->getActiveSetting($user);
 
         if (! $setting || $setting->stage !== 1 || ! $setting->active) {
+            abort(403);
+        }
+
+        return $setting;
+    }
+
+    private function requireWritableSetting(User $user): NuirSetting
+    {
+        $setting = $this->nuirService->getActiveSetting($user);
+
+        if (! $setting || ! $setting->active || $setting->stage === 3) {
             abort(403);
         }
 
