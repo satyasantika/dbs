@@ -3,6 +3,7 @@
 namespace App\Filament\Mahasiswa\Pages;
 
 use App\Filament\Concerns\AuthorizesMahasiswaPanelAccess;
+use App\Filament\Mahasiswa\Concerns\PreparesNuirSubmissionForm;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Services\NuirSubmissionService;
@@ -11,6 +12,7 @@ use Filament\Pages\Page;
 class ReviseNuirSubmission extends Page
 {
     use AuthorizesMahasiswaPanelAccess;
+    use PreparesNuirSubmissionForm;
 
     protected static ?string $title = 'Revisi Pengajuan NUIR';
 
