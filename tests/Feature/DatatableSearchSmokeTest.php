@@ -30,46 +30,28 @@ class DatatableSearchSmokeTest extends TestCase
     public static function datatableEndpointsProvider(): array
     {
         return [
-            'exam registrations' => [
-                '/setting/examregistrations',
-                ['kode_ujian', 'room', 'exam_date', 'exam_time', 'mahasiswa', 'penguji_1', 'penguji_2', 'penguji_3', 'penguji_4', 'penguji_5'],
-                'sempro',
-            ],
-            'guide examiners' => [
-                '/setting/guideexaminers',
-                ['npm', 'mahasiswa', 'penguji_1', 'penguji_2', 'penguji_3', 'penguji_4', 'penguji_5', 'proposal_date', 'seminar_date', 'thesis_date'],
-                'mahasiswa',
-            ],
+            // Route-route berikut masih aktif (belum/tidak digantikan Filament):
             'selection guides' => [
                 '/setting/selectionguides',
                 ['mahasiswa', 'group_id', 'pasangan', 'pembimbing', 'dosen', 'status', 'keterangan', 'updated_at'],
                 'disetujui',
-            ],
-            'selection stages' => [
-                '/setting/selectionstages',
-                ['tahap', 'final', 'npm', 'mahasiswa', 'pembimbing_1', 'pembimbing_2', 'grup1_id', 'grup2_id', 'updated_at'],
-                '1',
-            ],
-            'guide allocations' => [
-                '/setting/selectionguideallocations',
-                ['active', 'year', 'dosen', 'guide1_quota', 'guide2_quota', 'examiner_quota'],
-                'dosen',
             ],
             'guide groups' => [
                 '/setting/selectionguidegroups',
                 ['active', 'dosen', 'group', 'guide1_quota', 'guide1_filled', 'guide2_quota', 'guide2_filled'],
                 'group',
             ],
-            'scoring' => [
-                '/examination/scoring',
-                ['mahasiswa', 'waktu', 'revision_note'],
-                'semhas',
-            ],
             'information pass recap' => [
                 '/information/recap-list/20/Mahasiswa%20Lulus',
                 ['npm', 'mahasiswa', 'penguji_4', 'penguji_5', 'proposal_date', 'seminar_date', 'thesis_date', 'masa_studi'],
                 '20',
             ],
+            // Route yang sudah digantikan Filament (dihapus dari sini):
+            // - /setting/examregistrations   → ExamRegistrationResource (/admin/exam-registrations)
+            // - /setting/guideexaminers      → GuideExaminerResource    (/admin/guide-examiners)
+            // - /setting/selectionstages     → SelectionStageResource   (/admin/selection-stages)
+            // - /setting/selectionguideallocations → GuideAllocationResource (/admin/guide-allocations)
+            // - /examination/scoring         → UnscoredScoring page      (/home/examination/scoring)
         ];
     }
 

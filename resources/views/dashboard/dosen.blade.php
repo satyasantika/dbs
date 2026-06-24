@@ -10,7 +10,7 @@
             <div class="card-header">Penilaian Ujian</div>
             <div class="card-body">
                 untuk menilai ujian, silakan klik tombol berikut:<br>
-                <a href="{{ route('scoring.index') }}" class="btn btn-sm btn-primary">Menilai Ujian</a>
+                <a href="{{ \App\Filament\Dosen\Pages\UnscoredScoring::getUrl() }}" class="btn btn-sm btn-primary">Menilai Ujian</a>
             </div>
         </div>
     </div>

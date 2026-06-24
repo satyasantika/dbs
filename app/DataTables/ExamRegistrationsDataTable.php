@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Filament\Resources\ExamRegistrationResource;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Button;
@@ -46,8 +47,7 @@ class ExamRegistrationsDataTable extends DataTable
             })
             ->addColumn('action', function($row){
                 $action = ' ';
-                $action .= ' <a href="'.route('examregistrations.edit',$row->id).'" class="btn btn-outline-primary btn-sm action">E</a>';
-                $action .= ' <a href="'.route('examregistrations.examscores.index',$row->id).'" class="btn btn-outline-secondary btn-sm action">S</a>';
+                $action .= ' <a href="'.ExamRegistrationResource::getUrl('edit', ['record' => $row->id]).'" class="btn btn-outline-primary btn-sm action">E</a>';
                 return $action;
             })
             ->editColumn('kode_ujian', function($row) {

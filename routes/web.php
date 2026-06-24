@@ -27,51 +27,28 @@ Route::middleware('auth')->group(function () {
     Route::post('/mypassword/reset/{id}', [App\Http\Controllers\Auth\PasswordChangeController::class, 'resetPasswordPost'])->name('mypassword.reset');
     Route::resource('profiles', App\Http\Controllers\ProfileController::class)->only(['index','edit','update']);
     Route::middleware('can:active')->group(function () {
-        Route::put('/setting/users/{user}/activation', [App\Http\Controllers\Setting\UserController::class, 'activation'])->name('users.activation');
-        Route::put('/setting/selectionguideallocations/{guideallocation}/activation', [App\Http\Controllers\Setting\Selection\GuideAllocationController::class, 'activation'])->name('selectionguideallocations.activation');
         Route::put('/setting/selectionguidegroups/{guidegroup}/activation', [App\Http\Controllers\Setting\Selection\GuideGroupController::class, 'activation'])->name('selectionguidegroups.activation');
         Route::get('/setting/registrations/{student_id}/create', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class,'createByStudent'])->name('registrations.student');
         Route::get('/setting/registrations/{student_id}/show', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class,'showByStudent'])->name('registrations.show.student');
         Route::put('/setting/examregistrations/{examregistration}/scoreset', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'scoreSet'])->name('examregistrations.scoreset');
         Route::put('/setting/examregistrations/{examregistration}/mark-sent', [App\Http\Controllers\Setting\Examination\ExamScoreController::class, 'markSent'])->name('examregistrations.examscores.mark-sent');
-        Route::get('/setting/examregistrations/date/{id}', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'index2'])->name('examregistrations.date');
-        Route::post('/setting/examregistrations/paste-import', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImport'])->name('examregistrations.paste-import');
+        Route::post('/setting/examregistrations/paste-import',[App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImport'])->name('examregistrations.paste-import');
         Route::post('/setting/examregistrations/paste-import-check-duplicates', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImportCheckDuplicates'])->name('examregistrations.paste-import-check-duplicates');
         Route::post('/setting/examregistrations/paste-bulk-edit-resolve', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEditResolve'])->name('examregistrations.paste-bulk-edit-resolve');
         Route::post('/setting/examregistrations/paste-bulk-edit', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEdit'])->name('examregistrations.paste-bulk-edit');
         Route::get('/setting/examregistrations/{examregistration}/whatsapp/invite', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'whatsappInvite'])->name('examregistrations.whatsapp-invite');
         Route::get('/setting/examregistrations/{examregistration}/whatsapp/ralat', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'whatsappRalat'])->name('examregistrations.whatsapp-ralat');
-        Route::get('/admin/scoring-yet', [App\Http\Controllers\Examination\AdminController::class, 'getExaminerScoringYet'])->name('get.examinerscoringyet');
-        Route::resource('setting/roles', App\Http\Controllers\Setting\RoleController::class)->except('show');
-        Route::resource('setting/permissions', App\Http\Controllers\Setting\PermissionController::class)->except('show');
-        Route::resource('setting/rolepermissions', App\Http\Controllers\Setting\RolePermissionController::class)->only('edit', 'update');
-        Route::resource('setting/userpermissions', App\Http\Controllers\Setting\UserPermissionController::class)->only('edit', 'update');
-        Route::resource('setting/userroles', App\Http\Controllers\Setting\UserRoleController::class)->only('edit', 'update');
-        Route::resource('setting/users', App\Http\Controllers\Setting\UserController::class)->except('show');
         Route::resource('setting/navigations', App\Http\Controllers\Setting\NavigationController::class)->except('show');
-        Route::resource('setting/selectionstages', App\Http\Controllers\Setting\Selection\StageController::class)->except('show');
-        Route::resource('setting/selectionelements', App\Http\Controllers\Setting\Selection\ElementController::class)->except('show');
         Route::resource('setting/selectionelementcomments', App\Http\Controllers\Setting\Selection\ElementCommentController::class)->except('show');
-        Route::resource('setting/selectionguideallocations', App\Http\Controllers\Setting\Selection\GuideAllocationController::class)->except('show');
         Route::resource('setting/selectionguidegroups', App\Http\Controllers\Setting\Selection\GuideGroupController::class)->except('show');
         Route::resource('setting/selectionguides', App\Http\Controllers\Setting\Selection\GuideController::class)->except('show');
-        Route::resource('setting/guideexaminers', App\Http\Controllers\Setting\Examination\GuideExaminerController::class)->except('show');
-        Route::resource('setting/examregistrations', App\Http\Controllers\Setting\Examination\ExamRegistrationController::class)->except(['show', 'create']);
-        Route::resource('setting/examregistrations.examscores', App\Http\Controllers\Setting\Examination\ExamScoreController::class)->only('index','edit','update');
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
         Route::put('selection/guides/{guide}/cancel', [App\Http\Controllers\Selection\GuideController::class,'cancel'])->name('guides.cancel');
         Route::get('examination/student', [App\Http\Controllers\Examination\StudentController::class,'index'])->name('exam.student.index');
         Route::get('examination/student/{student}/get-revision', [App\Http\Controllers\Examination\StudentController::class,'getRevision'])->name('exam.student.get-revision');
-        // dashboard ketua penguji
-        Route::redirect('examination/chief', '/home/examination/chief')->name('chief.index');
-        Route::get('examination/chief/{chief}', [App\Http\Controllers\Examination\ChiefController::class,'show'])->name('chief.show');
-        Route::put('examination/chief/{chief}/pass', [App\Http\Controllers\Examination\ChiefController::class,'pass'])->name('chief.pass');
-        // dashboard dosen
-        Route::redirect('exam/scores', '/examination/scoring');
-        Route::get('examination/scoring', [App\Http\Controllers\Examination\ScoreController::class,'index'])->name('scoring.index');
-        Route::get('examination/scoring-archieves', [App\Http\Controllers\Examination\ScoreController::class,'archieves'])->name('scoring.archieves');
+        // dashboard dosen (scoring edit/update dipertahankan karena Filament masih menggunakannya)
         Route::get('examination/scoring/{scoring}/edit', [App\Http\Controllers\Examination\ScoreController::class,'edit'])->name('scoring.edit');
         Route::put('examination/scoring/{scoring}', [App\Http\Controllers\Examination\ScoreController::class,'update'])->name('scoring.update');
         Route::get('selection/respon', [App\Http\Controllers\Selection\GuideResponController::class,'index'])->name('respons.index');
