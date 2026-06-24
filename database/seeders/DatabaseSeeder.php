@@ -14,11 +14,12 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             ExamSeeder::class,
-            CreateAdminUserSeeder::class,
             PermissionSeeder::class,
+            CreateAdminUserSeeder::class,
             UserSeeder::class,
             ExamRegistrationSeeder::class,
             GuideAllocationGroupSeeder::class,
+            NuirSeeder::class,
         ]);
 
         // \App\Models\User::factory(10)->create();
