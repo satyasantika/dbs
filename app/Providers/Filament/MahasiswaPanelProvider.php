@@ -41,6 +41,7 @@ class MahasiswaPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(MaxWidth::SevenExtraLarge)
             ->discoverPages(in: app_path('Filament/Mahasiswa/Pages'), for: 'App\\Filament\\Mahasiswa\\Pages')
+            ->discoverWidgets(in: app_path('Filament/Mahasiswa/Widgets'), for: 'App\\Filament\\Mahasiswa\\Widgets')
             ->pages([
                 Dashboard::class,
                 NuirSubmissionOverview::class,

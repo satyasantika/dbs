@@ -63,7 +63,10 @@ class NuirValidatorPanelSmokeTest extends TestCase
     {
         $this->actingAs($this->validator)
             ->get(ValidatorDashboard::getUrl(panel: 'nuir-validator'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Selamat datang')
+            ->assertSee('Submission Ditugaskan')
+            ->assertSee('Referensi Pending');
     }
 
     public function test_validator_dapat_akses_daftar_dan_detail_submission(): void

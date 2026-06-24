@@ -40,9 +40,13 @@ class MahasiswaPanelSmokeTest extends TestCase
 
     public function test_mahasiswa_dashboard_accessible(): void
     {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+
         $this->actingAs($this->mahasiswa)
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Selamat datang')
+            ->assertSee('Status NUIR');
     }
 
     public function test_old_nuir_submission_route_redirects_to_filament(): void

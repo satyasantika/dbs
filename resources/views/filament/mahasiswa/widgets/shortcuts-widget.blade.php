@@ -1,7 +1,5 @@
-<x-filament-panels::page>
+<x-filament-widgets::widget class="fi-account-widget">
     <div class="space-y-6">
-        <h3 class="text-lg font-semibold">Selamat datang, {{ auth()->user()->name }}</h3>
-
         @can('join exam')
             <x-filament::section heading="Halaman Ujian">
                 <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -93,4 +91,4 @@
             </x-filament::section>
         @endif
     </div>
-</x-filament-panels::page>
+</x-filament-widgets::widget>
