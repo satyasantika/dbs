@@ -31,14 +31,14 @@ class NuirProposalOverview extends Page
 
     public ?NuirProposal $finalProposal = null;
 
-    public ?NuirSubmission $contentOkSubmission = null;
+    public ?NuirSubmission $proposableSubmission = null;
 
     public function mount(NuirProposalService $proposalService): void
     {
         $data = $proposalService->getIndexData(auth()->user());
         $this->proposals = $data['proposals'];
         $this->finalProposal = $data['finalProposal'];
-        $this->contentOkSubmission = $data['contentOkSubmission'];
+        $this->proposableSubmission = $data['proposableSubmission'];
     }
 
     protected static function mahasiswaAccessPermission(): string

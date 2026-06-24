@@ -53,6 +53,8 @@ class User extends Authenticatable implements FilamentUser
             'dosen' => $this->hasRole('dosen'),
             'dbs' => $this->hasRole('dbs'),
             'mahasiswa' => $this->hasRole('mahasiswa'),
+            'nuir-manajer' => $this->hasRole('manajer nuir'),
+            'nuir-validator' => $this->hasRole('validator nuir'),
             default => false,
         };
     }

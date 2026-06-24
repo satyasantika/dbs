@@ -12,6 +12,8 @@ use Illuminate\Validation\Rule;
 
 class NuirProposalService
 {
+    private const PROPOSABLE_STATUSES = ['submitted', 'revision', 'content_ok'];
+
     public function __construct(private NuirService $nuirService)
     {
     }
@@ -26,8 +28,8 @@ class NuirProposalService
         return [
             'proposals' => $proposals,
             'finalProposal' => $proposals->firstWhere('final', true),
-            'contentOkSubmission' => NuirSubmission::where('user_id', $user->id)
-                ->where('status', 'content_ok')
+            'proposableSubmission' => NuirSubmission::where('user_id', $user->id)
+                ->whereIn('status', self::PROPOSABLE_STATUSES)
                 ->latest('id')
                 ->first(),
         ];
@@ -46,7 +48,7 @@ class NuirProposalService
         }
 
         $submission = NuirSubmission::where('user_id', $user->id)
-            ->where('status', 'content_ok')
+            ->whereIn('status', self::PROPOSABLE_STATUSES)
             ->latest('id')
             ->first();
 
@@ -83,7 +85,7 @@ class NuirProposalService
             'nuir_submission_id' => [
                 'required',
                 Rule::exists('nuir_submissions', 'id')->where(
-                    fn ($q) => $q->where('user_id', $user->id)->where('status', 'content_ok')
+                    fn ($q) => $q->where('user_id', $user->id)->whereIn('status', self::PROPOSABLE_STATUSES)
                 ),
             ],
             'guide1_id' => ['required', Rule::exists('users', 'id')],

@@ -41,6 +41,14 @@ class HomeController extends Controller
             return redirect('/mahasiswa');
         }
 
+        if ($user->hasRole('manajer nuir')) {
+            return redirect('/nuir-manajer');
+        }
+
+        if ($user->hasRole('validator nuir')) {
+            return redirect('/nuir-validator');
+        }
+
         return view('home');
     }
 }

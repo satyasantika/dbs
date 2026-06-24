@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Dosen;
 
 use App\Http\Controllers\Controller;
 use App\Models\NuirProposal;
+use App\Models\NuirReference;
+use App\Services\NuirAssignmentService;
 use App\Services\NuirService;
 use Illuminate\Http\Request;
 
 class NuirProposalController extends Controller
 {
-    public function __construct(private NuirService $nuirService)
-    {
+    public function __construct(
+        private NuirService $nuirService,
+        private NuirAssignmentService $assignmentService,
+    ) {
     }
 
     public function index()
@@ -32,11 +36,14 @@ class NuirProposalController extends Controller
     public function show(NuirProposal $nuirProposal)
     {
         $this->authorizeProposal($nuirProposal);
-        $nuirProposal->load(['submission.user', 'submission.references', 'guide1', 'guide2']);
+        $nuirProposal->load(['submission.user', 'submission.references.reviews', 'guide1', 'guide2']);
+        $user = auth()->user();
 
         return view('dosen.nuir.proposal-show', [
             'proposal' => $nuirProposal,
             'canRespond' => $this->canRespond($nuirProposal),
+            'canAcceptProposal' => $this->assignmentService->guideCanAcceptProposal($nuirProposal, $user),
+            'canReviewReferences' => $this->canRespond($nuirProposal),
         ]);
     }
 
@@ -44,6 +51,10 @@ class NuirProposalController extends Controller
     {
         $this->authorizeProposal($nuirProposal);
         $this->ensureCanRespond($nuirProposal);
+
+        if (! $this->assignmentService->guideCanAcceptProposal($nuirProposal, auth()->user())) {
+            return back()->with('warning', 'Persetujuan pembimbing hanya dapat diberikan setelah NUIR disetujui final (content_ok).');
+        }
 
         if (auth()->id() === $nuirProposal->guide1_id) {
             $nuirProposal->update([
@@ -86,6 +97,33 @@ class NuirProposalController extends Controller
         }
 
         return to_route('nuir.dosen.index')->with('success', 'Usulan calon pembimbing ditolak.');
+    }
+
+    public function reviewReference(Request $request, NuirProposal $nuirProposal, NuirReference $nuirReference)
+    {
+        $this->authorizeProposal($nuirProposal);
+        $this->ensureCanRespond($nuirProposal);
+
+        if ($nuirReference->nuir_submission_id !== $nuirProposal->nuir_submission_id) {
+            abort(404);
+        }
+
+        $data = $request->validate([
+            'approved' => ['required', 'in:0,1'],
+            'note' => ['nullable', 'string', 'required_if:approved,0'],
+        ]);
+
+        $approved = (bool) (int) $data['approved'];
+
+        $this->assignmentService->reviewReferenceAsGuide(
+            $nuirReference,
+            $nuirProposal,
+            auth()->user(),
+            $approved,
+            $data['note'] ?? null,
+        );
+
+        return back()->with('success', 'Review referensi disimpan.');
     }
 
     private function authorizeProposal(NuirProposal $proposal): void

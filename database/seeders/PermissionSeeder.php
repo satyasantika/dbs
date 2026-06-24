@@ -20,6 +20,8 @@ class PermissionSeeder extends Seeder
         Role::create(['name' => 'dbs']);
         Role::create(['name' => 'dosen']);
         Role::create(['name' => 'mahasiswa']);
+        Role::create(['name' => 'manajer nuir']);
+        Role::create(['name' => 'validator nuir']);
 
         Permission::create(['name' => 'access dashboard kajur'])->assignRole('kajur');
         Permission::create(['name' => 'access dashboard dbs'])->syncRoles(['dbs', 'admin']);
@@ -222,7 +224,7 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'join exam']);
         Permission::create(['name' => 'force edit score'])->assignRole('admin');
 
-        Permission::firstOrCreate(['name' => 'active'])->syncRoles(['dbs', 'dosen', 'mahasiswa', 'kajur']);
+        Permission::firstOrCreate(['name' => 'active'])->syncRoles(['dbs', 'dosen', 'mahasiswa', 'kajur', 'manajer nuir', 'validator nuir']);
 
         Permission::create(['name' => 'manage nuir settings'])->assignRole('dbs');
         Permission::create(['name' => 'access setting/nuir-settings'])->assignRole('dbs');
@@ -288,5 +290,12 @@ class PermissionSeeder extends Seeder
                 'order' => 'D0'.($dosenNav->children()->count() + 1),
             ]);
         }
+
+        Permission::create(['name' => 'access dashboard manajer nuir'])->assignRole('manajer nuir');
+        Permission::create(['name' => 'access dashboard validator nuir'])->assignRole('validator nuir');
+        Permission::create(['name' => 'delegate nuir validator'])->assignRole('manajer nuir');
+        Permission::create(['name' => 'validate nuir references'])->assignRole('validator nuir');
+        Permission::where('name', 'read nuir submission')->first()?->assignRole(['manajer nuir', 'validator nuir']);
+        Permission::where('name', 'review nuir submission')->first()?->assignRole('manajer nuir');
     }
 }

@@ -43,9 +43,42 @@
                     </p>
                     <p><strong>Judul:</strong> {{ $this->submission->title }}</p>
 
-                    @if ($this->submission->dbs_note)
+                    @if ($this->submission->dbs_note && $this->submission->status !== 'revision')
                         <div class="rounded-lg border border-warning-300 bg-warning-50 p-3 text-sm text-warning-800">
                             {{ $this->submission->dbs_note }}
+                        </div>
+                    @endif
+
+                    @php($reviewedRefs = $this->submission->references()->whereNotNull('ref_approved')->orderBy('ref_order')->get())
+                    @if ($reviewedRefs->isNotEmpty())
+                        <div class="rounded-lg border border-gray-200 p-3 text-sm">
+                            <h6 class="mb-2 font-semibold">Feedback Validator NUIR</h6>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="border-b">
+                                            <th class="px-2 py-1 text-left">#</th>
+                                            <th class="px-2 py-1 text-left">Status</th>
+                                            <th class="px-2 py-1 text-left">Catatan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($reviewedRefs as $ref)
+                                            <tr class="border-b">
+                                                <td class="px-2 py-1">{{ $ref->ref_order }}</td>
+                                                <td class="px-2 py-1">
+                                                    @if ($ref->ref_approved)
+                                                        <x-filament::badge color="success">Disetujui</x-filament::badge>
+                                                    @else
+                                                        <x-filament::badge color="danger">Ditolak</x-filament::badge>
+                                                    @endif
+                                                </td>
+                                                <td class="px-2 py-1">{{ $ref->ref_note ?? '—' }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     @endif
 
@@ -61,7 +94,7 @@
                                     <thead>
                                         <tr class="border-b">
                                             <th class="px-2 py-1 text-left">#</th>
-                                            <th class="px-2 py-1 text-left">Catatan DBS</th>
+                                            <th class="px-2 py-1 text-left">Catatan Validator</th>
                                         </tr>
                                     </thead>
                                     <tbody>

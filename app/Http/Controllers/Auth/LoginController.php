@@ -34,6 +34,14 @@ class LoginController extends Controller
             return redirect('/home');
         }
 
+        if ($user->hasRole('manajer nuir')) {
+            return redirect('/nuir-manajer');
+        }
+
+        if ($user->hasRole('validator nuir')) {
+            return redirect('/nuir-validator');
+        }
+
         return redirect()->route('dashboard');
     }
 

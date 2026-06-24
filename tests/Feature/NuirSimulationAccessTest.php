@@ -28,7 +28,7 @@ class NuirSimulationAccessTest extends TestCase
 
     public function test_akun_simulasi_memakai_password_simulasi(): void
     {
-        foreach (['dbs', 'pembimbing1', 'pembimbing2', 'penguji1', 'mahasiswa1', 'mahasiswa8'] as $username) {
+        foreach (['dbs', 'manajer1', 'validator1', 'pembimbing1', 'pembimbing2', 'penguji1', 'mahasiswa1', 'mahasiswa8'] as $username) {
             $user = User::where('username', $username)->first();
             $this->assertNotNull($user, "Akun {$username} harus ada.");
             $this->assertTrue(
@@ -88,6 +88,24 @@ class NuirSimulationAccessTest extends TestCase
 
         $this->actingAs($pembimbing1)
             ->get('/nuir/dosen')
+            ->assertOk();
+    }
+
+    public function test_manajer_simulasi_dapat_akses_panel(): void
+    {
+        $manajer = User::where('username', 'manajer1')->first();
+
+        $this->actingAs($manajer)
+            ->get('/nuir-manajer')
+            ->assertOk();
+    }
+
+    public function test_validator_simulasi_dapat_akses_panel(): void
+    {
+        $validator = User::where('username', 'validator1')->first();
+
+        $this->actingAs($validator)
+            ->get('/nuir-validator')
             ->assertOk();
     }
 
