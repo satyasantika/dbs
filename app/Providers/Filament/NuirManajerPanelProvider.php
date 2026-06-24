@@ -36,6 +36,7 @@ class NuirManajerPanelProvider extends PanelProvider
             ->maxContentWidth(MaxWidth::SevenExtraLarge)
             ->discoverResources(in: app_path('Filament/NuirManajer/Resources'), for: 'App\\Filament\\NuirManajer\\Resources')
             ->discoverPages(in: app_path('Filament/NuirManajer/Pages'), for: 'App\\Filament\\NuirManajer\\Pages')
+            ->discoverWidgets(in: app_path('Filament/NuirManajer/Widgets'), for: 'App\\Filament\\NuirManajer\\Widgets')
             ->pages([
                 Dashboard::class,
             ])

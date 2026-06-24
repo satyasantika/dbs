@@ -36,6 +36,7 @@ class NuirValidatorPanelProvider extends PanelProvider
             ->maxContentWidth(MaxWidth::SevenExtraLarge)
             ->discoverResources(in: app_path('Filament/NuirValidator/Resources'), for: 'App\\Filament\\NuirValidator\\Resources')
             ->discoverPages(in: app_path('Filament/NuirValidator/Pages'), for: 'App\\Filament\\NuirValidator\\Pages')
+            ->discoverWidgets(in: app_path('Filament/NuirValidator/Widgets'), for: 'App\\Filament\\NuirValidator\\Widgets')
             ->pages([
                 Dashboard::class,
             ])

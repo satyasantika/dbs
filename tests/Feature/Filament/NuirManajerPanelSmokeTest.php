@@ -53,7 +53,10 @@ class NuirManajerPanelSmokeTest extends TestCase
     {
         $this->actingAs($this->manajer)
             ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Selamat datang')
+            ->assertSee('Submission Aktif')
+            ->assertSee('Belum Didelegasikan');
     }
 
     public function test_manajer_dapat_akses_daftar_dan_detail_submission(): void
