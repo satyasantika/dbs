@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesAdminPanelAccess;
 use App\Filament\Resources\SelectionStageResource\Pages;
 use App\Models\SelectionStage;
 use App\Models\User;
@@ -13,6 +14,8 @@ use Filament\Tables\Table;
 
 class SelectionStageResource extends Resource
 {
+    use AuthorizesAdminPanelAccess;
+
     protected static ?string $model = SelectionStage::class;
 
 

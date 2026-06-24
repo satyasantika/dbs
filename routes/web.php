@@ -152,6 +152,10 @@ Route::get('/go-home', function () {
         return redirect('/home');
     }
 
+    if ($user->hasRole('dbs')) {
+        return redirect('/dbs');
+    }
+
     return redirect()->route('dashboard');
 })->middleware('auth')->name('home');
 

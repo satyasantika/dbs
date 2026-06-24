@@ -9,38 +9,39 @@ use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
-use App\Services\NuirService;
+use App\Services\NuirReviewService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class SubmissionController extends Controller
 {
+    public function __construct(private NuirReviewService $reviewService)
+    {
+    }
+
     public function index(NuirSubmissionsDataTable $dataTable)
     {
-        return $dataTable->render('layouts.setting');
+        return redirect(\App\Filament\Dbs\Resources\NuirSubmissionResource::getUrl('index', panel: 'dbs'));
     }
 
     public function show(NuirSubmission $nuirSubmission)
     {
-        $nuirSubmission->load(['user', 'references', 'dbsReviewer', 'parentSubmission']);
-        $setting = NuirSetting::where('year_generation', $nuirSubmission->year_generation)->first();
-        $history = $this->parentChain($nuirSubmission);
-        $approvedCount = $nuirSubmission->references()->where('ref_approved', true)->count();
-
-        return view('setting.nuir.submission-show', compact('nuirSubmission', 'setting', 'history', 'approvedCount'));
+        return redirect(\App\Filament\Dbs\Resources\NuirSubmissionResource::getUrl('view', [
+            'record' => $nuirSubmission,
+        ], panel: 'dbs'));
     }
 
     public function reviewReference(Request $request, NuirReference $nuirReference)
     {
-        $approved = $request->boolean('ref_approved');
-
-        $data = $request->validate([
-            'ref_note' => [$approved ? 'nullable' : 'required', 'string'],
-        ]);
-
-        $nuirReference->update([
-            'ref_approved' => $approved,
-            'ref_note' => $approved ? null : ($data['ref_note'] ?? null),
-        ]);
+        try {
+            $this->reviewService->reviewReference(
+                $nuirReference,
+                $request->boolean('ref_approved'),
+                $request->input('ref_note'),
+            );
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
 
         return back()->with('success', 'Keputusan referensi disimpan.');
     }
@@ -52,52 +53,32 @@ class SubmissionController extends Controller
             'dbs_note' => ['nullable', 'string', 'required_if:action,revision'],
         ]);
 
-        if ($data['action'] === 'content_ok') {
-            $setting = NuirSetting::where('year_generation', $nuirSubmission->year_generation)->first();
-            $min = $setting?->min_references_approved ?? 10;
-            $approved = $nuirSubmission->references()->where('ref_approved', true)->count();
-
-            if ($approved < $min) {
-                return back()->with('warning', "Minimal {$min} referensi harus disetujui sebelum konten disetujui.");
+        try {
+            $this->reviewService->reviewSubmission(
+                $nuirSubmission,
+                $data['action'],
+                $data['dbs_note'] ?? null,
+            );
+        } catch (ValidationException $exception) {
+            if ($exception->errors()['action'][0] ?? null) {
+                return back()->with('warning', $exception->errors()['action'][0]);
             }
-        }
 
-        $nuirSubmission->update([
-            'status' => $data['action'] === 'content_ok' ? 'content_ok' : 'revision',
-            'dbs_note' => $data['dbs_note'] ?? null,
-            'dbs_reviewer_id' => auth()->id(),
-            'dbs_reviewed_at' => now(),
-        ]);
+            throw $exception;
+        }
 
         return to_route('nuir.review.show', $nuirSubmission)->with('success', 'Review submission disimpan.');
     }
 
     public function proposals(NuirProposalsDataTable $dataTable)
     {
-        return $dataTable->render('layouts.setting');
+        return redirect(\App\Filament\Dbs\Resources\NuirProposalResource::getUrl('index', panel: 'dbs'));
     }
 
     public function forceFinalize(NuirProposal $nuirProposal)
     {
-        if ($nuirProposal->guide1_status !== 'accepted' || $nuirProposal->guide2_status !== 'accepted') {
-            abort(403);
-        }
-
-        app(NuirService::class)->finalizeProposal($nuirProposal->fresh());
+        $this->reviewService->forceFinalize($nuirProposal);
 
         return back()->with('success', 'Proposal berhasil di-finalize.');
-    }
-
-    private function parentChain(NuirSubmission $submission)
-    {
-        $chain = collect();
-        $current = $submission->parentSubmission;
-
-        while ($current) {
-            $chain->push($current->load('dbsReviewer'));
-            $current = $current->parentSubmission;
-        }
-
-        return $chain;
     }
 }

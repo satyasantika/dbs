@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesDbsPanelAccess;
 use App\Filament\Resources\ReadyExamResultsResource\Pages;
 use App\Models\ExamRegistration;
 use Filament\Forms;
@@ -14,6 +15,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class ReadyExamResultsResource extends Resource
 {
+    use AuthorizesDbsPanelAccess;
+
     protected static ?string $model = ExamRegistration::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-paper-airplane';
@@ -29,6 +32,11 @@ class ReadyExamResultsResource extends Resource
     protected static ?string $slug = 'exam-results-ready-to-send';
 
     protected static ?int $navigationSort = 1;
+
+    protected static function dbsAccessPermission(): string
+    {
+        return 'access exam/registration/lists';
+    }
 
     public static function form(Form $form): Form
     {

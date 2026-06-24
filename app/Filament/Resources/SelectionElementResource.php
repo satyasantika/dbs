@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesDbsPanelAccess;
 use App\Filament\Resources\SelectionElementResource\Pages;
 use App\Models\SelectionElement;
 use App\Models\SelectionStage;
@@ -13,6 +14,8 @@ use Filament\Tables\Table;
 
 class SelectionElementResource extends Resource
 {
+    use AuthorizesDbsPanelAccess;
+
     protected static ?string $model = SelectionElement::class;
 
 
@@ -25,6 +28,18 @@ class SelectionElementResource extends Resource
     protected static ?string $pluralModelLabel = 'Elemen NUIR';
 
     protected static ?int $navigationSort = 3;
+
+    protected static function dbsAccessPermission(): string
+    {
+        return 'access selection/element/verifications';
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return filament()->getCurrentPanel()?->getId() === 'dbs'
+            ? 'Verifikasi NUIR'
+            : 'Elemen NUIR';
+    }
 
     public static function form(Form $form): Form
     {

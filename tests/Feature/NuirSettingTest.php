@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Dbs\Resources\NuirSettingResource;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -29,6 +30,10 @@ class NuirSettingTest extends TestCase
     {
         $this->actingAs($this->dbs)
             ->get('/setting/nuir-settings')
+            ->assertRedirect(NuirSettingResource::getUrl('index', panel: 'dbs'));
+
+        $this->actingAs($this->dbs)
+            ->get(NuirSettingResource::getUrl('index', panel: 'dbs'))
             ->assertOk();
     }
 

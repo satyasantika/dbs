@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesAdminPanelAccess;
 use App\Filament\Resources\ExamTypeResource\Pages;
 use App\Models\ExamType;
 use Filament\Forms;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ExamTypeResource extends Resource
 {
+    use AuthorizesAdminPanelAccess;
+
     protected static ?string $model = ExamType::class;
 
 

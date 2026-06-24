@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Dbs\Resources\NuirProposalResource;
 use App\Models\GuideExaminer;
 use App\Models\NuirProposal;
 use App\Models\NuirSetting;
@@ -117,6 +118,10 @@ class NuirGuardTest extends TestCase
 
         $this->actingAs($this->dbs)
             ->get('/setting/nuir/proposals')
+            ->assertRedirect(NuirProposalResource::getUrl('index', panel: 'dbs'));
+
+        $this->actingAs($this->dbs)
+            ->get(NuirProposalResource::getUrl('index', panel: 'dbs'))
             ->assertOk();
     }
 

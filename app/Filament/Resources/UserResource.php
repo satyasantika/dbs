@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\AuthorizesAdminPanelAccess;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\User;
 use Filament\Forms;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Hash;
 
 class UserResource extends Resource
 {
+    use AuthorizesAdminPanelAccess;
+
     protected static ?string $model = User::class;
 
     protected static ?string $navigationGroup = 'Manajemen Pengguna';

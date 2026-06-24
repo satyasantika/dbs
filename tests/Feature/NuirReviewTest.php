@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Dbs\Resources\NuirSubmissionResource;
 use App\Models\GuideExaminer;
 use App\Models\NuirReference;
 use App\Models\NuirSetting;
@@ -45,6 +46,10 @@ class NuirReviewTest extends TestCase
     {
         $this->actingAs($this->dbs)
             ->get('/setting/nuir/submissions')
+            ->assertRedirect(NuirSubmissionResource::getUrl('index', panel: 'dbs'));
+
+        $this->actingAs($this->dbs)
+            ->get(NuirSubmissionResource::getUrl('index', panel: 'dbs'))
             ->assertOk();
     }
 
