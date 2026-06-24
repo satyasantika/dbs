@@ -11,6 +11,13 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
+                    @if (session('info'))
+                        <div class="alert alert-info">{{ session('info') }}</div>
+                    @endif
+                    @if (session('warning'))
+                        <div class="alert alert-warning">{{ session('warning') }}</div>
+                    @endif
+
                     @if ($stage3 ?? false)
                         <p>Angkatan Anda tidak memerlukan pengajuan NUIR. Pembimbing akan ditetapkan langsung oleh DBS.</p>
                     @elseif ($closed ?? false)

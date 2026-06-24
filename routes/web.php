@@ -82,6 +82,10 @@ Route::middleware('auth')->group(function () {
                 ->name('nuir.review.reference');
             Route::put('setting/nuir/submissions/{nuirSubmission}/review', [App\Http\Controllers\Setting\Nuir\SubmissionController::class, 'review'])
                 ->name('nuir.review.submit');
+            Route::get('setting/nuir/proposals', [App\Http\Controllers\Setting\Nuir\SubmissionController::class, 'proposals'])
+                ->name('nuir.proposals.index');
+            Route::put('setting/nuir/proposals/{nuirProposal}/finalize', [App\Http\Controllers\Setting\Nuir\SubmissionController::class, 'forceFinalize'])
+                ->name('nuir.proposals.finalize');
         });
         Route::middleware(['can:read nuir proposal'])->group(function () {
             Route::get('nuir/proposal', [App\Http\Controllers\Selection\NuirProposalController::class, 'index'])

@@ -60,8 +60,10 @@ class NuirService
         return NuirProposal::where('nuir_submission_id', $submissionId)
             ->where('guide1_id', $guide1Id)
             ->where('guide2_id', $guide2Id)
-            ->where('guide1_status', 'pending')
-            ->where('guide2_status', 'pending')
+            ->where(function ($query) {
+                $query->where('guide1_status', 'pending')
+                    ->orWhere('guide2_status', 'pending');
+            })
             ->exists();
     }
 }

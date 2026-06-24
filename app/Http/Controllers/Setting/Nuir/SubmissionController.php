@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Setting\Nuir;
 
+use App\DataTables\NuirProposalsDataTable;
 use App\DataTables\NuirSubmissionsDataTable;
 use App\Http\Controllers\Controller;
+use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
+use App\Services\NuirService;
 use Illuminate\Http\Request;
 
 class SubmissionController extends Controller
@@ -67,6 +70,22 @@ class SubmissionController extends Controller
         ]);
 
         return to_route('nuir.review.show', $nuirSubmission)->with('success', 'Review submission disimpan.');
+    }
+
+    public function proposals(NuirProposalsDataTable $dataTable)
+    {
+        return $dataTable->render('layouts.setting');
+    }
+
+    public function forceFinalize(NuirProposal $nuirProposal)
+    {
+        if ($nuirProposal->guide1_status !== 'accepted' || $nuirProposal->guide2_status !== 'accepted') {
+            abort(403);
+        }
+
+        app(NuirService::class)->finalizeProposal($nuirProposal->fresh());
+
+        return back()->with('success', 'Proposal berhasil di-finalize.');
     }
 
     private function parentChain(NuirSubmission $submission)

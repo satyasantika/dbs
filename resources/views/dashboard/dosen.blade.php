@@ -4,6 +4,16 @@
 <h3>Selamat datang, {{ auth()->user()->name }}</h3>
 
 <div class="row mb-3">
+@can('respond nuir proposal')
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">Usulan NUIR Masuk</div>
+            <div class="card-body">
+                <a href="{{ route('nuir.dosen.index') }}" class="btn btn-sm btn-primary">Lihat Usulan</a>
+            </div>
+        </div>
+    </div>
+@endcan
 @can('access examination/scoring')
     <div class="col-md-6 mb-3">
         <div class="card">
