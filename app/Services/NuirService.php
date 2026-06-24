@@ -58,17 +58,10 @@ class NuirService
     public function hasPendingDuplicateProposal(int $submissionId, int $guide1Id, int $guide2Id): bool
     {
         return NuirProposal::where('nuir_submission_id', $submissionId)
-            ->where(function ($query) use ($guide1Id, $guide2Id) {
-                $query->where([
-                    'guide1_id' => $guide1Id,
-                    'guide2_id' => $guide2Id,
-                    'guide1_status' => 'pending',
-                ])->orWhere([
-                    'guide1_id' => $guide1Id,
-                    'guide2_id' => $guide2Id,
-                    'guide2_status' => 'pending',
-                ]);
-            })
+            ->where('guide1_id', $guide1Id)
+            ->where('guide2_id', $guide2Id)
+            ->where('guide1_status', 'pending')
+            ->where('guide2_status', 'pending')
             ->exists();
     }
 }

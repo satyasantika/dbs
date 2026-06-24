@@ -262,5 +262,18 @@ class PermissionSeeder extends Seeder
                 'order' => 'C0'.($dbsNavReview->children()->count() + 1),
             ]);
         }
+
+        Permission::create(['name' => 'create nuir proposal'])->assignRole('mahasiswa');
+        Permission::create(['name' => 'read nuir proposal'])->assignRole('mahasiswa');
+        Permission::create(['name' => 'access nuir/proposal'])->assignRole('mahasiswa');
+
+        $mahaNavProposal = Navigation::where('order', 'M00')->first();
+        if ($mahaNavProposal) {
+            $mahaNavProposal->children()->create([
+                'name' => 'proposal pembimbing NUIR',
+                'url' => 'nuir/proposal',
+                'order' => 'M0'.($mahaNavProposal->children()->count() + 1),
+            ]);
+        }
     }
 }
