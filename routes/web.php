@@ -48,7 +48,7 @@ Route::middleware('auth')->group(function () {
         Route::put('setting/nuir-settings/{nuirSetting}/toggle', [App\Http\Controllers\Setting\Nuir\SettingController::class, 'toggle'])
             ->name('nuir-settings.toggle')
             ->middleware('can:manage nuir settings');
-        Route::middleware('can:read nuir submission')->group(function () {
+        Route::middleware('can:access nuir/submission')->group(function () {
             Route::get('nuir/submission', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'index'])
                 ->name('nuir.submission.index');
             Route::get('nuir/submission/create', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'create'])

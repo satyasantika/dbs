@@ -11,7 +11,9 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
-                    @if ($closed ?? false)
+                    @if ($stage3 ?? false)
+                        <p>Angkatan Anda tidak memerlukan pengajuan NUIR. Pembimbing akan ditetapkan langsung oleh DBS.</p>
+                    @elseif ($closed ?? false)
                         <p class="text-muted">NUIR belum dibuka untuk angkatan Anda.</p>
                     @elseif (!$submission)
                         <p>Anda belum memiliki pengajuan NUIR aktif.</p>
