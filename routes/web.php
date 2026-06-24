@@ -83,6 +83,16 @@ Route::middleware('auth')->group(function () {
             Route::put('setting/nuir/submissions/{nuirSubmission}/review', [App\Http\Controllers\Setting\Nuir\SubmissionController::class, 'review'])
                 ->name('nuir.review.submit');
         });
+        Route::middleware(['can:read nuir proposal'])->group(function () {
+            Route::get('nuir/proposal', [App\Http\Controllers\Selection\NuirProposalController::class, 'index'])
+                ->name('nuir.proposal.index');
+            Route::get('nuir/proposal/create', [App\Http\Controllers\Selection\NuirProposalController::class, 'create'])
+                ->name('nuir.proposal.create')
+                ->middleware('can:create nuir proposal');
+            Route::post('nuir/proposal', [App\Http\Controllers\Selection\NuirProposalController::class, 'store'])
+                ->name('nuir.proposal.store')
+                ->middleware('can:create nuir proposal');
+        });
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
