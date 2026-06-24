@@ -48,6 +48,25 @@ Route::middleware('auth')->group(function () {
         Route::put('setting/nuir-settings/{nuirSetting}/toggle', [App\Http\Controllers\Setting\Nuir\SettingController::class, 'toggle'])
             ->name('nuir-settings.toggle')
             ->middleware('can:manage nuir settings');
+        Route::middleware('can:read nuir submission')->group(function () {
+            Route::get('nuir/submission', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'index'])
+                ->name('nuir.submission.index');
+            Route::get('nuir/submission/create', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'create'])
+                ->name('nuir.submission.create')
+                ->middleware('can:create nuir submission');
+            Route::post('nuir/submission', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'store'])
+                ->name('nuir.submission.store')
+                ->middleware('can:create nuir submission');
+            Route::get('nuir/submission/{nuirSubmission}/edit', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'edit'])
+                ->name('nuir.submission.edit')
+                ->middleware('can:update nuir submission');
+            Route::put('nuir/submission/{nuirSubmission}', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'update'])
+                ->name('nuir.submission.update')
+                ->middleware('can:update nuir submission');
+            Route::put('nuir/submission/{nuirSubmission}/submit', [App\Http\Controllers\Selection\NuirSubmissionController::class, 'submit'])
+                ->name('nuir.submission.submit')
+                ->middleware('can:update nuir submission');
+        });
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa
         Route::get('selection/guides/{stage}', [App\Http\Controllers\Selection\GuideController::class,'index'])->name('guides.index');
