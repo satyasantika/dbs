@@ -1,5 +1,5 @@
 <x-filament-panels::page>
-    <x-filament::section heading="Usulkan Pembimbing">
+    <x-filament::section heading="Usulan Calon Pembimbing">
         <div class="mb-4 rounded-lg border border-info-300 bg-info-50 p-3 text-sm text-info-800">
             NUIR: {{ $this->submission->title }} (v{{ $this->submission->version }})
             @if ($this->previousRejected)
@@ -48,7 +48,7 @@
             </div>
 
             <div class="flex gap-2">
-                <x-filament::button type="submit" size="sm">Kirim Proposal</x-filament::button>
+                <x-filament::button type="submit" size="sm">Kirim Usulan</x-filament::button>
                 <x-filament::button
                     tag="a"
                     href="{{ \App\Filament\Mahasiswa\Pages\NuirProposalOverview::getUrl(panel: 'mahasiswa') }}"

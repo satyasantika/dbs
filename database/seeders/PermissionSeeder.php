@@ -270,7 +270,7 @@ class PermissionSeeder extends Seeder
         $mahaNavProposal = Navigation::where('order', 'M00')->first();
         if ($mahaNavProposal) {
             $mahaNavProposal->children()->create([
-                'name' => 'proposal pembimbing NUIR',
+                'name' => 'usulan calon pembimbing NUIR',
                 'url' => 'nuir/proposal',
                 'order' => 'M0'.($mahaNavProposal->children()->count() + 1),
             ]);

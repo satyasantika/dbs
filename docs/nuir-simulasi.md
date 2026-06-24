@@ -62,7 +62,7 @@ Proposal simulasi memakai pasangan pembimbing **`pembimbing1`** + **`pembimbing2
 | Dashboard | `/dbs` | Statistik ujian |
 | Konfigurasi NUIR | `/dbs/nuir-settings` | Lihat setting angkatan 2099 |
 | Review Submission | `/dbs/nuir-submissions` | Buka submission `mahasiswa2`, `mahasiswa3`, `mahasiswa4` |
-| Monitor Proposal | `/dbs/nuir-proposals` | Force finalize jika kedua pembimbing sudah accept |
+| Monitor Usulan Calon Pembimbing | `/dbs/nuir-proposals` | Force finalize jika kedua pembimbing sudah accept |
 | Kuota / Kelompok / Ujian | menu Manajemen Seleksi & Ujian | Sesuai permission DBS |
 
 ### Langkah uji cepat
@@ -70,7 +70,7 @@ Proposal simulasi memakai pasangan pembimbing **`pembimbing1`** + **`pembimbing2
 1. **Review referensi** — login `dbs` → Review Submission → buka submission milik `mahasiswa2` → setujui/tolak referensi.
 2. **Setujui konten** — buka submission `mahasiswa3` (10 referensi sudah approved) → **Setujui Konten**.
 3. **Minta revisi** — buka submission `mahasiswa2` → **Minta Revisi** + isi catatan.
-4. **Monitor proposal** — Monitor Proposal → lihat proposal `mahasiswa5`–`mahasiswa8` → **Force Finalize** bila keduanya `accepted`.
+4. **Monitor usulan** — Monitor Usulan Calon Pembimbing → lihat usulan `mahasiswa5`–`mahasiswa8` → **Force Finalize** bila keduanya `accepted`.
 
 ---
 
@@ -82,7 +82,7 @@ Proposal simulasi memakai pasangan pembimbing **`pembimbing1`** + **`pembimbing2
 
 | Fitur | URL | Keterangan |
 |---|---|---|
-| Usulan NUIR masuk | `/nuir/dosen` | Proposal yang ditujukan ke akun login |
+| Usulan NUIR masuk | `/nuir/dosen` | Usulan calon pembimbing yang ditujukan ke akun login |
 | Dashboard dosen | `/home` | Penilaian ujian & statistik |
 
 ### Langkah uji per akun
@@ -131,7 +131,7 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 |---|---|---|
 | Dashboard | `/mahasiswa` | Ujian, seleksi tahap 2, shortcut NUIR |
 | NUIR Saya | `/mahasiswa/nuir-submission` | Draft, submit, revisi |
-| Proposal Pembimbing | `/mahasiswa/nuir-proposal` | Ajukan calon pembimbing setelah `content_ok` |
+| Usulan Calon Pembimbing | `/mahasiswa/nuir-proposal` | Ajukan calon pembimbing setelah `content_ok` |
 
 ### Langkah uji per akun
 
@@ -139,11 +139,11 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 |---|---|
 | `mahasiswa1` | Edit draft → submit ke DBS |
 | `mahasiswa2` | Lihat status submitted (menunggu DBS) |
-| `mahasiswa3` | Tunggu DBS setujui konten, lalu buat proposal |
+| `mahasiswa3` | Tunggu DBS setujui konten, lalu buat usulan calon pembimbing |
 | `mahasiswa4` | Buka form revisi v2 (parent v1 status `revision`) |
-| `mahasiswa5` | Lihat proposal pending ke pembimbing1 & pembimbing2 |
-| `mahasiswa6` | Lihat proposal sebagian diterima |
-| `mahasiswa7` | Lihat riwayat proposal ditolak + proposal aktif |
+| `mahasiswa5` | Lihat usulan pending ke pembimbing1 & pembimbing2 |
+| `mahasiswa6` | Lihat usulan sebagian diterima |
+| `mahasiswa7` | Lihat riwayat usulan ditolak + usulan aktif |
 | `mahasiswa8` | Lihat status finalized (pembimbing sudah ditetapkan) |
 
 ---
@@ -152,9 +152,9 @@ Card **Pengajuan NUIR** muncul karena angkatan 2099 aktif stage 1.
 
 1. **`mahasiswa1`** — lengkapi draft → submit.
 2. **`dbs`** — review referensi & konten submission `mahasiswa3` → setujui konten.
-3. **`mahasiswa3`** — buat proposal ke `pembimbing1` + `pembimbing2`.
-4. **`pembimbing1`** & **`pembimbing2`** — terima proposal.
-5. **`dbs`** — Monitor Proposal → verifikasi status finalized / force finalize bila perlu.
+3. **`mahasiswa3`** — buat usulan calon pembimbing ke `pembimbing1` + `pembimbing2`.
+4. **`pembimbing1`** & **`pembimbing2`** — terima usulan.
+5. **`dbs`** — Monitor Usulan Calon Pembimbing → verifikasi status finalized / force finalize bila perlu.
 
 ---
 

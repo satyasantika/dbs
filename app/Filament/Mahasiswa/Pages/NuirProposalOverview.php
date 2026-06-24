@@ -17,9 +17,9 @@ class NuirProposalOverview extends Page
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
-    protected static ?string $navigationLabel = 'Proposal Pembimbing';
+    protected static ?string $navigationLabel = 'Usulan Calon Pembimbing';
 
-    protected static ?string $title = 'Proposal Pembimbing NUIR';
+    protected static ?string $title = 'Usulan Calon Pembimbing NUIR';
 
     protected static ?string $navigationGroup = 'NUIR';
 

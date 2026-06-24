@@ -86,7 +86,7 @@
                             size="sm"
                             color="gray"
                         >
-                            Proposal Pembimbing
+                            Usulan Calon Pembimbing
                         </x-filament::button>
                     @endcan
                 </div>

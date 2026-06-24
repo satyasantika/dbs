@@ -18,10 +18,10 @@
 
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Proposal Pembimbing NUIR</span>
+                <span>Usulan Calon Pembimbing NUIR</span>
                 @if (!$finalProposal && $contentOkSubmission)
                     @can('create nuir proposal')
-                        <a href="{{ route('nuir.proposal.create') }}" class="btn btn-primary btn-sm">Usulkan ke Dosen</a>
+                        <a href="{{ route('nuir.proposal.create') }}" class="btn btn-primary btn-sm">Buat Usulan</a>
                     @endcan
                 @endif
             </div>
@@ -45,7 +45,7 @@
                                 <td>{{ $proposal->created_at?->format('d-m-Y') }}</td>
                             </tr>
                         @empty
-                            <tr><td colspan="7">Belum ada proposal.</td></tr>
+                            <tr><td colspan="7">Belum ada usulan calon pembimbing.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

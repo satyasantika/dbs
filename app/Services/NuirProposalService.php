@@ -102,7 +102,7 @@ class NuirProposalService
             (int) $data['guide1_id'],
             (int) $data['guide2_id'],
         )) {
-            return back()->withErrors(['guide2_id' => 'Proposal dengan pasangan dosen yang sama masih pending.'])->withInput();
+            return back()->withErrors(['guide2_id' => 'Usulan dengan pasangan dosen yang sama masih pending.'])->withInput();
         }
 
         NuirProposal::create([
@@ -111,7 +111,7 @@ class NuirProposalService
             'guide2_id' => $data['guide2_id'],
         ]);
 
-        return to_route('nuir.proposal.index')->with('success', 'Proposal berhasil diajukan.');
+        return to_route('nuir.proposal.index')->with('success', 'Usulan calon pembimbing berhasil diajukan.');
     }
 
     public function lecturers(User $user): Collection

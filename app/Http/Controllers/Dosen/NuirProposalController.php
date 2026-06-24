@@ -61,7 +61,7 @@ class NuirProposalController extends Controller
             $this->nuirService->finalizeProposal($nuirProposal->fresh());
         }
 
-        return to_route('nuir.dosen.index')->with('success', 'Proposal diterima.');
+        return to_route('nuir.dosen.index')->with('success', 'Usulan calon pembimbing diterima.');
     }
 
     public function reject(Request $request, NuirProposal $nuirProposal)
@@ -85,7 +85,7 @@ class NuirProposalController extends Controller
             ]);
         }
 
-        return to_route('nuir.dosen.index')->with('success', 'Proposal ditolak.');
+        return to_route('nuir.dosen.index')->with('success', 'Usulan calon pembimbing ditolak.');
     }
 
     private function authorizeProposal(NuirProposal $proposal): void
