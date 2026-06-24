@@ -249,5 +249,18 @@ class PermissionSeeder extends Seeder
                 'order' => 'M0'.($mahaNav->children()->count() + 1),
             ]);
         }
+
+        Permission::create(['name' => 'review nuir submission'])->assignRole('dbs');
+        Permission::where('name', 'read nuir submission')->first()?->assignRole('dbs');
+        Permission::create(['name' => 'access setting/nuir/submissions'])->assignRole('dbs');
+
+        $dbsNavReview = Navigation::where('order', 'C00')->first();
+        if ($dbsNavReview) {
+            $dbsNavReview->children()->create([
+                'name' => 'review NUIR',
+                'url' => 'setting/nuir/submissions',
+                'order' => 'C0'.($dbsNavReview->children()->count() + 1),
+            ]);
+        }
     }
 }
