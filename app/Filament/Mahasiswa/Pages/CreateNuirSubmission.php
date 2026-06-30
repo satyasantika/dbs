@@ -35,6 +35,11 @@ class CreateNuirSubmission extends Page
 
     public bool $referencesOnly = false;
 
+    public bool $partialNuiOnly = false;
+
+    /** @var list<string> */
+    public array $rejectedNuiFields = [];
+
     public bool $titleSlotOnly = false;
 
     public function mount(NuirSubmissionService $submissionService): void
@@ -52,6 +57,9 @@ class CreateNuirSubmission extends Page
         $this->stage = $result['stage'];
         $this->rejectedRefs = $result['rejectedRefs'];
         $this->revisionParent = $result['revisionParent'];
+        $this->referencesOnly = $result['referencesOnly'] ?? false;
+        $this->partialNuiOnly = $result['partialNuiOnly'] ?? false;
+        $this->rejectedNuiFields = $result['rejectedNuiFields'] ?? [];
         $this->titleSlotOnly = $result['titleSlotOnly'] ?? false;
     }
 

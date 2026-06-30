@@ -26,7 +26,13 @@
                 </div>
             @endif
 
-            @if ($this->referencesOnly)
+            @if ($this->partialNuiOnly)
+                <div class="mt-3 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800">
+                    Perbaiki elemen NUI yang diminta revisi pembimbing sebelum melanjutkan usulan pembimbing.
+                </div>
+            @endif
+
+            @if ($this->referencesOnly && ! $this->partialNuiOnly)
                 <div class="mt-3 rounded-lg border border-info-200 bg-info-50 px-3 py-2 text-sm text-info-800">
                     Konten NUIR sudah diajukan. Anda dapat menambah atau memperbaiki referensi selama kuota masih tersedia.
                 </div>
@@ -46,9 +52,14 @@
                     <input type="hidden" name="title_only" value="1">
                 @endif
 
-                @if (! $this->referencesOnly)
+                @if (! $this->referencesOnly || $this->partialNuiOnly)
                     @foreach (['title' => 'Judul', 'novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'] as $field => $label)
-                        @if ($field === 'title' || ($this->stage === 1 && ! $this->titleSlotOnly))
+                        @php
+                            $showField = $this->partialNuiOnly
+                                ? in_array($field, $this->rejectedNuiFields, true)
+                                : ($field === 'title' || ($this->stage === 1 && ! $this->titleSlotOnly));
+                        @endphp
+                        @if ($showField)
                             <div>
                                 <div class="mb-1 flex items-center justify-between gap-3">
                                     <label class="block text-sm font-medium" for="{{ $field }}">{{ $label }}</label>
@@ -90,7 +101,7 @@
                     @endforeach
                 @endif
 
-                @if (($this->stage === 1 && ! $this->titleSlotOnly) || $this->referencesOnly)
+                @if (($this->stage === 1 && ! $this->titleSlotOnly) || $this->referencesOnly || $this->partialNuiOnly)
                     <div class="space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
@@ -248,6 +259,8 @@
                     <x-filament::button type="submit" size="sm">
                         @if ($this->titleSlotOnly)
                             Buat Slot Judul
+                        @elseif ($this->partialNuiOnly)
+                            Simpan Revisi NUI
                         @elseif ($this->referencesOnly)
                             Simpan Referensi
                         @elseif ($this->stage === 2)

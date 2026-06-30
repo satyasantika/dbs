@@ -120,4 +120,40 @@ class NuirSubmission extends Model
     {
         return $this->proposals()->where('final', true)->exists();
     }
+
+    /** @return list<string> */
+    public function rejectedNuiFields(): array
+    {
+        return $this->contentReviews()
+            ->where('approved', false)
+            ->distinct()
+            ->pluck('field')
+            ->values()
+            ->all();
+    }
+
+    public function hasRejectedReferences(): bool
+    {
+        return $this->references()->where('ref_approved', false)->exists();
+    }
+
+    public function hasPendingRevisions(): bool
+    {
+        return $this->hasRejectedReferences() || $this->rejectedNuiFields() !== [];
+    }
+
+    public function isPartialNuiEditable(): bool
+    {
+        return $this->rejectedNuiFields() !== []
+            && in_array($this->status, ['submitted', 'content_ok'], true);
+    }
+
+    public function isNuiFieldEditable(string $field): bool
+    {
+        if ($this->isEditable()) {
+            return true;
+        }
+
+        return $this->isPartialNuiEditable() && in_array($field, $this->rejectedNuiFields(), true);
+    }
 }

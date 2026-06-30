@@ -73,7 +73,8 @@ class NuirProposalService
             'submission' => $submission,
             'previousRejected' => $previousRejected,
             'lockedSeats' => $lockedSeats,
-            'lecturers' => $this->lecturers($user, $submission->year_generation, $lockedSeats),
+            'lecturersP1' => $this->lecturersForSeat($user, $submission->year_generation, 1, $lockedSeats),
+            'lecturersP2' => $this->lecturersForSeat($user, $submission->year_generation, 2, $lockedSeats),
         ];
     }
 
@@ -100,6 +101,7 @@ class NuirProposalService
         ]);
 
         $submission = NuirSubmission::findOrFail($data['nuir_submission_id']);
+        \App\Support\NuirRevisionGate::assertRevisionComplete($submission);
         $lockedSeats = $submission->lockedSeats();
 
         if ($lockedSeats['guide1'] && (int) $data['guide1_id'] !== $lockedSeats['guide1']['id']) {
@@ -132,6 +134,18 @@ class NuirProposalService
         $guide1Status = $lockedSeats['guide1'] ? 'accepted' : 'pending';
         $guide2Status = $lockedSeats['guide2'] ? 'accepted' : 'pending';
 
+        if ($guide1Status === 'pending' && ! $this->quotaService->hasQuota($guide1, 1, $submission->year_generation)) {
+            throw ValidationException::withMessages([
+                'guide1_id' => 'Kuota Pembimbing 1 dosen ini sudah habis.',
+            ]);
+        }
+
+        if ($guide2Status === 'pending' && ! $this->quotaService->hasQuota($guide2, 2, $submission->year_generation)) {
+            throw ValidationException::withMessages([
+                'guide2_id' => 'Kuota Pembimbing 2 dosen ini sudah habis.',
+            ]);
+        }
+
         if ($guide1Status === 'pending' && $this->needsQuotaConsumption($submission, (int) $data['guide1_id'], 1)) {
             $this->quotaService->consume($guide1, 1, $submission->year_generation);
         }
@@ -151,6 +165,24 @@ class NuirProposalService
         ]);
 
         return to_route('nuir.proposal.index')->with('success', 'Usulan calon pembimbing berhasil diajukan.');
+    }
+
+    public function lecturersForSeat(User $user, string $yearGeneration, int $guideOrder, array $lockedSeats): Collection
+    {
+        if ($guideOrder === 1 && $lockedSeats['guide1']) {
+            return User::where('id', $lockedSeats['guide1']['id'])->get();
+        }
+
+        if ($guideOrder === 2 && $lockedSeats['guide2']) {
+            return User::where('id', $lockedSeats['guide2']['id'])->get();
+        }
+
+        return User::role('dosen')
+            ->where('id', '!=', $user->id)
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (User $lecturer) => $this->quotaService->hasQuota($lecturer, $guideOrder, $yearGeneration))
+            ->values();
     }
 
     public function lecturers(User $user, string $yearGeneration, array $lockedSeats = ['guide1' => null, 'guide2' => null]): Collection
