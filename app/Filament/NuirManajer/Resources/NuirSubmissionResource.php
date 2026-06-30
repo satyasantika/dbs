@@ -15,6 +15,14 @@ class NuirSubmissionResource extends Resource
 {
     use AuthorizesNuirRolePanelAccess;
 
+    public const DASHBOARD_VIEW_UNASSIGNED = 'unassigned';
+
+    public const DASHBOARD_VIEW_SUBMITTED = 'submitted';
+
+    public const DASHBOARD_VIEW_REVISION = 'revision';
+
+    public const DASHBOARD_VIEW_CONTENT_OK = 'content_ok';
+
     protected static ?string $model = NuirSubmission::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-document-magnifying-glass';
@@ -126,14 +134,52 @@ class NuirSubmissionResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()
+        return static::activeSubmissionsQuery()
             ->with(['user', 'references', 'assignment.validator'])
             ->withCount([
                 'references as references_total_count',
                 'references as references_validated_count' => fn (Builder $query) => $query->whereNotNull('ref_approved'),
-            ])
+            ]);
+    }
+
+    public static function activeSubmissionsQuery(): Builder
+    {
+        return parent::getEloquentQuery()
             ->where('status', '!=', 'draft')
             ->whereDoesntHave('childSubmissions', fn (Builder $query) => $query->where('status', '!=', 'draft'));
+    }
+
+    public static function applyDashboardViewFilter(Builder $query, ?string $view): Builder
+    {
+        return match ($view) {
+            self::DASHBOARD_VIEW_UNASSIGNED => $query->whereDoesntHave('assignment'),
+            self::DASHBOARD_VIEW_SUBMITTED => $query->where('status', 'submitted'),
+            self::DASHBOARD_VIEW_REVISION => $query->where('status', 'revision'),
+            self::DASHBOARD_VIEW_CONTENT_OK => $query->where('status', 'content_ok'),
+            default => $query,
+        };
+    }
+
+    public static function dashboardViewLabel(?string $view): ?string
+    {
+        return match ($view) {
+            self::DASHBOARD_VIEW_UNASSIGNED => 'Belum Didelegasikan',
+            self::DASHBOARD_VIEW_SUBMITTED => 'Menunggu Review',
+            self::DASHBOARD_VIEW_REVISION => 'Diminta Revisi',
+            self::DASHBOARD_VIEW_CONTENT_OK => 'Konten Disetujui',
+            default => null,
+        };
+    }
+
+    public static function listUrl(?string $view = null, string $panel = 'nuir-manajer'): string
+    {
+        $url = static::getUrl('index', panel: $panel);
+
+        if (filled($view)) {
+            return $url.'?view='.urlencode($view);
+        }
+
+        return $url;
     }
 
     public static function referenceValidationStatusFromCounts(int $validated, int $total): string

@@ -176,6 +176,11 @@ class NuirRevisionHistoryService
             ->values();
     }
 
+    public function contentFieldHasRevisionHistory(NuirSubmission $submission, string $field): bool
+    {
+        return $this->contentFieldHistory($submission, $field)->isNotEmpty();
+    }
+
     public function contentFieldRevisionRound(NuirSubmission $submission, string $field): int
     {
         $requests = $this->contentFieldHistory($submission, $field)
@@ -208,6 +213,11 @@ class NuirRevisionHistoryService
                 'submission_version' => $event->submission_version,
             ]))
             ->values();
+    }
+
+    public function referenceHasRevisionHistory(NuirSubmission $submission, int $refOrder): bool
+    {
+        return $this->referenceRevisionHistory($submission, $refOrder)->isNotEmpty();
     }
 
     public function referenceRevisionRound(NuirSubmission $submission, int $refOrder): int

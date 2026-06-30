@@ -224,6 +224,7 @@ class NuirManajerRoleTest extends TestCase
             ->assertSee('batas 50–300 kata')
             ->assertSee('Lihat histori revisi')
             ->assertSee('Revisi ke-2')
+            ->assertDontSee('Revisi ke-1')
             ->assertSee('Referensi');
     }
 
@@ -302,5 +303,104 @@ class NuirManajerRoleTest extends TestCase
             ->assertSee('Belum berprogress')
             ->assertSee('Berprogress')
             ->assertSee('Selesai');
+    }
+
+    public function test_daftar_submission_terfilter_sesuai_kartu_dashboard(): void
+    {
+        $submittedUnassignedUser = User::factory()->create(['name' => 'Mhs Menunggu Delegasi'])->assignRole('mahasiswa');
+        NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $submittedUnassignedUser->id,
+            'year_generation' => '2022',
+        ]);
+
+        $submittedAssignedUser = User::factory()->create(['name' => 'Mhs Sudah Didelegasikan'])->assignRole('mahasiswa');
+        $submittedAssigned = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $submittedAssignedUser->id,
+            'year_generation' => '2022',
+        ]);
+        NuirAssignment::create([
+            'nuir_submission_id' => $submittedAssigned->id,
+            'validator_id' => $this->validator->id,
+            'assigned_by' => $this->manajer->id,
+            'assigned_at' => now(),
+        ]);
+
+        $revisionUser = User::factory()->create(['name' => 'Mhs Diminta Revisi'])->assignRole('mahasiswa');
+        NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $revisionUser->id,
+            'year_generation' => '2022',
+            'status' => 'revision',
+        ]);
+
+        $contentOkUser = User::factory()->create(['name' => 'Mhs Konten Disetujui'])->assignRole('mahasiswa');
+        NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $contentOkUser->id,
+            'year_generation' => '2022',
+            'status' => 'content_ok',
+        ]);
+
+        $supersededUser = User::factory()->create(['name' => 'Mhs Versi Lama'])->assignRole('mahasiswa');
+        $superseded = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $supersededUser->id,
+            'year_generation' => '2022',
+        ]);
+        $latestRevisionUser = User::factory()->create(['name' => 'Mhs Versi Terbaru'])->assignRole('mahasiswa');
+        NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $latestRevisionUser->id,
+            'year_generation' => '2022',
+            'parent_submission_id' => $superseded->id,
+            'version' => 2,
+            'status' => 'revision',
+        ]);
+
+        $indexUrl = NuirSubmissionResource::getUrl('index', panel: 'nuir-manajer');
+
+        $this->actingAs($this->manajer)
+            ->get($indexUrl)
+            ->assertOk()
+            ->assertSee('Mhs Menunggu Delegasi')
+            ->assertSee('Mhs Sudah Didelegasikan')
+            ->assertSee('Mhs Diminta Revisi')
+            ->assertSee('Mhs Konten Disetujui')
+            ->assertSee('Mhs Versi Terbaru')
+            ->assertDontSee('Mhs Versi Lama');
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::listUrl(NuirSubmissionResource::DASHBOARD_VIEW_UNASSIGNED))
+            ->assertOk()
+            ->assertSee('Belum Didelegasikan')
+            ->assertSee('Kembali ke Dashboard')
+            ->assertSee('Mhs Menunggu Delegasi')
+            ->assertSee($this->submission->user->name)
+            ->assertDontSee('Mhs Sudah Didelegasikan');
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::listUrl(NuirSubmissionResource::DASHBOARD_VIEW_SUBMITTED))
+            ->assertOk()
+            ->assertSee('Menunggu Review')
+            ->assertSee('Kembali ke Dashboard')
+            ->assertSee('Mhs Menunggu Delegasi')
+            ->assertSee('Mhs Sudah Didelegasikan')
+            ->assertDontSee('Mhs Diminta Revisi')
+            ->assertDontSee('Mhs Konten Disetujui');
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::listUrl(NuirSubmissionResource::DASHBOARD_VIEW_REVISION))
+            ->assertOk()
+            ->assertSee('Diminta Revisi')
+            ->assertSee('Kembali ke Dashboard')
+            ->assertSee('Mhs Diminta Revisi')
+            ->assertSee('Mhs Versi Terbaru')
+            ->assertDontSee('Mhs Menunggu Delegasi')
+            ->assertDontSee('Mhs Versi Lama');
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::listUrl(NuirSubmissionResource::DASHBOARD_VIEW_CONTENT_OK))
+            ->assertOk()
+            ->assertSee('Konten Disetujui')
+            ->assertSee('Kembali ke Dashboard')
+            ->assertSee('Mhs Konten Disetujui')
+            ->assertDontSee('Mhs Menunggu Delegasi')
+            ->assertDontSee('Mhs Diminta Revisi');
     }
 }
