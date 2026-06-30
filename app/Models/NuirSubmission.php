@@ -17,6 +17,12 @@ class NuirSubmission extends Model
         'dbs_reviewed_at' => 'datetime',
     ];
 
+    public const REF_VALIDATION_NOT_STARTED = 'not_started';
+
+    public const REF_VALIDATION_IN_PROGRESS = 'in_progress';
+
+    public const REF_VALIDATION_COMPLETE = 'complete';
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -160,5 +166,67 @@ class NuirSubmission extends Model
         }
 
         return $this->isPartialNuiEditable() && in_array($field, $this->rejectedNuiFields(), true);
+    }
+
+    public function validatedReferenceCount(): int
+    {
+        if ($this->relationLoaded('references')) {
+            return $this->references->whereNotNull('ref_approved')->count();
+        }
+
+        return $this->references()->whereNotNull('ref_approved')->count();
+    }
+
+    public function totalReferenceCount(): int
+    {
+        if ($this->relationLoaded('references')) {
+            return $this->references->count();
+        }
+
+        return $this->references()->count();
+    }
+
+    public function referenceValidationStatus(): string
+    {
+        $total = $this->totalReferenceCount();
+
+        if ($total === 0) {
+            return self::REF_VALIDATION_NOT_STARTED;
+        }
+
+        $validated = $this->validatedReferenceCount();
+
+        if ($validated === 0) {
+            return self::REF_VALIDATION_NOT_STARTED;
+        }
+
+        if ($validated >= $total) {
+            return self::REF_VALIDATION_COMPLETE;
+        }
+
+        return self::REF_VALIDATION_IN_PROGRESS;
+    }
+
+    public function referenceValidationProgressLabel(): string
+    {
+        return $this->validatedReferenceCount().'/'.$this->totalReferenceCount();
+    }
+
+    public static function referenceValidationStatusLabel(string $status): string
+    {
+        return match ($status) {
+            self::REF_VALIDATION_COMPLETE => 'Selesai',
+            self::REF_VALIDATION_IN_PROGRESS => 'Berprogress',
+            default => 'Belum berprogress',
+        };
+    }
+
+    public static function referenceValidationStatusColor(string $status): string
+    {
+        return match ($status) {
+            self::REF_VALIDATION_COMPLETE => 'success',
+            self::REF_VALIDATION_IN_PROGRESS => 'warning',
+            default => 'gray',
+        };
     }
 }

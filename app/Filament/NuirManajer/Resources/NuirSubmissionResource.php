@@ -69,6 +69,19 @@ class NuirSubmissionResource extends Resource
                 Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
                 Tables\Columns\TextColumn::make('status')->label('Status')->badge(),
                 Tables\Columns\TextColumn::make('assignment.validator.name')->label('Validator')->placeholder('Belum ditugaskan'),
+                Tables\Columns\TextColumn::make('references_validated_count')
+                    ->label('Referensi Divalidasi')
+                    ->formatStateUsing(fn ($state, NuirSubmission $record): string => ($state ?? 0).'/'.($record->references_total_count ?? 0))
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('reference_validation_status')
+                    ->label('Progress Validasi')
+                    ->badge()
+                    ->state(fn (NuirSubmission $record): string => static::referenceValidationStatusFromCounts(
+                        (int) ($record->references_validated_count ?? 0),
+                        (int) ($record->references_total_count ?? 0),
+                    ))
+                    ->formatStateUsing(fn (string $state): string => NuirSubmission::referenceValidationStatusLabel($state))
+                    ->color(fn (string $state): string => NuirSubmission::referenceValidationStatusColor($state)),
                 Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->dateTime()->sortable(),
             ])
             ->filters([
@@ -82,6 +95,43 @@ class NuirSubmissionResource extends Resource
                         'content_ok' => 'Content OK',
                         'finalized' => 'Finalized',
                     ]),
+                Tables\Filters\SelectFilter::make('reference_validation_status')
+                    ->label('Progress Validasi')
+                    ->options([
+                        NuirSubmission::REF_VALIDATION_NOT_STARTED => 'Belum berprogress',
+                        NuirSubmission::REF_VALIDATION_IN_PROGRESS => 'Berprogress',
+                        NuirSubmission::REF_VALIDATION_COMPLETE => 'Selesai',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $value = $data['value'] ?? null;
+
+                        if (blank($value)) {
+                            return $query;
+                        }
+
+                        return match ($value) {
+                            NuirSubmission::REF_VALIDATION_NOT_STARTED => $query->whereDoesntHave(
+                                'references',
+                                fn (Builder $referenceQuery) => $referenceQuery->whereNotNull('ref_approved'),
+                            ),
+                            NuirSubmission::REF_VALIDATION_COMPLETE => $query
+                                ->whereHas('references')
+                                ->whereDoesntHave(
+                                    'references',
+                                    fn (Builder $referenceQuery) => $referenceQuery->whereNull('ref_approved'),
+                                ),
+                            NuirSubmission::REF_VALIDATION_IN_PROGRESS => $query
+                                ->whereHas(
+                                    'references',
+                                    fn (Builder $referenceQuery) => $referenceQuery->whereNotNull('ref_approved'),
+                                )
+                                ->whereHas(
+                                    'references',
+                                    fn (Builder $referenceQuery) => $referenceQuery->whereNull('ref_approved'),
+                                ),
+                            default => $query,
+                        };
+                    }),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -108,7 +158,24 @@ class NuirSubmissionResource extends Resource
     {
         return parent::getEloquentQuery()
             ->with(['user', 'references', 'assignment.validator'])
+            ->withCount([
+                'references as references_total_count',
+                'references as references_validated_count' => fn (Builder $query) => $query->whereNotNull('ref_approved'),
+            ])
             ->where('status', '!=', 'draft');
+    }
+
+    public static function referenceValidationStatusFromCounts(int $validated, int $total): string
+    {
+        if ($total === 0 || $validated === 0) {
+            return NuirSubmission::REF_VALIDATION_NOT_STARTED;
+        }
+
+        if ($validated >= $total) {
+            return NuirSubmission::REF_VALIDATION_COMPLETE;
+        }
+
+        return NuirSubmission::REF_VALIDATION_IN_PROGRESS;
     }
 
     public static function approvedReferenceCount(NuirSubmission $submission): int

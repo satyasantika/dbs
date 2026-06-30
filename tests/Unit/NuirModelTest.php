@@ -108,4 +108,30 @@ class NuirModelTest extends TestCase
         $this->expectException(\Illuminate\Database\QueryException::class);
         NuirReference::factory()->create(['nuir_submission_id' => $sub->id, 'ref_order' => 1]);
     }
+
+    public function test_nuir_submission_reference_validation_status(): void
+    {
+        $sub = NuirSubmission::factory()->create();
+
+        $this->assertSame(NuirSubmission::REF_VALIDATION_NOT_STARTED, $sub->referenceValidationStatus());
+
+        NuirReference::factory()->create(['nuir_submission_id' => $sub->id, 'ref_order' => 1, 'ref_approved' => null]);
+        NuirReference::factory()->create(['nuir_submission_id' => $sub->id, 'ref_order' => 2, 'ref_approved' => null]);
+        $sub->load('references');
+
+        $this->assertSame(NuirSubmission::REF_VALIDATION_NOT_STARTED, $sub->referenceValidationStatus());
+        $this->assertSame('0/2', $sub->referenceValidationProgressLabel());
+
+        NuirReference::where('nuir_submission_id', $sub->id)->where('ref_order', 1)->update(['ref_approved' => true]);
+        $sub->load('references');
+
+        $this->assertSame(NuirSubmission::REF_VALIDATION_IN_PROGRESS, $sub->referenceValidationStatus());
+        $this->assertSame('1/2', $sub->referenceValidationProgressLabel());
+
+        NuirReference::where('nuir_submission_id', $sub->id)->where('ref_order', 2)->update(['ref_approved' => false]);
+        $sub->load('references');
+
+        $this->assertSame(NuirSubmission::REF_VALIDATION_COMPLETE, $sub->referenceValidationStatus());
+        $this->assertSame('2/2', $sub->referenceValidationProgressLabel());
+    }
 }
