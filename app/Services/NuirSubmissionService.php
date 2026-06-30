@@ -343,16 +343,21 @@ class NuirSubmissionService
             }
         }
 
-        return $request->validate($rules);
+        $data = $request->validate($rules);
+        \App\Support\NuirTextLimits::assertNuiFields($data, $setting);
+
+        return $data;
     }
 
     private function syncReferences(NuirSubmission $submission, array $references): void
     {
+        $setting = NuirSetting::where('year_generation', $submission->year_generation)->first();
+        $maxReferences = $setting?->max_references ?? 10;
         $orders = [];
 
         foreach ($references as $order => $ref) {
             $order = (int) $order;
-            if ($order < 1 || $order > 10) {
+            if ($order < 1 || $order > $maxReferences) {
                 continue;
             }
 

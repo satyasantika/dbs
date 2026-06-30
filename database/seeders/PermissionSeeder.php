@@ -226,7 +226,8 @@ class PermissionSeeder extends Seeder
 
         Permission::firstOrCreate(['name' => 'active'])->syncRoles(['dbs', 'dosen', 'mahasiswa', 'kajur', 'manajer nuir', 'validator nuir']);
 
-        Permission::create(['name' => 'manage nuir settings'])->assignRole('dbs');
+        Permission::create(['name' => 'manage nuir settings'])->assignRole(['dbs', 'manajer nuir']);
+        Permission::create(['name' => 'manage nuir guide quota'])->assignRole('manajer nuir');
         Permission::create(['name' => 'access setting/nuir-settings'])->assignRole('dbs');
 
         $dbsNav = Navigation::where('order', 'C00')->first();

@@ -3,10 +3,10 @@
 namespace App\Filament\Dbs\Resources;
 
 use App\Filament\Concerns\AuthorizesDbsPanelAccess;
+use App\Filament\Concerns\NuirSettingFormSchema;
 use App\Filament\Dbs\Resources\NuirSettingResource\Pages;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -16,6 +16,7 @@ use Filament\Tables\Table;
 class NuirSettingResource extends Resource
 {
     use AuthorizesDbsPanelAccess;
+    use NuirSettingFormSchema;
 
     protected static ?string $model = NuirSetting::class;
 
@@ -36,44 +37,7 @@ class NuirSettingResource extends Resource
 
     public static function form(Form $form): Form
     {
-        return $form->schema([
-            Forms\Components\TextInput::make('year_generation')
-                ->label('Angkatan')
-                ->required()
-                ->unique(ignoreRecord: true),
-            Forms\Components\Select::make('stage')
-                ->label('Tahap')
-                ->options([
-                    1 => '1 - NUIR penuh',
-                    2 => '2 - Judul saja',
-                    3 => '3 - Tanpa NUIR',
-                ])
-                ->required()
-                ->native(false),
-            Forms\Components\Toggle::make('active')
-                ->label('Angkatan aktif'),
-            Forms\Components\DatePicker::make('deadline')
-                ->label('Deadline'),
-            Forms\Components\TextInput::make('min_references_approved')
-                ->label('Min referensi disetujui')
-                ->numeric()
-                ->minValue(1)
-                ->maxValue(20)
-                ->default(10)
-                ->required(),
-            Forms\Components\TextInput::make('max_chars_novelty')
-                ->label('Max karakter Novelty')
-                ->numeric()
-                ->minValue(100),
-            Forms\Components\TextInput::make('max_chars_urgency')
-                ->label('Max karakter Urgency')
-                ->numeric()
-                ->minValue(100),
-            Forms\Components\TextInput::make('max_chars_impact')
-                ->label('Max karakter Impact')
-                ->numeric()
-                ->minValue(100),
-        ])->columns(2);
+        return $form->schema(static::nuirSettingFormSchema())->columns(2);
     }
 
     public static function table(Table $table): Table
@@ -85,6 +49,7 @@ class NuirSettingResource extends Resource
                 Tables\Columns\IconColumn::make('active')->label('Aktif')->boolean(),
                 Tables\Columns\TextColumn::make('deadline')->label('Deadline')->date(),
                 Tables\Columns\TextColumn::make('min_references_approved')->label('Min Ref'),
+                Tables\Columns\TextColumn::make('max_references')->label('Max Ref'),
             ])
             ->filters([])
             ->actions([

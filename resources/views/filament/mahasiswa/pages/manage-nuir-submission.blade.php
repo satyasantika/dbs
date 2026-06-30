@@ -10,7 +10,9 @@
             'refNotes' => $this->getRefNotesForForm(),
             'indexers' => $this->getIndexerOptions(),
             'minReferences' => $this->getMinReferences(),
+            'maxReferences' => $this->getMaxReferences(),
             'maxWords' => $this->getNuiMaxWords(),
+            'wordLimits' => $this->getNuiWordLimits(),
             'charLimits' => $this->getNuiCharLimits(),
         ]))"
         x-init="initNuiFields()"

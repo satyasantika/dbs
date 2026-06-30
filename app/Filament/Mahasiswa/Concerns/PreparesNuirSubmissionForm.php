@@ -55,9 +55,36 @@ trait PreparesNuirSubmissionForm
         return $this->setting->min_references_approved ?? 10;
     }
 
+    public function getMaxReferences(): int
+    {
+        return $this->setting->max_references ?? 10;
+    }
+
     public function getNuiMaxWords(): int
     {
-        return 300;
+        return $this->setting->max_words_novelty
+            ?? $this->setting->max_words_urgency
+            ?? $this->setting->max_words_impact
+            ?? 300;
+    }
+
+    /** @return array<string, array{min: int|null, max: int|null}> */
+    public function getNuiWordLimits(): array
+    {
+        return [
+            'novelty' => [
+                'min' => $this->setting->min_words_novelty,
+                'max' => $this->setting->max_words_novelty,
+            ],
+            'urgency' => [
+                'min' => $this->setting->min_words_urgency,
+                'max' => $this->setting->max_words_urgency,
+            ],
+            'impact' => [
+                'min' => $this->setting->min_words_impact,
+                'max' => $this->setting->max_words_impact,
+            ],
+        ];
     }
 
     public function getNuiCharLimits(): array
