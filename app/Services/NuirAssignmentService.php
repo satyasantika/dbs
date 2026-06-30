@@ -69,6 +69,14 @@ class NuirAssignmentService
             abort(403, 'Submission masih draft.');
         }
 
+        if ($approved) {
+            \App\Support\NuirReferenceExistence::assertVerifiable($reference);
+        } elseif (blank($note)) {
+            throw ValidationException::withMessages([
+                'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
+            ]);
+        }
+
         app(NuirReviewService::class)->reviewReference($reference, $approved, $note);
     }
 

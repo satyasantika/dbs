@@ -41,4 +41,16 @@ class NuirReferenceFactory extends Factory
             'ref_note' => $note,
         ]);
     }
+
+    public function verifiable(): static
+    {
+        return $this->state(fn () => [
+            'link_ojs' => 'https://ojs.example.com/article/1',
+            'indexer_name' => 'Scopus',
+            'link_index' => 'https://www.scopus.com/record/1',
+            'link_drive' => 'https://drive.example.com/ref1',
+            'quote' => 'Kutipan referensi yang relevan.',
+            'relevance' => 'Relevansi dengan penelitian.',
+        ]);
+    }
 }

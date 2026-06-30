@@ -18,7 +18,7 @@ class NuirReviewService
     {
         if (! $approved && blank($note)) {
             throw ValidationException::withMessages([
-                'ref_note' => 'Catatan wajib diisi saat referensi ditolak.',
+                'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
             ]);
         }
 
