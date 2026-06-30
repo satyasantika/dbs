@@ -297,6 +297,5 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'delegate nuir validator'])->assignRole('manajer nuir');
         Permission::create(['name' => 'validate nuir references'])->assignRole('validator nuir');
         Permission::where('name', 'read nuir submission')->first()?->assignRole(['manajer nuir', 'validator nuir']);
-        Permission::where('name', 'review nuir submission')->first()?->assignRole('manajer nuir');
     }
 }

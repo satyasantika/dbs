@@ -7,15 +7,10 @@ use App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource\RelationManagers;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
-use App\Services\NuirReviewService;
-use Filament\Infolists;
-use Filament\Infolists\Infolist;
-use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Validation\ValidationException;
 
 class NuirSubmissionResource extends Resource
 {
@@ -36,28 +31,6 @@ class NuirSubmissionResource extends Resource
     protected static function nuirRoleAccessPermission(): string
     {
         return 'access dashboard manajer nuir';
-    }
-
-    public static function infolist(Infolist $infolist): Infolist
-    {
-        return $infolist->schema([
-            Infolists\Components\Section::make('Ringkasan')
-                ->schema([
-                    Infolists\Components\TextEntry::make('user.name')->label('Mahasiswa'),
-                    Infolists\Components\TextEntry::make('year_generation')->label('Angkatan'),
-                    Infolists\Components\TextEntry::make('version')->label('Versi'),
-                    Infolists\Components\TextEntry::make('status')->label('Status')->badge(),
-                    Infolists\Components\TextEntry::make('assignment.validator.name')->label('Validator'),
-                    Infolists\Components\TextEntry::make('dbs_note')->label('Catatan Revisi')->columnSpanFull(),
-                ])->columns(4),
-            Infolists\Components\Section::make('Konten')
-                ->schema([
-                    Infolists\Components\TextEntry::make('title')->label('Judul')->columnSpanFull(),
-                    Infolists\Components\TextEntry::make('novelty')->label('Novelty')->columnSpanFull(),
-                    Infolists\Components\TextEntry::make('urgency')->label('Urgency')->columnSpanFull(),
-                    Infolists\Components\TextEntry::make('impact')->label('Impact')->columnSpanFull(),
-                ]),
-        ]);
     }
 
     public static function table(Table $table): Table
@@ -188,17 +161,5 @@ class NuirSubmissionResource extends Resource
         $setting = NuirSetting::where('year_generation', $submission->year_generation)->first();
 
         return $setting?->min_references_approved ?? 10;
-    }
-
-    public static function reviewSubmission(NuirSubmission $submission, string $action, ?string $dbsNote = null): void
-    {
-        try {
-            app(NuirReviewService::class)->reviewSubmission($submission, $action, $dbsNote);
-            Notification::make()->success()->title('Review submission disimpan.')->send();
-        } catch (ValidationException $exception) {
-            $message = collect($exception->errors())->flatten()->first() ?? 'Validasi gagal.';
-            Notification::make()->warning()->title($message)->send();
-            throw $exception;
-        }
     }
 }
