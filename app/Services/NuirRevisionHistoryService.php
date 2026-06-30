@@ -108,6 +108,96 @@ class NuirRevisionHistoryService
             ->get();
     }
 
+    /**
+     * @return Collection<int, array{heading: string, recorded_at: \Illuminate\Support\Carbon|null, actor_name: string|null, actor_role: string, note: string|null, content: string|null, kind: string}>
+     */
+    public function contentFieldHistory(NuirSubmission $submission, string $field): Collection
+    {
+        $lineageIds = $this->versionLineageIds($submission);
+        $items = collect();
+
+        NuirSubmission::query()
+            ->with('user')
+            ->whereIn('id', $lineageIds)
+            ->where('id', '!=', $submission->id)
+            ->orderByDesc('version')
+            ->get()
+            ->each(function (NuirSubmission $ancestor) use ($items, $field): void {
+                $text = $ancestor->{$field};
+
+                if (blank($text)) {
+                    return;
+                }
+
+                $items->push([
+                    'heading' => 'Versi '.$ancestor->version.' · teks sebelumnya',
+                    'recorded_at' => $ancestor->dbs_reviewed_at ?? $ancestor->updated_at,
+                    'actor_name' => $ancestor->user?->name,
+                    'actor_role' => 'mahasiswa',
+                    'note' => $field === 'title' ? $ancestor->dbs_note : null,
+                    'content' => $text,
+                    'kind' => 'snapshot',
+                ]);
+            });
+
+        $eventQuery = NuirRevisionEvent::query()
+            ->with('actor')
+            ->whereIn('nuir_submission_id', $lineageIds);
+
+        if ($field === 'title') {
+            $eventQuery->where('event_type', NuirRevisionEvent::TYPE_DBS_REVISION);
+        } else {
+            $eventQuery->where(function ($query) use ($field): void {
+                $query->where(function ($inner) use ($field): void {
+                    $inner->where('event_type', NuirRevisionEvent::TYPE_NUI_REVISION)
+                        ->where('subject', $field);
+                })->orWhere('event_type', NuirRevisionEvent::TYPE_DBS_REVISION);
+            });
+        }
+
+        $eventQuery->orderByDesc('recorded_at')->get()->each(function (NuirRevisionEvent $event) use ($items): void {
+            $items->push([
+                'heading' => $event->event_type === NuirRevisionEvent::TYPE_DBS_REVISION
+                    ? 'Permintaan revisi · DBS'
+                    : 'Permintaan revisi · '.$event->actorRoleLabel(),
+                'recorded_at' => $event->recorded_at,
+                'actor_name' => $event->actor?->name,
+                'actor_role' => $event->actor_role,
+                'note' => $event->note,
+                'content' => null,
+                'kind' => 'revision_request',
+            ]);
+        });
+
+        return $items
+            ->sortByDesc(fn (array $item) => $item['recorded_at']?->timestamp ?? 0)
+            ->values();
+    }
+
+    /**
+     * @return Collection<int, array{heading: string, recorded_at: \Illuminate\Support\Carbon|null, actor_name: string|null, actor_role: string, note: string|null, content: string|null, kind: string}>
+     */
+    public function referenceRevisionHistory(NuirSubmission $submission, int $refOrder): Collection
+    {
+        return NuirRevisionEvent::query()
+            ->with('actor')
+            ->whereIn('nuir_submission_id', $this->versionLineageIds($submission))
+            ->where('event_type', NuirRevisionEvent::TYPE_REFERENCE_REVISION)
+            ->where('ref_order', $refOrder)
+            ->orderByDesc('recorded_at')
+            ->get()
+            ->map(fn (NuirRevisionEvent $event): array => [
+                'heading' => 'Permintaan revisi · '.$event->actorRoleLabel(),
+                'recorded_at' => $event->recorded_at,
+                'actor_name' => $event->actor?->name,
+                'actor_role' => $event->actor_role,
+                'note' => $event->note,
+                'content' => null,
+                'kind' => 'revision_request',
+            ])
+            ->values();
+    }
+
     private function record(
         NuirSubmission $submission,
         User $actor,

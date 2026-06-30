@@ -65,4 +65,15 @@ class NuirRevisionEvent extends Model
             default => $this->subject,
         };
     }
+
+    public function actorRoleLabel(): string
+    {
+        return match ($this->actor_role) {
+            self::ROLE_VALIDATOR => 'Validator',
+            self::ROLE_GUIDE1 => 'Pembimbing 1',
+            self::ROLE_GUIDE2 => 'Pembimbing 2',
+            self::ROLE_DBS => 'DBS',
+            default => ucfirst((string) $this->actor_role),
+        };
+    }
 }

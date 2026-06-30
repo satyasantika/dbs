@@ -38,6 +38,11 @@ class NuirSubmission extends Model
         return $this->belongsTo(NuirSubmission::class, 'parent_submission_id');
     }
 
+    public function childSubmissions(): HasMany
+    {
+        return $this->hasMany(NuirSubmission::class, 'parent_submission_id');
+    }
+
     public function references(): HasMany
     {
         return $this->hasMany(NuirReference::class);

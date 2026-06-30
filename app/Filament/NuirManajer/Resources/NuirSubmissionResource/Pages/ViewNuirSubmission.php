@@ -28,8 +28,15 @@ class ViewNuirSubmission extends ViewRecord
                 ->schema($this->manajerSubmissionRingkasanSchema($this->validatorManagementAction()))
                 ->columns(4),
             Infolists\Components\Section::make('Konten')
-                ->description('Teks yang dikirim mahasiswa beserta jumlah kata per elemen.')
+                ->description('Menampilkan teks terakhir setelah revisi. Histori per elemen dibuka lewat tautan di bawah masing-masing bagian.')
                 ->schema($this->manajerSubmissionKontenSchema()),
+            Infolists\Components\Section::make('Referensi')
+                ->description('Menampilkan referensi terakhir. Histori revisi per referensi dibuka lewat tautan di masing-masing kartu.')
+                ->schema([
+                    Infolists\Components\ViewEntry::make('references_panel')
+                        ->view('filament.nuir-manajer.infolists.references-panel')
+                        ->viewData(fn (NuirSubmission $record): array => self::referencesPanelViewData($record)),
+                ]),
         ]);
     }
 
