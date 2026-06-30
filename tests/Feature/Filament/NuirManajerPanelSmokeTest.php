@@ -70,9 +70,9 @@ class NuirManajerPanelSmokeTest extends TestCase
         $this->actingAs($this->manajer)
             ->get(ManajerSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-manajer'))
             ->assertOk()
-            ->assertSee('Delegasikan Validator')
-            ->assertSee('Setujui Konten')
-            ->assertSee('Minta Revisi');
+            ->assertSee('Delegasikan')
+            ->assertDontSee('Setujui Konten')
+            ->assertDontSee('Minta Revisi');
     }
 
     public function test_manajer_tidak_melihat_submission_draft(): void

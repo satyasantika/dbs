@@ -2,79 +2,35 @@
 
 namespace App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
 
+use App\Filament\NuirManajer\Concerns\BuildsManajerNuirSubmissionInfolist;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource;
 use App\Models\NuirSubmission;
+use App\Models\User;
 use App\Services\NuirAssignmentService;
-use Filament\Actions;
 use Filament\Forms;
+use Filament\Infolists;
+use Filament\Infolists\Components\Actions\Action;
+use Filament\Infolists\Infolist;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Validation\ValidationException;
 
 class ViewNuirSubmission extends ViewRecord
 {
+    use BuildsManajerNuirSubmissionInfolist;
+
     protected static string $resource = NuirSubmissionResource::class;
 
-    protected function getHeaderActions(): array
+    public function infolist(Infolist $infolist): Infolist
     {
-        /** @var NuirSubmission $submission */
-        $submission = $this->record;
-        $approved = NuirSubmissionResource::approvedReferenceCount($submission);
-        $minimum = NuirSubmissionResource::minimumApprovedReferences($submission);
-        $assignmentService = app(NuirAssignmentService::class);
-
-        return [
-            Actions\Action::make('assignValidator')
-                ->label('Delegasikan Validator')
-                ->icon('heroicon-o-user-plus')
-                ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false)
-                ->form([
-                    Forms\Components\Select::make('validator_id')
-                        ->label('Validator NUIR')
-                        ->options(fn () => $assignmentService->validators()->pluck('name', 'id'))
-                        ->required()
-                        ->searchable(),
-                ])
-                ->action(function (array $data) use ($assignmentService, $submission): void {
-                    try {
-                        $validator = \App\Models\User::findOrFail($data['validator_id']);
-                        $assignmentService->assignValidator($submission, $validator, auth()->user());
-                        Notification::make()->success()->title('Validator berhasil ditugaskan.')->send();
-                        $this->refreshFormData(['assignment']);
-                    } catch (ValidationException $exception) {
-                        Notification::make()->danger()->title(collect($exception->errors())->flatten()->first())->send();
-                    }
-                }),
-            Actions\Action::make('approveContent')
-                ->label('Setujui Konten')
-                ->color('success')
-                ->visible(fn (): bool => auth()->user()?->can('review nuir submission') ?? false)
-                ->disabled($approved < $minimum)
-                ->tooltip($approved < $minimum
-                    ? "Minimal {$minimum} referensi disetujui (saat ini {$approved})."
-                    : null)
-                ->form([
-                    Forms\Components\Textarea::make('dbs_note')
-                        ->label('Catatan'),
-                ])
-                ->action(function (array $data): void {
-                    NuirSubmissionResource::reviewSubmission($this->record, 'content_ok', $data['dbs_note'] ?? null);
-                    $this->refreshFormData(['status', 'dbs_note', 'dbs_reviewer_id', 'dbs_reviewed_at']);
-                }),
-            Actions\Action::make('requestRevision')
-                ->label('Minta Revisi')
-                ->color('warning')
-                ->visible(fn (): bool => auth()->user()?->can('review nuir submission') ?? false)
-                ->form([
-                    Forms\Components\Textarea::make('dbs_note')
-                        ->label('Catatan revisi')
-                        ->required(),
-                ])
-                ->action(function (array $data): void {
-                    NuirSubmissionResource::reviewSubmission($this->record, 'revision', $data['dbs_note']);
-                    $this->refreshFormData(['status', 'dbs_note', 'dbs_reviewer_id', 'dbs_reviewed_at']);
-                }),
-        ];
+        return $infolist->schema([
+            Infolists\Components\Section::make('Ringkasan')
+                ->schema($this->manajerSubmissionRingkasanSchema($this->validatorManagementAction()))
+                ->columns(4),
+            Infolists\Components\Section::make('Konten')
+                ->description('Teks yang dikirim mahasiswa beserta jumlah kata per elemen.')
+                ->schema($this->manajerSubmissionKontenSchema()),
+        ]);
     }
 
     public function getSubheading(): ?string
@@ -87,5 +43,44 @@ class ViewNuirSubmission extends ViewRecord
 
         return "{$submission->referenceValidationProgressLabel()} referensi divalidasi validator ({$validationLabel}). "
             ."{$approved} disetujui — standar minimum: {$minimum}.";
+    }
+
+    private function validatorManagementAction(): Action
+    {
+        $assignmentService = app(NuirAssignmentService::class);
+
+        return Action::make('manageValidator')
+            ->label(fn (NuirSubmission $record): string => $record->assignment?->validator_id ? 'Ubah' : 'Delegasikan')
+            ->icon(fn (NuirSubmission $record): string => $record->assignment?->validator_id
+                ? 'heroicon-o-arrow-path'
+                : 'heroicon-o-user-plus')
+            ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false)
+            ->form([
+                Forms\Components\Select::make('validator_id')
+                    ->label('Validator NUIR')
+                    ->options(fn () => $assignmentService->validators()->pluck('name', 'id'))
+                    ->default(fn (NuirSubmission $record): ?int => $record->assignment?->validator_id)
+                    ->required()
+                    ->searchable(),
+            ])
+            ->action(function (array $data, NuirSubmission $record) use ($assignmentService): void {
+                try {
+                    $changing = $record->assignment?->validator_id !== null;
+                    $validator = User::findOrFail($data['validator_id']);
+                    $assignmentService->assignValidator($record, $validator, auth()->user());
+
+                    Notification::make()
+                        ->success()
+                        ->title($changing ? 'Validator berhasil diubah.' : 'Validator berhasil ditugaskan.')
+                        ->send();
+
+                    $this->refreshFormData(['assignment']);
+                } catch (ValidationException $exception) {
+                    Notification::make()
+                        ->danger()
+                        ->title(collect($exception->errors())->flatten()->first())
+                        ->send();
+                }
+            });
     }
 }

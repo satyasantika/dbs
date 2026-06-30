@@ -133,16 +133,83 @@ class NuirManajerRoleTest extends TestCase
             ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
                 'record' => $this->submission->getRouteKey(),
             ])
-            ->callAction('assignValidator', data: [
+            ->callInfolistAction('assignment.validator.name', 'manageValidator', data: [
                 'validator_id' => $this->validator->id,
             ])
-            ->assertHasNoActionErrors();
+            ->assertHasNoInfolistActionErrors();
 
         $this->assertDatabaseHas('nuir_assignments', [
             'nuir_submission_id' => $this->submission->id,
             'validator_id' => $this->validator->id,
             'assigned_by' => $this->manajer->id,
         ]);
+    }
+
+    public function test_manajer_dapat_mengubah_validator_yang_sudah_ditugaskan(): void
+    {
+        $validatorBaru = User::factory()->create()->assignRole('validator nuir');
+
+        NuirAssignment::create([
+            'nuir_submission_id' => $this->submission->id,
+            'validator_id' => $this->validator->id,
+            'assigned_by' => $this->manajer->id,
+            'assigned_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->assertSee('Ubah')
+            ->callInfolistAction('assignment.validator.name', 'manageValidator', data: [
+                'validator_id' => $validatorBaru->id,
+            ])
+            ->assertHasNoInfolistActionErrors();
+
+        $this->assertDatabaseHas('nuir_assignments', [
+            'nuir_submission_id' => $this->submission->id,
+            'validator_id' => $validatorBaru->id,
+        ]);
+    }
+
+    public function test_manajer_tidak_dapat_menyetujui_atau_minta_revisi_konten(): void
+    {
+        $this->assertFalse($this->manajer->can('review nuir submission'));
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertDontSee('Setujui Konten')
+            ->assertDontSee('Minta Revisi');
+    }
+
+    public function test_detail_submission_menampilkan_jumlah_kata_konten(): void
+    {
+        $this->submission->update([
+            'title' => 'Judul penelitian simulasi',
+            'novelty' => str_repeat('novelty ', 80),
+            'urgency' => str_repeat('urgency ', 70),
+            'impact' => str_repeat('impact ', 60),
+        ]);
+
+        $this->setting->update([
+            'min_words_novelty' => 50,
+            'max_words_novelty' => 300,
+            'min_words_urgency' => 50,
+            'max_words_urgency' => 300,
+            'min_words_impact' => 50,
+            'max_words_impact' => 300,
+        ]);
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertSee('Judul')
+            ->assertSee('Novelty')
+            ->assertSee('Urgency')
+            ->assertSee('Impact')
+            ->assertSee('kata dikirim')
+            ->assertSee('batas 50–300 kata');
     }
 
     public function test_batas_kata_manajer_diterapkan_saat_mahasiswa_simpan_nuir(): void
