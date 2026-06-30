@@ -9,6 +9,7 @@ use App\Models\GuideAllocation;
 use App\Models\GuideExaminer;
 use App\Models\NuirAssignment;
 use App\Models\NuirReference;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -201,6 +202,17 @@ class NuirManajerRoleTest extends TestCase
             'max_words_impact' => 300,
         ]);
 
+        NuirRevisionEvent::create([
+            'nuir_submission_id' => $this->submission->id,
+            'submission_version' => 1,
+            'actor_id' => $this->dosen->id,
+            'actor_role' => NuirRevisionEvent::ROLE_GUIDE1,
+            'event_type' => NuirRevisionEvent::TYPE_NUI_REVISION,
+            'subject' => 'novelty',
+            'note' => 'Perjelas kebaruan penelitian.',
+            'recorded_at' => now()->subDay(),
+        ]);
+
         $this->actingAs($this->manajer)
             ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-manajer'))
             ->assertOk()
@@ -209,7 +221,9 @@ class NuirManajerRoleTest extends TestCase
             ->assertSee('Urgency')
             ->assertSee('Impact')
             ->assertSee('kata dikirim')
-            ->assertSee('batas 50–300 kata');
+            ->assertSee('batas 50–300 kata')
+            ->assertSee('Lihat histori revisi')
+            ->assertSee('Referensi');
     }
 
     public function test_batas_kata_manajer_diterapkan_saat_mahasiswa_simpan_nuir(): void

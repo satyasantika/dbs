@@ -4,6 +4,7 @@ namespace App\Filament\NuirManajer\Concerns;
 
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
+use App\Services\NuirRevisionHistoryService;
 use App\Support\NuirTextLimits;
 use Filament\Infolists;
 use Filament\Infolists\Components\Actions\Action;
@@ -107,6 +108,28 @@ trait BuildsManajerNuirSubmissionInfolist
             'content' => filled($content) ? $content : '—',
             'wordMeta' => self::wordCountDescription($record, $field),
             'isEmpty' => blank($content),
+            'revisionHistory' => app(NuirRevisionHistoryService::class)
+                ->contentFieldHistory($record, $field)
+                ->all(),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function referencesPanelViewData(NuirSubmission $record): array
+    {
+        $historyService = app(NuirRevisionHistoryService::class);
+
+        return [
+            'references' => $record->references()->orderBy('ref_order')->get(),
+            'histories' => $record->references()
+                ->orderBy('ref_order')
+                ->pluck('ref_order')
+                ->mapWithKeys(fn (int $refOrder) => [
+                    $refOrder => $historyService->referenceRevisionHistory($record, $refOrder)->all(),
+                ])
+                ->all(),
         ];
     }
 

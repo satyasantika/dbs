@@ -92,4 +92,8 @@
     ])>
         {{ $content }}
     </div>
+
+    @include('filament.nuir-manajer.infolists.partials.revision-accordion', [
+        'history' => $revisionHistory ?? [],
+    ])
 </div>

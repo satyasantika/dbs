@@ -4,7 +4,6 @@ namespace App\Filament\NuirManajer\Resources;
 
 use App\Filament\Concerns\AuthorizesNuirRolePanelAccess;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
-use App\Filament\NuirManajer\Resources\NuirSubmissionResource\RelationManagers;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use Filament\Resources\Resource;
@@ -114,9 +113,7 @@ class NuirSubmissionResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            RelationManagers\ReferencesRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getPages(): array
@@ -135,7 +132,8 @@ class NuirSubmissionResource extends Resource
                 'references as references_total_count',
                 'references as references_validated_count' => fn (Builder $query) => $query->whereNotNull('ref_approved'),
             ])
-            ->where('status', '!=', 'draft');
+            ->where('status', '!=', 'draft')
+            ->whereDoesntHave('childSubmissions', fn (Builder $query) => $query->where('status', '!=', 'draft'));
     }
 
     public static function referenceValidationStatusFromCounts(int $validated, int $total): string

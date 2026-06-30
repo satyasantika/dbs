@@ -44,7 +44,10 @@ class NuirSeederTest extends TestCase
         $revisionChild = NuirSubmission::whereNotNull('parent_submission_id')->first();
         $this->assertNotNull($revisionChild);
         $this->assertSame(2, $revisionChild->version);
-        $this->assertSame('draft', $revisionChild->status);
+        $this->assertSame(
+            NuirSimulationAccountSeeder::SIMULATION_YEAR === $year ? 'submitted' : 'draft',
+            $revisionChild->status,
+        );
         $this->assertSame('revision', $revisionChild->parentSubmission?->status);
 
         $finalized = NuirSubmission::where('status', 'finalized')->first();

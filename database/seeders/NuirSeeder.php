@@ -303,11 +303,11 @@ class NuirSeeder extends Seeder
             'year_generation' => $this->year,
             'parent_submission_id' => $versionOne->id,
             'version' => 2,
-            'title' => 'Revisi v2 — '.$student->name,
-            'novelty' => 'Novelty versi 2 hasil perbaikan mahasiswa.',
-            'urgency' => 'Urgency versi 2 hasil perbaikan mahasiswa.',
-            'impact' => 'Impact versi 2 hasil perbaikan mahasiswa.',
-            'status' => 'draft',
+            'title' => 'Monitoring Kualitas Udara IoT-ML — Revisi v2 '.$student->name,
+            'novelty' => 'Novelty versi 2 hasil perbaikan mahasiswa setelah masukan DBS dan pembimbing.'.str_repeat(' Kebaruan diperkuat.', 25),
+            'urgency' => 'Urgency versi 2 hasil perbaikan mahasiswa dengan penekanan kondisi kesehatan masyarakat.'.str_repeat(' Urgensi dipertegas.', 25),
+            'impact' => 'Impact versi 2 hasil perbaikan mahasiswa mencakup manfaat kebijakan publik.'.str_repeat(' Dampak diperjelas.', 25),
+            'status' => $this->simulationMode ? 'submitted' : 'draft',
         ]);
 
         $this->seedReferences($versionTwo, total: self::MIN_REFS, approved: 0, rejected: 0);
@@ -487,6 +487,7 @@ class NuirSeeder extends Seeder
         $this->seedSimulationGuideAllocations();
         $this->seedSimulationContentReviews();
         $this->seedSimulationRevisionHistory();
+        $this->seedManajerRevisionDemo();
         $this->syncSimulationQuotaFilled();
     }
 
@@ -696,6 +697,137 @@ class NuirSeeder extends Seeder
                     );
                 }
             }
+        }
+    }
+
+    private function seedManajerRevisionDemo(): void
+    {
+        if (! $this->validator || ! $this->pembimbing1 || ! $this->pembimbing2 || ! $this->dbs) {
+            return;
+        }
+
+        $submission = $this->latestSubmissionFor('mahasiswa2', 'submitted');
+
+        if ($submission) {
+            $submission->update([
+                'title' => 'Integrasi IoT dan Machine Learning untuk Monitoring Kualitas Udara Perkotaan (Revisi Terakhir)',
+                'novelty' => 'Penelitian ini menawarkan kebaruan integrasi sensor IoT dengan deep learning untuk prediksi PM2.5 real-time di Indonesia.'
+                    .str_repeat(' Kebaruan diperkuat setelah revisi pembimbing.', 35),
+                'urgency' => 'Kualitas udara perkotaan memburuk dan masyarakat rentan membutuhkan peringatan dini.'
+                    .str_repeat(' Urgensi dipertegas pasca revisi.', 30),
+                'impact' => 'Dampak meliputi pengurangan paparan polusi dan rekomendasi kebijakan tata ruang hijau.'
+                    .str_repeat(' Dampak sosial diperjelas.', 30),
+            ]);
+
+            foreach ([
+                ['field' => 'novelty', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Perjelas gap penelitian sebelumnya dan state-of-the-art.'],
+                ['field' => 'urgency', 'actor' => $this->pembimbing2, 'role' => NuirRevisionEvent::ROLE_GUIDE2, 'note' => 'Tambahkan data epidemiologi lokal untuk memperkuat urgensi.'],
+                ['field' => 'impact', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Uraikan manfaat praktis bagi pemangku kebijakan daerah.'],
+            ] as $revision) {
+                NuirRevisionEvent::updateOrCreate(
+                    [
+                        'nuir_submission_id' => $submission->id,
+                        'event_type' => NuirRevisionEvent::TYPE_NUI_REVISION,
+                        'subject' => $revision['field'],
+                        'actor_id' => $revision['actor']->id,
+                    ],
+                    [
+                        'submission_version' => $submission->version ?? 1,
+                        'actor_role' => $revision['role'],
+                        'note' => $revision['note'],
+                        'recorded_at' => now()->subDays(4),
+                    ],
+                );
+            }
+
+            NuirRevisionEvent::updateOrCreate(
+                [
+                    'nuir_submission_id' => $submission->id,
+                    'event_type' => NuirRevisionEvent::TYPE_DBS_REVISION,
+                    'subject' => 'submission',
+                    'actor_id' => $this->dbs->id,
+                ],
+                [
+                    'submission_version' => $submission->version ?? 1,
+                    'actor_role' => NuirRevisionEvent::ROLE_DBS,
+                    'note' => 'Sesuaikan judul agar lebih spesifik dan konsisten dengan isi Novelty.',
+                    'recorded_at' => now()->subDays(5),
+                ],
+            );
+
+            $submission->references()->whereIn('ref_order', [6, 7, 8])->each(function (NuirReference $reference): void {
+                if ($reference->ref_order === 8) {
+                    NuirRevisionEvent::updateOrCreate(
+                        [
+                            'nuir_submission_id' => $reference->nuir_submission_id,
+                            'event_type' => NuirRevisionEvent::TYPE_REFERENCE_REVISION,
+                            'subject' => '8',
+                            'ref_order' => 8,
+                            'actor_id' => $this->validator->id,
+                        ],
+                        [
+                            'submission_version' => 1,
+                            'actor_role' => NuirRevisionEvent::ROLE_VALIDATOR,
+                            'note' => 'Kutipan belum menunjukkan relevansi langsung dengan variabel penelitian.',
+                            'recorded_at' => now()->subDay(),
+                        ],
+                    );
+
+                    return;
+                }
+
+                $reference->update([
+                    'quote' => 'Kutipan referensi #'.$reference->ref_order.' setelah diperbaiki mahasiswa (versi terakhir).',
+                    'ref_approved' => null,
+                    'ref_note' => null,
+                ]);
+            });
+        }
+
+        $versionTwo = NuirSubmission::query()
+            ->where('year_generation', $this->year)
+            ->where('version', 2)
+            ->whereHas('user', fn ($query) => $query->where('username', 'mahasiswa4'))
+            ->first();
+
+        if ($versionTwo) {
+            foreach ([
+                ['field' => 'novelty', 'actor' => $this->pembimbing2, 'role' => NuirRevisionEvent::ROLE_GUIDE2],
+                ['field' => 'urgency', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1],
+            ] as $revision) {
+                NuirRevisionEvent::updateOrCreate(
+                    [
+                        'nuir_submission_id' => $versionTwo->id,
+                        'event_type' => NuirRevisionEvent::TYPE_NUI_REVISION,
+                        'subject' => $revision['field'],
+                        'actor_id' => $revision['actor']->id,
+                    ],
+                    [
+                        'submission_version' => 2,
+                        'actor_role' => $revision['role'],
+                        'note' => 'Perbaiki '.ucfirst($revision['field']).' pada versi 2 sesuai masukan simulasi.',
+                        'recorded_at' => now()->subDays(2),
+                    ],
+                );
+            }
+
+            $versionTwo->references()->where('ref_order', '<=', 3)->each(function (NuirReference $reference): void {
+                NuirRevisionEvent::updateOrCreate(
+                    [
+                        'nuir_submission_id' => $reference->nuir_submission_id,
+                        'event_type' => NuirRevisionEvent::TYPE_REFERENCE_REVISION,
+                        'subject' => (string) $reference->ref_order,
+                        'ref_order' => $reference->ref_order,
+                        'actor_id' => $this->validator->id,
+                    ],
+                    [
+                        'submission_version' => 2,
+                        'actor_role' => NuirRevisionEvent::ROLE_VALIDATOR,
+                        'note' => 'Referensi #'.$reference->ref_order.' perlu verifikasi link index pada versi 2.',
+                        'recorded_at' => now()->subDays(3),
+                    ],
+                );
+            });
         }
     }
 
