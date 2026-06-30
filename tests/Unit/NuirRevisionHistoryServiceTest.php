@@ -59,6 +59,9 @@ class NuirRevisionHistoryServiceTest extends TestCase
         $this->assertTrue($noveltyHistory->contains(fn (array $item) => $item['note'] === 'Perjelas novelty.'));
         $this->assertSame('info', $noveltyHistory->firstWhere('kind', 'snapshot')['tone'] ?? null);
         $this->assertSame(2, $service->contentFieldRevisionRound($v2, 'novelty'));
+        $this->assertTrue($service->contentFieldHasRevisionHistory($v2, 'novelty'));
+        $this->assertTrue($service->contentFieldHasRevisionHistory($v2, 'title'));
+        $this->assertFalse($service->contentFieldHasRevisionHistory($v1, 'novelty'));
     }
 
     public function test_history_item_tone_berbeda_per_peran(): void

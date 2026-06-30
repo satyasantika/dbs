@@ -110,6 +110,7 @@ trait BuildsManajerNuirSubmissionInfolist
             'wordMeta' => self::wordCountDescription($record, $field),
             'isEmpty' => blank($content),
             'revisionRound' => $historyService->contentFieldRevisionRound($record, $field),
+            'showRevisionBadge' => $historyService->contentFieldHasRevisionHistory($record, $field),
             'revisionHistory' => $historyService->contentFieldHistory($record, $field)->all(),
         ];
     }
@@ -134,6 +135,12 @@ trait BuildsManajerNuirSubmissionInfolist
                 ->pluck('ref_order')
                 ->mapWithKeys(fn (int $refOrder) => [
                     $refOrder => $historyService->referenceRevisionRound($record, $refOrder),
+                ])
+                ->all(),
+            'showRevisionBadges' => $references
+                ->pluck('ref_order')
+                ->mapWithKeys(fn (int $refOrder) => [
+                    $refOrder => $historyService->referenceHasRevisionHistory($record, $refOrder),
                 ])
                 ->all(),
         ];

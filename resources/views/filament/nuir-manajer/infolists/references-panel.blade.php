@@ -1,6 +1,7 @@
 @php
     $histories = $histories ?? [];
     $revisionRounds = $revisionRounds ?? [];
+    $showRevisionBadges = $showRevisionBadges ?? [];
 @endphp
 
 <div class="space-y-3">
@@ -8,6 +9,7 @@
         @php
             $history = $histories[$reference->ref_order] ?? [];
             $revisionRound = $revisionRounds[$reference->ref_order] ?? 1;
+            $showRevisionBadge = $showRevisionBadges[$reference->ref_order] ?? false;
             $statusLabel = match ($reference->ref_approved) {
                 true => 'Disetujui',
                 false => 'Ditolak',
@@ -27,7 +29,9 @@
                         <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             Referensi #{{ $reference->ref_order }}
                         </span>
-                        <x-filament::badge color="info">Revisi ke-{{ $revisionRound }}</x-filament::badge>
+                        @if ($showRevisionBadge)
+                            <x-filament::badge color="info">Revisi ke-{{ $revisionRound }}</x-filament::badge>
+                        @endif
                         <x-filament::badge :color="$statusColor">{{ $statusLabel }}</x-filament::badge>
                     </div>
                     @if ($reference->indexer_name)
