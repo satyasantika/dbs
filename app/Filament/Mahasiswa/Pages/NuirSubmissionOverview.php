@@ -33,6 +33,8 @@ class NuirSubmissionOverview extends Page
 
     public Collection $versions;
 
+    public Collection $revisionHistory;
+
     public bool $closed = false;
 
     public bool $stage3 = false;
@@ -43,6 +45,7 @@ class NuirSubmissionOverview extends Page
         $this->setting = $data['setting'];
         $this->submission = $data['submission'];
         $this->versions = $data['versions'];
+        $this->revisionHistory = $data['revisionHistory'];
         $this->closed = $data['closed'];
         $this->stage3 = $data['stage3'];
     }

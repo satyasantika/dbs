@@ -4,22 +4,35 @@ namespace App\Services;
 
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
+use App\Services\NuirRevisionHistoryService;
 use Illuminate\Validation\ValidationException;
 
 class NuirReviewService
 {
-    public function __construct(private NuirService $nuirService)
-    {
+    public function __construct(
+        private NuirService $nuirService,
+        private NuirRevisionHistoryService $revisionHistory,
+    ) {
     }
 
-    public function reviewReference(NuirReference $reference, bool $approved, ?string $note = null): void
+    public function reviewReference(NuirReference $reference, bool $approved, ?string $note = null, bool $recordHistory = true): void
     {
         if (! $approved && blank($note)) {
             throw ValidationException::withMessages([
                 'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
             ]);
+        }
+
+        if (! $approved && $recordHistory && auth()->user()) {
+            $this->revisionHistory->logReferenceRevision(
+                $reference,
+                auth()->user(),
+                NuirRevisionEvent::ROLE_DBS,
+                $note,
+            );
         }
 
         $reference->update([
@@ -46,6 +59,10 @@ class NuirReviewService
                     'action' => "Minimal {$min} referensi harus disetujui sebelum konten disetujui.",
                 ]);
             }
+        }
+
+        if ($action === 'revision' && auth()->user()) {
+            $this->revisionHistory->logDbsRevision($submission, auth()->user(), $dbsNote);
         }
 
         $submission->update([

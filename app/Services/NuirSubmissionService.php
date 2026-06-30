@@ -12,8 +12,10 @@ use Illuminate\Validation\ValidationException;
 
 class NuirSubmissionService
 {
-    public function __construct(private NuirService $nuirService)
-    {
+    public function __construct(
+        private NuirService $nuirService,
+        private NuirRevisionHistoryService $revisionHistory,
+    ) {
     }
 
     public function getIndexData(User $user): array
@@ -25,6 +27,7 @@ class NuirSubmissionService
                 'setting' => $setting,
                 'submission' => null,
                 'versions' => collect(),
+                'revisionHistory' => collect(),
                 'closed' => true,
                 'stage3' => false,
             ];
@@ -35,15 +38,21 @@ class NuirSubmissionService
                 'setting' => $setting,
                 'submission' => null,
                 'versions' => collect(),
+                'revisionHistory' => collect(),
                 'closed' => false,
                 'stage3' => true,
             ];
         }
 
+        $submission = $this->nuirService->activeSubmission($user);
+
         return [
             'setting' => $setting,
-            'submission' => $this->nuirService->activeSubmission($user),
+            'submission' => $submission,
             'versions' => $this->versionChain($user),
+            'revisionHistory' => $submission
+                ? $this->revisionHistory->historyForLineage($submission)
+                : collect(),
             'closed' => false,
             'stage3' => false,
         ];
