@@ -2,9 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Models\GuideAllocation;
 use App\Models\GuideExaminer;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -98,6 +101,48 @@ class NuirSeederTest extends TestCase
             NuirProposal::where('guide1_id', $pembimbing1?->id)
                 ->orWhere('guide2_id', $pembimbing1?->id)
                 ->exists()
+        );
+
+        $yearInt = (int) $year;
+        $this->assertGreaterThanOrEqual(
+            5,
+            GuideAllocation::where('year', $yearInt)->where('active', true)->count(),
+            'Simulasi harus menyiapkan kuota pembimbing angkatan 2099.',
+        );
+
+        $this->assertTrue(
+            GuideAllocation::where('user_id', User::where('username', 'penguji3')->value('id'))
+                ->where('year', $yearInt)
+                ->where('guide1_quota', 0)
+                ->where('guide2_quota', '>', 0)
+                ->exists(),
+            'penguji3 harus hanya punya kuota P2 untuk uji filter posisi.',
+        );
+
+        $this->assertGreaterThan(
+            0,
+            NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_REFERENCE_REVISION)->count(),
+        );
+        $this->assertGreaterThan(
+            0,
+            NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_DBS_REVISION)->count(),
+        );
+        $this->assertGreaterThan(
+            0,
+            NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_PROPOSAL_REJECTION)->count(),
+        );
+
+        $mahasiswa6 = User::where('username', 'mahasiswa6')->first();
+        $partialSubmission = NuirSubmission::where('user_id', $mahasiswa6?->id)
+            ->where('status', 'content_ok')
+            ->first();
+        $this->assertNotNull($partialSubmission);
+        $this->assertSame(
+            3,
+            NuirContentReview::where('nuir_submission_id', $partialSubmission->id)
+                ->where('user_id', $pembimbing1?->id)
+                ->where('approved', true)
+                ->count(),
         );
     }
 }

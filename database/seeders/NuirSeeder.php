@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\GuideAllocation;
 use App\Models\GuideExaminer;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -103,6 +106,7 @@ class NuirSeeder extends Seeder
 
         if ($this->simulationMode) {
             $this->seedValidatorAssignments();
+            $this->seedSimulationEnrichment();
         }
 
         $this->command?->info(sprintf(
@@ -476,5 +480,238 @@ class NuirSeeder extends Seeder
                     ],
                 );
             });
+    }
+
+    private function seedSimulationEnrichment(): void
+    {
+        $this->seedSimulationGuideAllocations();
+        $this->seedSimulationContentReviews();
+        $this->seedSimulationRevisionHistory();
+        $this->syncSimulationQuotaFilled();
+    }
+
+    private function seedSimulationGuideAllocations(): void
+    {
+        $year = (int) $this->year;
+
+        $quotas = [
+            'pembimbing1' => ['guide1_quota' => 10, 'guide2_quota' => 10],
+            'pembimbing2' => ['guide1_quota' => 10, 'guide2_quota' => 10],
+            'penguji1' => ['guide1_quota' => 5, 'guide2_quota' => 5],
+            'penguji2' => ['guide1_quota' => 5, 'guide2_quota' => 5],
+            'penguji3' => ['guide1_quota' => 0, 'guide2_quota' => 5],
+        ];
+
+        foreach ($quotas as $username => $values) {
+            $user = User::where('username', $username)->first();
+
+            if (! $user) {
+                continue;
+            }
+
+            GuideAllocation::updateOrCreate(
+                ['user_id' => $user->id, 'year' => $year],
+                [
+                    'guide1_quota' => $values['guide1_quota'],
+                    'guide2_quota' => $values['guide2_quota'],
+                    'guide1_filled' => 0,
+                    'guide2_filled' => 0,
+                    'active' => true,
+                ],
+            );
+        }
+    }
+
+    private function syncSimulationQuotaFilled(): void
+    {
+        $year = (int) $this->year;
+
+        GuideAllocation::query()
+            ->where('year', $year)
+            ->whereIn('user_id', $this->lecturers->pluck('id'))
+            ->update(['guide1_filled' => 0, 'guide2_filled' => 0]);
+
+        NuirProposal::query()
+            ->with('submission')
+            ->whereHas('submission', fn ($query) => $query->where('year_generation', $this->year))
+            ->get()
+            ->each(function (NuirProposal $proposal) use ($year): void {
+                if (in_array($proposal->guide1_status, ['pending', 'accepted'], true)) {
+                    GuideAllocation::query()
+                        ->where('user_id', $proposal->guide1_id)
+                        ->where('year', $year)
+                        ->increment('guide1_filled');
+                }
+
+                if (in_array($proposal->guide2_status, ['pending', 'accepted'], true)) {
+                    GuideAllocation::query()
+                        ->where('user_id', $proposal->guide2_id)
+                        ->where('year', $year)
+                        ->increment('guide2_filled');
+                }
+            });
+    }
+
+    private function seedSimulationContentReviews(): void
+    {
+        if (! $this->pembimbing1 || ! $this->pembimbing2) {
+            return;
+        }
+
+        $partialSubmission = $this->latestSubmissionFor('mahasiswa6', 'content_ok');
+        if ($partialSubmission) {
+            foreach (NuirContentReview::FIELDS as $field) {
+                NuirContentReview::updateOrCreate(
+                    [
+                        'nuir_submission_id' => $partialSubmission->id,
+                        'user_id' => $this->pembimbing1->id,
+                        'field' => $field,
+                    ],
+                    [
+                        'role' => NuirContentReview::ROLE_GUIDE1,
+                        'approved' => true,
+                        'note' => null,
+                        'reviewed_at' => now()->subDay(),
+                    ],
+                );
+            }
+
+            NuirContentReview::updateOrCreate(
+                [
+                    'nuir_submission_id' => $partialSubmission->id,
+                    'user_id' => $this->pembimbing2->id,
+                    'field' => NuirContentReview::FIELD_NOVELTY,
+                ],
+                [
+                    'role' => NuirContentReview::ROLE_GUIDE2,
+                    'approved' => true,
+                    'note' => null,
+                    'reviewed_at' => now()->subHours(12),
+                ],
+            );
+        }
+
+        $finalizedSubmission = $this->latestSubmissionFor('mahasiswa8', 'finalized');
+        if ($finalizedSubmission) {
+            foreach ([
+                [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1],
+                [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2],
+            ] as [$guide, $role]) {
+                foreach (NuirContentReview::FIELDS as $field) {
+                    NuirContentReview::updateOrCreate(
+                        [
+                            'nuir_submission_id' => $finalizedSubmission->id,
+                            'user_id' => $guide->id,
+                            'field' => $field,
+                        ],
+                        [
+                            'role' => $role,
+                            'approved' => true,
+                            'note' => null,
+                            'reviewed_at' => now()->subDays(3),
+                        ],
+                    );
+                }
+            }
+        }
+    }
+
+    private function seedSimulationRevisionHistory(): void
+    {
+        $submitted = $this->latestSubmissionFor('mahasiswa2', 'submitted');
+        if ($submitted && $this->validator) {
+            $submitted->references()
+                ->where('ref_approved', false)
+                ->each(function (NuirReference $reference) use ($submitted): void {
+                    NuirRevisionEvent::updateOrCreate(
+                        [
+                            'nuir_submission_id' => $reference->nuir_submission_id,
+                            'event_type' => NuirRevisionEvent::TYPE_REFERENCE_REVISION,
+                            'subject' => (string) $reference->ref_order,
+                            'ref_order' => $reference->ref_order,
+                            'actor_id' => $this->validator->id,
+                        ],
+                        [
+                            'submission_version' => $submitted->version ?? 1,
+                            'actor_role' => NuirRevisionEvent::ROLE_VALIDATOR,
+                            'note' => $reference->ref_note ?? 'Referensi perlu diperbaiki (simulasi seeder).',
+                            'recorded_at' => now()->subDays(2),
+                        ],
+                    );
+                });
+        }
+
+        $revisionParent = NuirSubmission::query()
+            ->where('year_generation', $this->year)
+            ->where('status', 'revision')
+            ->whereHas('user', fn ($query) => $query->where('username', 'mahasiswa4'))
+            ->first();
+
+        if ($revisionParent && $this->dbs) {
+            NuirRevisionEvent::updateOrCreate(
+                [
+                    'nuir_submission_id' => $revisionParent->id,
+                    'event_type' => NuirRevisionEvent::TYPE_DBS_REVISION,
+                    'subject' => 'submission',
+                    'actor_id' => $this->dbs->id,
+                ],
+                [
+                    'submission_version' => $revisionParent->version ?? 1,
+                    'actor_role' => NuirRevisionEvent::ROLE_DBS,
+                    'note' => $revisionParent->dbs_note ?? 'Perbaiki referensi SINTA dan perjelas urgensi penelitian.',
+                    'recorded_at' => $revisionParent->dbs_reviewed_at ?? now()->subDays(3),
+                ],
+            );
+        }
+
+        $retriedSubmission = $this->latestSubmissionFor('mahasiswa7', 'content_ok');
+        if ($retriedSubmission) {
+            $rejectedProposal = NuirProposal::query()
+                ->where('nuir_submission_id', $retriedSubmission->id)
+                ->where('guide1_status', 'rejected')
+                ->where('guide2_status', 'rejected')
+                ->first();
+
+            if ($rejectedProposal) {
+                foreach ([
+                    [1, $rejectedProposal->guide1_id, $rejectedProposal->guide1_note],
+                    [2, $rejectedProposal->guide2_id, $rejectedProposal->guide2_note],
+                ] as [$guideOrder, $actorId, $note]) {
+                    NuirRevisionEvent::updateOrCreate(
+                        [
+                            'nuir_submission_id' => $retriedSubmission->id,
+                            'event_type' => NuirRevisionEvent::TYPE_PROPOSAL_REJECTION,
+                            'subject' => 'guide'.$guideOrder,
+                            'nuir_proposal_id' => $rejectedProposal->id,
+                            'actor_id' => $actorId,
+                        ],
+                        [
+                            'submission_version' => $retriedSubmission->version ?? 1,
+                            'actor_role' => $guideOrder === 1
+                                ? NuirRevisionEvent::ROLE_GUIDE1
+                                : NuirRevisionEvent::ROLE_GUIDE2,
+                            'note' => $note ?? 'Usulan ditolak (simulasi seeder).',
+                            'recorded_at' => $rejectedProposal->guide2_responded_at ?? now()->subDays(4),
+                        ],
+                    );
+                }
+            }
+        }
+    }
+
+    private function latestSubmissionFor(string $username, string $status): ?NuirSubmission
+    {
+        $user = User::where('username', $username)->first();
+
+        if (! $user) {
+            return null;
+        }
+
+        return NuirSubmission::query()
+            ->where('user_id', $user->id)
+            ->where('year_generation', $this->year)
+            ->where('status', $status)
+            ->latest('id')
+            ->first();
     }
 }

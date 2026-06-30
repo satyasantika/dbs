@@ -44,6 +44,7 @@ class NuirSimulationAccountSeeder extends Seeder
         $this->seedAccount('validator1', 'Validator NUIR Simulasi', 'validator1@simulasi.test', 'validator nuir');
 
         $this->command?->info('NuirSimulationAccountSeeder: akun simulasi NUIR siap (password: '.self::PASSWORD.').');
+        $this->command?->info('Angkatan simulasi: '.self::SIMULATION_YEAR.' — lihat docs/nuir-simulasi.md untuk panduan per role.');
     }
 
     private function seedAccount(
