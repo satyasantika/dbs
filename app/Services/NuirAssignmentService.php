@@ -7,6 +7,7 @@ use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirReferenceReview;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Support\NuirGuideSeatSync;
@@ -14,8 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class NuirAssignmentService
 {
-    public function __construct(private NuirGuideSeatSync $guideSeatSync)
-    {
+    public function __construct(
+        private NuirGuideSeatSync $guideSeatSync,
+        private NuirRevisionHistoryService $revisionHistory,
+    ) {
     }
 
     public function assignValidator(NuirSubmission $submission, User $validator, User $manajer): NuirAssignment
@@ -71,13 +74,22 @@ class NuirAssignmentService
 
         if ($approved) {
             \App\Support\NuirReferenceExistence::assertVerifiable($reference);
-        } elseif (blank($note)) {
-            throw ValidationException::withMessages([
-                'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
-            ]);
+        } else {
+            if (blank($note)) {
+                throw ValidationException::withMessages([
+                    'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
+                ]);
+            }
+
+            $this->revisionHistory->logReferenceRevision(
+                $reference,
+                $validator,
+                NuirRevisionEvent::ROLE_VALIDATOR,
+                $note,
+            );
         }
 
-        app(NuirReviewService::class)->reviewReference($reference, $approved, $note);
+        app(NuirReviewService::class)->reviewReference($reference, $approved, $note, recordHistory: false);
     }
 
     public function reviewReferenceAsGuide(
@@ -170,6 +182,10 @@ class NuirAssignmentService
                 'reviewed_at' => now(),
             ],
         );
+
+        if (! $approved) {
+            $this->revisionHistory->logNuiRevision($submission, $guide, $role, $field, $note);
+        }
 
         $this->guideSeatSync->syncGuideSeat($proposal, $guide);
     }

@@ -162,6 +162,27 @@
                             </ul>
                         </div>
                     @endif
+
+                    @if ($this->revisionHistory->isNotEmpty())
+                        <div>
+                            <h6 class="mb-2 font-semibold">Histori Revisi</h6>
+                            <ul class="divide-y rounded-lg border text-sm">
+                                @foreach ($this->revisionHistory as $event)
+                                    <li class="px-3 py-2">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <x-filament::badge color="gray">v{{ $event->submission_version }}</x-filament::badge>
+                                            <span class="font-medium">{{ $event->subjectLabel() }}</span>
+                                            <span class="text-xs text-gray-500">{{ $event->recorded_at?->format('d-m-Y H:i') }}</span>
+                                        </div>
+                                        <p class="mt-1 text-gray-700">{{ $event->note }}</p>
+                                        @if ($event->actor)
+                                            <p class="text-xs text-gray-500">Oleh: {{ $event->actor->name }} ({{ $event->actor_role }})</p>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                 </div>
             @endif
         </x-filament::section>

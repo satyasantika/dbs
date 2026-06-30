@@ -8,6 +8,7 @@ use App\Models\NuirReference;
 use App\Models\NuirSubmission;
 use App\Services\NuirAssignmentService;
 use App\Services\NuirProposalService;
+use App\Services\NuirRevisionHistoryService;
 use App\Services\NuirService;
 use Illuminate\Http\Request;
 
@@ -17,6 +18,7 @@ class NuirProposalController extends Controller
         private NuirService $nuirService,
         private NuirAssignmentService $assignmentService,
         private NuirProposalService $proposalService,
+        private NuirRevisionHistoryService $revisionHistory,
     ) {
     }
 
@@ -47,6 +49,8 @@ class NuirProposalController extends Controller
             'canRespond' => $this->canReview($nuirProposal),
             'canAcceptProposal' => $this->assignmentService->guideCanAcceptProposal($nuirProposal, $user),
             'canReviewReferences' => $this->canReview($nuirProposal),
+            'revisionHistory' => app(NuirRevisionHistoryService::class)->historyForLineage($nuirProposal->submission),
+            'rejectionHistory' => app(NuirRevisionHistoryService::class)->rejectionHistoryForSubmission($nuirProposal->submission),
         ]);
     }
 
@@ -84,6 +88,7 @@ class NuirProposalController extends Controller
                 'guide1_note' => $data['note'],
                 'guide1_responded_at' => now(),
             ]);
+            $this->revisionHistory->logProposalRejection($nuirProposal->fresh(), auth()->user(), 1, $data['note']);
             $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 1);
         } else {
             $nuirProposal->update([
@@ -91,6 +96,7 @@ class NuirProposalController extends Controller
                 'guide2_note' => $data['note'],
                 'guide2_responded_at' => now(),
             ]);
+            $this->revisionHistory->logProposalRejection($nuirProposal->fresh(), auth()->user(), 2, $data['note']);
             $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 2);
         }
 

@@ -52,6 +52,11 @@ class NuirSubmission extends Model
         return $this->hasMany(NuirContentReview::class);
     }
 
+    public function revisionEvents(): HasMany
+    {
+        return $this->hasMany(NuirRevisionEvent::class);
+    }
+
     public function isTitleSlot(): bool
     {
         return $this->status === 'title_slot';

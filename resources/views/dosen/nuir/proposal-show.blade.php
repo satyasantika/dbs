@@ -147,6 +147,58 @@
                 </form>
             @endif
 
+            @if ($revisionHistory->isNotEmpty())
+                <h6 class="mt-4">Histori Revisi NUIR</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Versi</th>
+                            <th>Elemen</th>
+                            <th>Catatan</th>
+                            <th>Oleh</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($revisionHistory as $event)
+                            <tr>
+                                <td>v{{ $event->submission_version }}</td>
+                                <td>{{ $event->subjectLabel() }}</td>
+                                <td>{{ $event->note }}</td>
+                                <td>{{ $event->actor?->name ?? '-' }} ({{ $event->actor_role }})</td>
+                                <td>{{ $event->recorded_at?->format('d-m-Y H:i') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
+            @if ($rejectionHistory->isNotEmpty())
+                <h6 class="mt-4">Histori Penolakan Usulan</h6>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Versi</th>
+                            <th>Posisi</th>
+                            <th>Catatan</th>
+                            <th>Oleh</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($rejectionHistory as $event)
+                            <tr>
+                                <td>v{{ $event->submission_version }}</td>
+                                <td>{{ strtoupper($event->subject) }}</td>
+                                <td>{{ $event->note }}</td>
+                                <td>{{ $event->actor?->name ?? '-' }}</td>
+                                <td>{{ $event->recorded_at?->format('d-m-Y H:i') }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+
             <a href="{{ route('nuir.dosen.index') }}" class="btn btn-outline-secondary btn-sm">Kembali</a>
         </div>
     </div>
