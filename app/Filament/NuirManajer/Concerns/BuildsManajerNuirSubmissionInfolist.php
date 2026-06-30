@@ -102,15 +102,15 @@ trait BuildsManajerNuirSubmissionInfolist
         };
 
         $content = $record->{$field} ?? '';
+        $historyService = app(NuirRevisionHistoryService::class);
 
         return [
             ...$config,
             'content' => filled($content) ? $content : '—',
             'wordMeta' => self::wordCountDescription($record, $field),
             'isEmpty' => blank($content),
-            'revisionHistory' => app(NuirRevisionHistoryService::class)
-                ->contentFieldHistory($record, $field)
-                ->all(),
+            'revisionRound' => $historyService->contentFieldRevisionRound($record, $field),
+            'revisionHistory' => $historyService->contentFieldHistory($record, $field)->all(),
         ];
     }
 
@@ -120,14 +120,20 @@ trait BuildsManajerNuirSubmissionInfolist
     public static function referencesPanelViewData(NuirSubmission $record): array
     {
         $historyService = app(NuirRevisionHistoryService::class);
+        $references = $record->references()->orderBy('ref_order')->get();
 
         return [
-            'references' => $record->references()->orderBy('ref_order')->get(),
-            'histories' => $record->references()
-                ->orderBy('ref_order')
+            'references' => $references,
+            'histories' => $references
                 ->pluck('ref_order')
                 ->mapWithKeys(fn (int $refOrder) => [
                     $refOrder => $historyService->referenceRevisionHistory($record, $refOrder)->all(),
+                ])
+                ->all(),
+            'revisionRounds' => $references
+                ->pluck('ref_order')
+                ->mapWithKeys(fn (int $refOrder) => [
+                    $refOrder => $historyService->referenceRevisionRound($record, $refOrder),
                 ])
                 ->all(),
         ];
