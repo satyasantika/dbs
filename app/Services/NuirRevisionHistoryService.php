@@ -129,7 +129,7 @@ class NuirRevisionHistoryService
                     return;
                 }
 
-                $items->push([
+                $items->push($this->enrichHistoryItem([
                     'heading' => 'Versi '.$ancestor->version.' · teks sebelumnya',
                     'recorded_at' => $ancestor->dbs_reviewed_at ?? $ancestor->updated_at,
                     'actor_name' => $ancestor->user?->name,
@@ -137,7 +137,8 @@ class NuirRevisionHistoryService
                     'note' => $field === 'title' ? $ancestor->dbs_note : null,
                     'content' => $text,
                     'kind' => 'snapshot',
-                ]);
+                    'submission_version' => $ancestor->version,
+                ]));
             });
 
         $eventQuery = NuirRevisionEvent::query()
@@ -156,7 +157,7 @@ class NuirRevisionHistoryService
         }
 
         $eventQuery->orderByDesc('recorded_at')->get()->each(function (NuirRevisionEvent $event) use ($items): void {
-            $items->push([
+            $items->push($this->enrichHistoryItem([
                 'heading' => $event->event_type === NuirRevisionEvent::TYPE_DBS_REVISION
                     ? 'Permintaan revisi · DBS'
                     : 'Permintaan revisi · '.$event->actorRoleLabel(),
@@ -166,7 +167,8 @@ class NuirRevisionHistoryService
                 'note' => $event->note,
                 'content' => null,
                 'kind' => 'revision_request',
-            ]);
+                'submission_version' => $event->submission_version,
+            ]));
         });
 
         return $items
@@ -174,8 +176,17 @@ class NuirRevisionHistoryService
             ->values();
     }
 
+    public function contentFieldRevisionRound(NuirSubmission $submission, string $field): int
+    {
+        $requests = $this->contentFieldHistory($submission, $field)
+            ->where('kind', 'revision_request')
+            ->count();
+
+        return max(1, max((int) $submission->version, 1 + $requests));
+    }
+
     /**
-     * @return Collection<int, array{heading: string, recorded_at: \Illuminate\Support\Carbon|null, actor_name: string|null, actor_role: string, note: string|null, content: string|null, kind: string}>
+     * @return Collection<int, array{heading: string, recorded_at: \Illuminate\Support\Carbon|null, actor_name: string|null, actor_role: string, note: string|null, content: string|null, kind: string, tone: string, submission_version: int|null}>
      */
     public function referenceRevisionHistory(NuirSubmission $submission, int $refOrder): Collection
     {
@@ -186,7 +197,7 @@ class NuirRevisionHistoryService
             ->where('ref_order', $refOrder)
             ->orderByDesc('recorded_at')
             ->get()
-            ->map(fn (NuirRevisionEvent $event): array => [
+            ->map(fn (NuirRevisionEvent $event): array => $this->enrichHistoryItem([
                 'heading' => 'Permintaan revisi · '.$event->actorRoleLabel(),
                 'recorded_at' => $event->recorded_at,
                 'actor_name' => $event->actor?->name,
@@ -194,8 +205,44 @@ class NuirRevisionHistoryService
                 'note' => $event->note,
                 'content' => null,
                 'kind' => 'revision_request',
-            ])
+                'submission_version' => $event->submission_version,
+            ]))
             ->values();
+    }
+
+    public function referenceRevisionRound(NuirSubmission $submission, int $refOrder): int
+    {
+        return max(1, 1 + $this->referenceRevisionHistory($submission, $refOrder)->count());
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return array<string, mixed>
+     */
+    private function enrichHistoryItem(array $item): array
+    {
+        $item['tone'] = $this->historyTone(
+            (string) ($item['kind'] ?? 'revision_request'),
+            (string) ($item['actor_role'] ?? ''),
+        );
+
+        return $item;
+    }
+
+    private function historyTone(string $kind, string $actorRole): string
+    {
+        if ($kind === 'snapshot') {
+            return 'info';
+        }
+
+        return match ($actorRole) {
+            NuirRevisionEvent::ROLE_DBS => 'primary',
+            NuirRevisionEvent::ROLE_VALIDATOR => 'warning',
+            NuirRevisionEvent::ROLE_GUIDE1 => 'success',
+            NuirRevisionEvent::ROLE_GUIDE2 => 'danger',
+            'mahasiswa' => 'gray',
+            default => 'gray',
+        };
     }
 
     private function record(

@@ -57,5 +57,31 @@ class NuirRevisionHistoryServiceTest extends TestCase
         $noveltyHistory = $service->contentFieldHistory($v2, 'novelty');
         $this->assertTrue($noveltyHistory->contains(fn (array $item) => $item['content'] === 'Novelty versi 1'));
         $this->assertTrue($noveltyHistory->contains(fn (array $item) => $item['note'] === 'Perjelas novelty.'));
+        $this->assertSame('info', $noveltyHistory->firstWhere('kind', 'snapshot')['tone'] ?? null);
+        $this->assertSame(2, $service->contentFieldRevisionRound($v2, 'novelty'));
+    }
+
+    public function test_history_item_tone_berbeda_per_peran(): void
+    {
+        $this->seed(PermissionSeeder::class);
+
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create();
+        $validator = User::factory()->create()->assignRole('validator nuir');
+
+        NuirRevisionEvent::create([
+            'nuir_submission_id' => $submission->id,
+            'submission_version' => 1,
+            'actor_id' => $validator->id,
+            'actor_role' => NuirRevisionEvent::ROLE_VALIDATOR,
+            'event_type' => NuirRevisionEvent::TYPE_REFERENCE_REVISION,
+            'subject' => '1',
+            'ref_order' => 1,
+            'note' => 'Link tidak valid.',
+            'recorded_at' => now(),
+        ]);
+
+        $history = app(NuirRevisionHistoryService::class)->referenceRevisionHistory($submission, 1);
+
+        $this->assertSame('warning', $history->first()['tone']);
     }
 }

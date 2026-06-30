@@ -223,6 +223,7 @@ class NuirManajerRoleTest extends TestCase
             ->assertSee('kata dikirim')
             ->assertSee('batas 50–300 kata')
             ->assertSee('Lihat histori revisi')
+            ->assertSee('Revisi ke-2')
             ->assertSee('Referensi');
     }
 

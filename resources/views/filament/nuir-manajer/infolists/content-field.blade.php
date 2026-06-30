@@ -72,6 +72,9 @@
                     ])>
                         {{ $label }}
                     </h3>
+                    <x-filament::badge :color="$accent">
+                        Revisi ke-{{ $revisionRound ?? 1 }}
+                    </x-filament::badge>
                 </div>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $hint }}</p>
             </div>
