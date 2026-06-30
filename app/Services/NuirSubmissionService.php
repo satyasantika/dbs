@@ -8,6 +8,7 @@ use App\Models\NuirSubmission;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class NuirSubmissionService
 {
@@ -77,6 +78,9 @@ class NuirSubmissionService
             'stage' => $setting->stage,
             'rejectedRefs' => [],
             'revisionParent' => null,
+            'referencesOnly' => false,
+            'partialNuiOnly' => false,
+            'rejectedNuiFields' => [],
             'titleSlotOnly' => $setting->stage === 1,
         ];
     }
@@ -85,17 +89,26 @@ class NuirSubmissionService
     {
         $this->authorizeSubmission($submission, referencesEditable: true);
 
-        if (! $submission->isEditable() && ! $submission->isReferencesEditable()) {
+        $canEditContent = $submission->isEditable() || $submission->isPartialNuiEditable();
+
+        if (! $canEditContent && ! $submission->isReferencesEditable()) {
             abort(403);
         }
 
+        $rejectedRefs = $submission->references()
+            ->where('ref_approved', false)
+            ->pluck('ref_note', 'ref_order')
+            ->all();
+
         return [
             'setting' => $this->requireStageOneSetting($user),
-            'submission' => $submission->load('references'),
+            'submission' => $submission->load(['references', 'contentReviews']),
             'stage' => 1,
-            'rejectedRefs' => [],
+            'rejectedRefs' => $rejectedRefs,
             'revisionParent' => null,
-            'referencesOnly' => ! $submission->isEditable() && $submission->isReferencesEditable(),
+            'referencesOnly' => ! $canEditContent && $submission->isReferencesEditable(),
+            'partialNuiOnly' => $submission->isPartialNuiEditable(),
+            'rejectedNuiFields' => $submission->rejectedNuiFields(),
             'titleSlotOnly' => false,
         ];
     }
@@ -114,6 +127,9 @@ class NuirSubmissionService
             'stage' => 1,
             'rejectedRefs' => $rejectedRefs,
             'revisionParent' => $submission,
+            'referencesOnly' => false,
+            'partialNuiOnly' => false,
+            'rejectedNuiFields' => [],
             'titleSlotOnly' => false,
         ];
     }
@@ -185,7 +201,9 @@ class NuirSubmissionService
     {
         $this->authorizeSubmission($submission, referencesEditable: true);
 
-        if (! $submission->isEditable() && ! $submission->isReferencesEditable()) {
+        $canEditContent = $submission->isEditable() || $submission->isPartialNuiEditable();
+
+        if (! $canEditContent && ! $submission->isReferencesEditable()) {
             abort(403);
         }
 
@@ -213,12 +231,17 @@ class NuirSubmissionService
                     'impact' => $data['impact'],
                 ]);
             }
+        } elseif ($submission->isPartialNuiEditable()) {
+            $this->updateRejectedNuiFields($request, $submission, $setting);
         }
 
-        $this->syncReferences($submission, $request->input('references', []));
+        if ($submission->isReferencesEditable()) {
+            $this->syncReferences($submission, $request->input('references', []));
+        }
 
         $message = match (true) {
             $wasTitleSlot => 'NUIR berhasil disimpan. Lanjutkan untuk mengajukan.',
+            $submission->isPartialNuiEditable() => 'Elemen NUIR yang diminta revisi berhasil diperbarui.',
             $submission->isEditable() => 'Draft NUIR berhasil diperbarui.',
             default => 'Referensi berhasil diperbarui.',
         };
@@ -239,9 +262,11 @@ class NuirSubmissionService
             return to_route('nuir.proposal.create');
         }
 
+        \App\Support\NuirRevisionGate::assertRevisionComplete($submission->fresh());
+
         $submission->update(['status' => 'submitted']);
 
-        return to_route('nuir.submission.index')->with('success', 'NUIR berhasil diajukan ke DBS.');
+        return to_route('nuir.submission.index')->with('success', 'NUIR berhasil diajukan. NUI ditujukan ke calon pembimbing, referensi ke validator.');
     }
 
     public function storeRevision(Request $request, NuirSubmission $parent, User $user): RedirectResponse
@@ -408,6 +433,60 @@ class NuirSubmissionService
                     ->orWhere('ref_approved', false);
             })
             ->delete();
+    }
+
+    private function updateRejectedNuiFields(Request $request, NuirSubmission $submission, NuirSetting $setting): void
+    {
+        $fields = $submission->rejectedNuiFields();
+
+        if ($fields === []) {
+            abort(403);
+        }
+
+        $rules = [];
+        foreach ($fields as $field) {
+            $rules[$field] = ['required', 'string'];
+            $limitField = match ($field) {
+                'novelty' => 'max_chars_novelty',
+                'urgency' => 'max_chars_urgency',
+                'impact' => 'max_chars_impact',
+                default => null,
+            };
+
+            if ($limitField && $setting->{$limitField}) {
+                $rules[$field][] = 'max:'.$setting->{$limitField};
+            }
+        }
+
+        $data = $request->validate($rules);
+
+        $errors = [];
+        foreach ($fields as $field) {
+            $message = \App\Support\NuirTextLimits::validateNuiField($data[$field], $setting, $field);
+
+            if ($message !== null) {
+                $errors[$field] = $message;
+            }
+        }
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages($errors);
+        }
+
+        $updates = [];
+        foreach ($fields as $field) {
+            if (($data[$field] ?? '') !== ($submission->{$field} ?? '')) {
+                $updates[$field] = $data[$field];
+            }
+        }
+
+        if ($updates !== []) {
+            $submission->update($updates);
+        }
+
+        foreach ($fields as $field) {
+            \App\Support\NuirRevisionGate::clearRejectedContentReviews($submission, $field);
+        }
     }
 
     private function referenceFilled(array $ref): bool

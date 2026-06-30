@@ -15,7 +15,7 @@
                 <input type="hidden" name="guide1_id" value="{{ $this->lockedSeats['guide1']['id'] }}">
                 <p class="text-sm text-gray-600">
                     <strong>Pembimbing 1 (terkunci):</strong>
-                    {{ $this->lecturers->firstWhere('id', $this->lockedSeats['guide1']['id'])?->name ?? 'Dosen #' . $this->lockedSeats['guide1']['id'] }}
+                    {{ $this->lecturersP1->firstWhere('id', $this->lockedSeats['guide1']['id'])?->name ?? 'Dosen #' . $this->lockedSeats['guide1']['id'] }}
                 </p>
             @endif
 
@@ -23,7 +23,7 @@
                 <input type="hidden" name="guide2_id" value="{{ $this->lockedSeats['guide2']['id'] }}">
                 <p class="text-sm text-gray-600">
                     <strong>Pembimbing 2 (terkunci):</strong>
-                    {{ $this->lecturers->firstWhere('id', $this->lockedSeats['guide2']['id'])?->name ?? 'Dosen #' . $this->lockedSeats['guide2']['id'] }}
+                    {{ $this->lecturersP2->firstWhere('id', $this->lockedSeats['guide2']['id'])?->name ?? 'Dosen #' . $this->lockedSeats['guide2']['id'] }}
                 </p>
             @endif
 
@@ -37,7 +37,7 @@
                     required
                 >
                     <option value="">-- Pilih Dosen --</option>
-                    @foreach ($this->lecturers as $lecturer)
+                    @foreach ($this->lecturersP1 as $lecturer)
                         <option value="{{ $lecturer->id }}" @selected(old('guide1_id') == $lecturer->id)>{{ $lecturer->name }}</option>
                     @endforeach
                 </select>
@@ -57,7 +57,7 @@
                     required
                 >
                     <option value="">-- Pilih Dosen --</option>
-                    @foreach ($this->lecturers as $lecturer)
+                    @foreach ($this->lecturersP2 as $lecturer)
                         <option value="{{ $lecturer->id }}" @selected(old('guide2_id') == $lecturer->id)>{{ $lecturer->name }}</option>
                     @endforeach
                 </select>
