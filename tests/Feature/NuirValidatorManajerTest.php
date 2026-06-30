@@ -116,7 +116,7 @@ class NuirValidatorManajerTest extends TestCase
             'assigned_at' => now(),
         ]);
 
-        $ref = NuirReference::factory()->create([
+        $ref = NuirReference::factory()->verifiable()->create([
             'nuir_submission_id' => $this->submission->id,
             'ref_order' => 1,
         ]);
