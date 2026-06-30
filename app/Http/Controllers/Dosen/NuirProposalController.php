@@ -44,9 +44,9 @@ class NuirProposalController extends Controller
 
         return view('dosen.nuir.proposal-show', [
             'proposal' => $nuirProposal,
-            'canRespond' => $this->canRespond($nuirProposal),
+            'canRespond' => $this->canReview($nuirProposal),
             'canAcceptProposal' => $this->assignmentService->guideCanAcceptProposal($nuirProposal, $user),
-            'canReviewReferences' => $this->canRespond($nuirProposal),
+            'canReviewReferences' => $this->canReview($nuirProposal),
         ]);
     }
 
@@ -55,33 +55,26 @@ class NuirProposalController extends Controller
         $this->authorizeProposal($nuirProposal);
         $this->ensureCanRespond($nuirProposal);
 
-        if (! $this->assignmentService->guideCanAcceptProposal($nuirProposal, auth()->user())) {
-            return back()->with('warning', 'Persetujuan pembimbing hanya dapat diberikan setelah NUIR disetujui final (content_ok).');
+        if (! $nuirProposal->submission->isContentFinalForPembimbing()) {
+            return back()->with('warning', 'Review NUI hanya dapat diselesaikan setelah NUIR disetujui final (content_ok).');
         }
 
-        if (auth()->id() === $nuirProposal->guide1_id) {
-            $nuirProposal->update([
-                'guide1_status' => 'accepted',
-                'guide1_responded_at' => now(),
-            ]);
-        } else {
-            $nuirProposal->update([
-                'guide2_status' => 'accepted',
-                'guide2_responded_at' => now(),
-            ]);
+        if (! $this->assignmentService->guideHasApprovedAllNuiFields($nuirProposal, auth()->user())) {
+            return back()->with('warning', 'Setujui seluruh elemen NUI (Novelty, Urgency, Impact) terlebih dahulu.');
         }
 
-        if ($nuirProposal->fresh()->isBothAccepted()) {
-            $this->nuirService->finalizeProposal($nuirProposal->fresh());
-        }
+        $nuirProposal = app(\App\Support\NuirGuideSeatSync::class)
+            ->syncGuideSeat($nuirProposal, auth()->user());
 
-        return to_route('nuir.dosen.index')->with('success', 'Usulan calon pembimbing diterima.');
+        app(\App\Support\NuirGuideSeatSync::class)->tryFinalize($nuirProposal);
+
+        return to_route('nuir.dosen.index')->with('success', 'Seluruh elemen NUI disetujui. Kursi pembimbing Anda diterima.');
     }
 
     public function reject(Request $request, NuirProposal $nuirProposal)
     {
         $this->authorizeProposal($nuirProposal);
-        $this->ensureCanRespond($nuirProposal);
+        $this->ensureCanReject($nuirProposal);
 
         $data = $request->validate(['note' => ['required', 'string']]);
 
@@ -101,13 +94,13 @@ class NuirProposalController extends Controller
             $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 2);
         }
 
-        return to_route('nuir.dosen.index')->with('success', 'Usulan calon pembimbing ditolak.');
+        return to_route('nuir.dosen.index')->with('success', 'Usulan NUI ditolak. Kursi Anda dikosongkan.');
     }
 
     public function reviewReference(Request $request, NuirProposal $nuirProposal, NuirReference $nuirReference)
     {
         $this->authorizeProposal($nuirProposal);
-        $this->ensureCanRespond($nuirProposal);
+        $this->ensureCanReview($nuirProposal);
 
         if ($nuirReference->nuir_submission_id !== $nuirProposal->nuir_submission_id) {
             abort(404);
@@ -134,7 +127,7 @@ class NuirProposalController extends Controller
     public function reviewContent(Request $request, NuirProposal $nuirProposal)
     {
         $this->authorizeProposal($nuirProposal);
-        $this->ensureCanRespond($nuirProposal);
+        $this->ensureCanReview($nuirProposal);
 
         $data = $request->validate([
             'field' => ['required', 'in:novelty,urgency,impact'],
@@ -153,7 +146,9 @@ class NuirProposalController extends Controller
             $data['note'] ?? null,
         );
 
-        return back()->with('success', 'Review konten NUIR disimpan.');
+        app(\App\Support\NuirGuideSeatSync::class)->tryFinalize($nuirProposal->fresh());
+
+        return back()->with('success', $approved ? 'Elemen NUI disetujui.' : 'Permintaan revisi elemen NUI disimpan.');
     }
 
     private function authorizeProposal(NuirProposal $proposal): void
@@ -169,6 +164,26 @@ class NuirProposalController extends Controller
         return $this->pendingForUser($proposal);
     }
 
+    private function canReview(NuirProposal $proposal): bool
+    {
+        if ($proposal->final) {
+            return false;
+        }
+
+        return $this->seatStatusForUser($proposal) !== 'rejected';
+    }
+
+    private function canReject(NuirProposal $proposal): bool
+    {
+        if ($proposal->final) {
+            return false;
+        }
+
+        $status = $this->seatStatusForUser($proposal);
+
+        return in_array($status, ['pending', 'accepted'], true);
+    }
+
     private function ensureCanRespond(NuirProposal $proposal): void
     {
         if (! $this->canRespond($proposal)) {
@@ -176,16 +191,35 @@ class NuirProposalController extends Controller
         }
     }
 
-    private function pendingForUser(NuirProposal $proposal): bool
+    private function ensureCanReview(NuirProposal $proposal): void
+    {
+        if (! $this->canReview($proposal)) {
+            abort(403);
+        }
+    }
+
+    private function ensureCanReject(NuirProposal $proposal): void
+    {
+        if (! $this->canReject($proposal)) {
+            abort(403);
+        }
+    }
+
+    private function seatStatusForUser(NuirProposal $proposal): ?string
     {
         if (auth()->id() === $proposal->guide1_id) {
-            return $proposal->guide1_status === 'pending';
+            return $proposal->guide1_status;
         }
 
         if (auth()->id() === $proposal->guide2_id) {
-            return $proposal->guide2_status === 'pending';
+            return $proposal->guide2_status;
         }
 
-        return false;
+        return null;
+    }
+
+    private function pendingForUser(NuirProposal $proposal): bool
+    {
+        return $this->seatStatusForUser($proposal) === 'pending';
     }
 }

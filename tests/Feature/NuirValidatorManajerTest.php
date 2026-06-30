@@ -209,9 +209,13 @@ class NuirValidatorManajerTest extends TestCase
             'guide2_id' => $this->dosen2->id,
         ]);
 
-        $this->actingAs($this->dosen1)
-            ->put("/nuir/dosen/{$proposal->id}/accept")
-            ->assertRedirect(route('nuir.dosen.index'));
+        foreach (['novelty', 'urgency', 'impact'] as $field) {
+            $this->actingAs($this->dosen1)
+                ->patch("/nuir/dosen/{$proposal->id}/content", [
+                    'field' => $field,
+                    'approved' => '1',
+                ]);
+        }
 
         $this->assertEquals('accepted', $proposal->fresh()->guide1_status);
     }

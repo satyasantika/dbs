@@ -37,7 +37,7 @@
                                 <td>{{ $label }}</td>
                                 <td>
                                     @if ($contentReview?->approved === true) Disetujui
-                                    @elseif ($contentReview?->approved === false) Ditolak
+                                    @elseif ($contentReview?->approved === false) Diminta revisi
                                     @else Pending @endif
                                 </td>
                                 <td>{{ $contentReview?->note }}</td>
@@ -54,8 +54,8 @@
                                         @method('PATCH')
                                         <input type="hidden" name="field" value="{{ $field }}">
                                         <input type="hidden" name="approved" value="0">
-                                        <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Alasan penolakan" required>
-                                        <button class="btn btn-danger btn-sm">Tolak</button>
+                                        <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Catatan revisi" required>
+                                        <button class="btn btn-warning btn-sm">Minta Revisi</button>
                                     </form>
                                 </td>
                             </tr>
@@ -131,19 +131,19 @@
                     <form method="POST" action="{{ route('nuir.dosen.accept', $proposal) }}" class="d-inline">
                         @csrf
                         @method('PUT')
-                        <button class="btn btn-success btn-sm">Terima Menjadi Pembimbing</button>
+                        <button class="btn btn-success btn-sm">Konfirmasi Kursi (Semua Elemen Disetujui)</button>
                     </form>
                 @else
                     <p class="text-muted small">
-                        Persetujuan menjadi pembimbing baru tersedia setelah NUIR disetujui final (content_ok).
-                        Anda tetap dapat mereview referensi dan melihat permintaan revisi.
+                        Kursi Anda diterima otomatis setelah seluruh elemen NUI (Novelty, Urgency, Impact) disetujui
+                        dan NUIR berstatus content_ok. Jika ada elemen diminta revisi, kursi tetap menunggu perbaikan mahasiswa.
                     </p>
                 @endif
-                <form method="POST" action="{{ route('nuir.dosen.reject', $proposal) }}" class="d-inline">
+                <form method="POST" action="{{ route('nuir.dosen.reject', $proposal) }}" class="d-inline ms-2">
                     @csrf
                     @method('PUT')
-                    <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Alasan penolakan usulan" required>
-                    <button class="btn btn-danger btn-sm">Tolak Usulan</button>
+                    <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Catatan penolakan usulan NUI" required>
+                    <button class="btn btn-danger btn-sm">Tolak Usulan NUI</button>
                 </form>
             @endif
 

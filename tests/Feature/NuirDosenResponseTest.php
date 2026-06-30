@@ -68,9 +68,7 @@ class NuirDosenResponseTest extends TestCase
 
     public function test_dosen1_dapat_menerima_proposal(): void
     {
-        $this->actingAs($this->dosen1)
-            ->put("/nuir/dosen/{$this->proposal->id}/accept")
-            ->assertRedirect(route('nuir.dosen.index'));
+        $this->approveAllNuiFields($this->dosen1);
 
         $this->assertEquals('accepted', $this->proposal->fresh()->guide1_status);
         $this->assertNotNull($this->proposal->fresh()->guide1_responded_at);
@@ -126,11 +124,8 @@ class NuirDosenResponseTest extends TestCase
 
     public function test_kedua_dosen_terima_memicu_final_dan_guide_examiners(): void
     {
-        $this->actingAs($this->dosen1)
-            ->put("/nuir/dosen/{$this->proposal->id}/accept");
-
-        $this->actingAs($this->dosen2)
-            ->put("/nuir/dosen/{$this->proposal->id}/accept");
+        $this->approveAllNuiFields($this->dosen1);
+        $this->approveAllNuiFields($this->dosen2);
 
         $proposal = $this->proposal->fresh();
         $this->assertTrue($proposal->final);
@@ -164,5 +159,17 @@ class NuirDosenResponseTest extends TestCase
         $this->actingAs($this->mahasiswa)
             ->put("/nuir/dosen/{$this->proposal->id}/accept")
             ->assertForbidden();
+    }
+
+    /** @param list<string> $fields */
+    private function approveAllNuiFields(User $dosen, array $fields = ['novelty', 'urgency', 'impact']): void
+    {
+        foreach ($fields as $field) {
+            $this->actingAs($dosen)
+                ->patch("/nuir/dosen/{$this->proposal->id}/content", [
+                    'field' => $field,
+                    'approved' => '1',
+                ]);
+        }
     }
 }
