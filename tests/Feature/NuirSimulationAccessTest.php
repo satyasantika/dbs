@@ -8,6 +8,7 @@ use App\Filament\Dbs\Resources\NuirSubmissionResource;
 use App\Filament\Mahasiswa\Pages\Dashboard;
 use App\Filament\NuirManajer\Resources\GuideAllocationResource;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource as ManajerNuirSubmissionResource;
+use App\Filament\NuirValidator\Resources\NuirReferenceResource as ValidatorNuirReferenceResource;
 use App\Filament\NuirValidator\Resources\NuirSubmissionResource as ValidatorNuirSubmissionResource;
 use App\Models\User;
 use Database\Seeders\NuirSeeder;
@@ -121,7 +122,7 @@ class NuirSimulationAccessTest extends TestCase
             ->assertOk();
 
         $this->actingAs($validator)
-            ->get(ValidatorNuirSubmissionResource::getUrl('index', panel: 'nuir-validator'))
+            ->get(ValidatorNuirSubmissionResource::listUrl(ValidatorNuirSubmissionResource::DASHBOARD_VIEW_ASSIGNED, panel: 'nuir-validator'))
             ->assertOk();
     }
 

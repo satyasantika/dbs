@@ -16,6 +16,12 @@ class GuideAllocationGroupSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! User::whereNotNull('initial')->where('initial', '!=', '')->exists()) {
+            $this->command?->warn('GuideAllocationGroupSeeder: data pengguna dari UserSeeder tidak tersedia, dilewati.');
+
+            return;
+        }
+
         // Import Data kuota keseluruhan
         $csvData = fopen(base_path('/database/seeders/csvs/guideallocation2023.csv'), 'r');
         $transRow = true;

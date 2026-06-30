@@ -1,40 +1,45 @@
 <?php
 
-namespace App\Filament\NuirValidator\Resources\NuirSubmissionResource\Pages;
+namespace App\Filament\NuirValidator\Resources\NuirReferenceResource\Pages;
 
 use App\Filament\NuirValidator\Pages\Dashboard;
-use App\Filament\NuirValidator\Resources\NuirSubmissionResource;
+use App\Filament\NuirValidator\Resources\NuirReferenceResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Url;
 
-class ListNuirSubmissions extends ListRecords
+class ListNuirReferences extends ListRecords
 {
-    protected static string $resource = NuirSubmissionResource::class;
+    protected static string $resource = NuirReferenceResource::class;
 
     #[Url(as: 'view')]
     public ?string $dashboardView = null;
 
     public function getTitle(): string
     {
-        return NuirSubmissionResource::dashboardViewLabel($this->dashboardView)
+        return NuirReferenceResource::dashboardViewLabel($this->dashboardView)
             ?? static::getResource()::getPluralModelLabel();
     }
 
     public function getSubheading(): ?string
     {
+        if (blank($this->dashboardView)) {
+            return 'Daftar referensi yang didelegasikan ke Anda.';
+        }
+
         return match ($this->dashboardView) {
-            NuirSubmissionResource::DASHBOARD_VIEW_VALIDATION_COMPLETE => 'Submission dengan seluruh referensi sudah disetujui.',
-            default => 'Submission NUIR yang didelegasikan manajer ke Anda, beserta ringkasan progress validasi referensi.',
+            NuirReferenceResource::DASHBOARD_VIEW_PENDING_REFERENCES => 'Referensi yang belum pernah divalidasi.',
+            NuirReferenceResource::DASHBOARD_VIEW_AWAITING_REVALIDATION => 'Referensi yang sudah direvisi mahasiswa dan menunggu validasi ulang.',
+            default => null,
         };
     }
 
     protected function getTableQuery(): ?Builder
     {
-        return NuirSubmissionResource::applyDashboardViewFilter(
+        return NuirReferenceResource::applyDashboardViewFilter(
             parent::getTableQuery(),
-            $this->dashboardView ?? NuirSubmissionResource::DASHBOARD_VIEW_ASSIGNED,
+            $this->dashboardView,
         );
     }
 

@@ -92,13 +92,18 @@ class NuirValidatorManajerTest extends TestCase
             'assigned_at' => now(),
         ]);
 
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
         $otherSubmission = NuirSubmission::factory()->submitted()->create([
             'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
             'year_generation' => '2022',
         ]);
 
         $this->actingAs($this->validator)
-            ->get(ValidatorSubmissionResource::getUrl('index', panel: 'nuir-validator'))
+            ->get(ValidatorSubmissionResource::listUrl(ValidatorSubmissionResource::DASHBOARD_VIEW_ASSIGNED, panel: 'nuir-validator'))
             ->assertOk()
             ->assertSee($this->submission->user->name);
 
@@ -124,7 +129,13 @@ class NuirValidatorManajerTest extends TestCase
         app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, true);
         $this->assertTrue($ref->fresh()->ref_approved);
 
-        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, false, 'Link tidak valid');
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator(
+            $ref,
+            $this->validator,
+            false,
+            'Link tidak valid',
+            ['link_ojs'],
+        );
         $this->assertFalse($ref->fresh()->ref_approved);
         $this->assertEquals('Link tidak valid', $ref->fresh()->ref_note);
     }

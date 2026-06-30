@@ -60,9 +60,17 @@
                     </div>
                 @endif
                 @if ($reference->ref_note && $reference->ref_approved === false)
-                    <p class="rounded-md bg-danger-50 px-2.5 py-2 text-danger-800 dark:bg-danger-950/40 dark:text-danger-200">
-                        <span class="font-medium">Catatan validator saat ini:</span> {{ $reference->ref_note }}
-                    </p>
+                    <div class="space-y-1 rounded-md bg-danger-50 px-2.5 py-2 text-danger-800 dark:bg-danger-950/40 dark:text-danger-200">
+                        @if (filled($reference->ref_revision_fields))
+                            <p>
+                                <span class="font-medium">Bagian diperbaiki:</span>
+                                {{ \App\Support\NuirReferenceRevisionFields::labelsText($reference->ref_revision_fields) }}
+                            </p>
+                        @endif
+                        <p>
+                            <span class="font-medium">Catatan validator saat ini:</span> {{ $reference->ref_note }}
+                        </p>
+                    </div>
                 @endif
             </div>
 

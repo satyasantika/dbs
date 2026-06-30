@@ -25,6 +25,28 @@
         </div>
     </div>
 @endcan
+@can('access dashboard validator nuir')
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">Validasi NUIR</div>
+            <div class="card-body">
+                Panel validator untuk memvalidasi referensi submission yang ditugaskan.<br>
+                <a href="{{ \App\Filament\NuirValidator\Pages\Dashboard::getUrl(panel: 'nuir-validator') }}" class="btn btn-sm btn-primary mt-2">Buka Panel Validator</a>
+            </div>
+        </div>
+    </div>
+@endcan
+@can('access dashboard manajer nuir')
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">Manajemen NUIR</div>
+            <div class="card-body">
+                Panel manajer untuk delegasi validator dan mengelola submission NUIR.<br>
+                <a href="{{ \App\Filament\NuirManajer\Pages\Dashboard::getUrl(panel: 'nuir-manajer') }}" class="btn btn-sm btn-primary mt-2">Buka Panel Manajer</a>
+            </div>
+        </div>
+    </div>
+@endcan
     <div class="col-md-6 mb-3">
         <div class="card">
             <div class="card-header">Status Pembimbing dan Penguji</div>

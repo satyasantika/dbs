@@ -8,6 +8,7 @@ use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Services\NuirRevisionHistoryService;
+use App\Support\NuirReferenceRevisionFields;
 use Illuminate\Validation\ValidationException;
 
 class NuirReviewService
@@ -18,13 +19,20 @@ class NuirReviewService
     ) {
     }
 
-    public function reviewReference(NuirReference $reference, bool $approved, ?string $note = null, bool $recordHistory = true): void
-    {
+    public function reviewReference(
+        NuirReference $reference,
+        bool $approved,
+        ?string $note = null,
+        bool $recordHistory = true,
+        ?array $revisionFields = null,
+    ): void {
         if (! $approved && blank($note)) {
             throw ValidationException::withMessages([
                 'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
             ]);
         }
+
+        $normalizedFields = NuirReferenceRevisionFields::normalize($revisionFields);
 
         if (! $approved && $recordHistory && auth()->user()) {
             $this->revisionHistory->logReferenceRevision(
@@ -32,12 +40,14 @@ class NuirReviewService
                 auth()->user(),
                 NuirRevisionEvent::ROLE_DBS,
                 $note,
+                $normalizedFields ?: null,
             );
         }
 
         $reference->update([
             'ref_approved' => $approved,
             'ref_note' => $approved ? null : $note,
+            'ref_revision_fields' => $approved ? null : ($normalizedFields ?: null),
         ]);
     }
 
