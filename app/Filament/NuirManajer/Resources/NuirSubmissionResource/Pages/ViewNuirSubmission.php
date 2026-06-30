@@ -83,7 +83,9 @@ class ViewNuirSubmission extends ViewRecord
         $submission = $this->record;
         $approved = NuirSubmissionResource::approvedReferenceCount($submission);
         $minimum = NuirSubmissionResource::minimumApprovedReferences($submission);
+        $validationLabel = NuirSubmission::referenceValidationStatusLabel($submission->referenceValidationStatus());
 
-        return "{$approved} dari {$submission->references->count()} referensi disetujui. Standar minimum: {$minimum}.";
+        return "{$submission->referenceValidationProgressLabel()} referensi divalidasi validator ({$validationLabel}). "
+            ."{$approved} disetujui — standar minimum: {$minimum}.";
     }
 }

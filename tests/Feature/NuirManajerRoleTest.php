@@ -8,6 +8,7 @@ use App\Filament\NuirManajer\Resources\NuirSubmissionResource;
 use App\Models\GuideAllocation;
 use App\Models\GuideExaminer;
 use App\Models\NuirAssignment;
+use App\Models\NuirReference;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -170,5 +171,54 @@ class NuirManajerRoleTest extends TestCase
         $this->actingAs($this->mahasiswa)
             ->get(GuideAllocationResource::getUrl('index', panel: 'nuir-manajer'))
             ->assertForbidden();
+    }
+
+    public function test_daftar_submission_menampilkan_tombol_dashboard_dan_progress_validasi(): void
+    {
+        NuirReference::factory()->count(3)->sequence(
+            ['ref_order' => 1],
+            ['ref_order' => 2],
+            ['ref_order' => 3],
+        )->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_approved' => null,
+        ]);
+
+        $inProgress = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
+            'year_generation' => '2022',
+        ]);
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $inProgress->id,
+            'ref_order' => 1,
+            'ref_approved' => true,
+        ]);
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $inProgress->id,
+            'ref_order' => 2,
+            'ref_approved' => null,
+        ]);
+
+        $complete = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
+            'year_generation' => '2022',
+        ]);
+        NuirReference::factory()->count(2)->sequence(
+            ['ref_order' => 1, 'ref_approved' => true],
+            ['ref_order' => 2, 'ref_approved' => false],
+        )->create(['nuir_submission_id' => $complete->id]);
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::getUrl('index', panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertSee('Dashboard')
+            ->assertSee('Referensi Divalidasi')
+            ->assertSee('Progress Validasi')
+            ->assertSee('0/3')
+            ->assertSee('1/2')
+            ->assertSee('2/2')
+            ->assertSee('Belum berprogress')
+            ->assertSee('Berprogress')
+            ->assertSee('Selesai');
     }
 }
