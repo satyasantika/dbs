@@ -15,9 +15,11 @@ window.nuirSubmissionForm = function (config) {
         refStatuses: config.refStatuses ?? {},
         refNotes: config.refNotes ?? {},
         indexers: config.indexers ?? [],
-        maxRefOrder: 10,
+        maxRefOrder: config.maxReferences ?? 10,
         minReferences: config.minReferences ?? 10,
+        maxReferences: config.maxReferences ?? 10,
         maxWords: config.maxWords ?? 300,
+        wordLimits: config.wordLimits ?? {},
         charLimits: config.charLimits ?? {},
         modalOpen: false,
         editingOrder: null,
@@ -170,12 +172,18 @@ window.nuirSubmissionForm = function (config) {
 
         limitLabel(field) {
             const charLimit = this.charLimits[field];
+            const wordLimit = this.wordLimits[field] ?? {};
+            const words = this.wordCount(this.$refs[field]?.value ?? '');
 
             if (charLimit) {
                 return `${this.charCount(this.$refs[field]?.value ?? '')} / ${charLimit} karakter`;
             }
 
-            const words = this.wordCount(this.$refs[field]?.value ?? '');
+            if (wordLimit.min || wordLimit.max) {
+                const maxLabel = wordLimit.max ?? '—';
+
+                return `${words} kata (min ${wordLimit.min ?? '—'}, max ${maxLabel})`;
+            }
 
             return `${words} / ${this.maxWords} kata`;
         },

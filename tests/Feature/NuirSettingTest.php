@@ -52,6 +52,7 @@ class NuirSettingTest extends TestCase
                 'stage' => 1,
                 'active' => true,
                 'min_references_approved' => 10,
+                'max_references' => 10,
             ])
             ->assertRedirect();
 

@@ -20,6 +20,7 @@ class NuirSettingFactory extends Factory
             'active' => true,
             'deadline' => null,
             'min_references_approved' => 10,
+            'max_references' => 10,
             'max_chars_novelty' => null,
             'max_chars_urgency' => null,
             'max_chars_impact' => null,
