@@ -7,6 +7,7 @@ use App\Models\NuirReference;
 use App\Models\NuirRevisionEvent;
 use App\Models\NuirSubmission;
 use App\Models\User;
+use App\Support\NuirReferenceRevisionFields;
 use Illuminate\Support\Collection;
 
 class NuirRevisionHistoryService
@@ -26,6 +27,7 @@ class NuirRevisionHistoryService
         User $actor,
         string $role,
         string $note,
+        ?array $revisionFields = null,
     ): NuirRevisionEvent {
         return $this->record(
             $reference->submission,
@@ -35,6 +37,7 @@ class NuirRevisionHistoryService
             (string) $reference->ref_order,
             $note,
             refOrder: $reference->ref_order,
+            revisionFields: $revisionFields,
         );
     }
 
@@ -208,6 +211,8 @@ class NuirRevisionHistoryService
                 'actor_name' => $event->actor?->name,
                 'actor_role' => $event->actor_role,
                 'note' => $event->note,
+                'revision_fields' => NuirReferenceRevisionFields::normalize($event->revision_fields),
+                'revision_field_labels' => NuirReferenceRevisionFields::labels($event->revision_fields),
                 'content' => null,
                 'kind' => 'revision_request',
                 'submission_version' => $event->submission_version,
@@ -264,6 +269,7 @@ class NuirRevisionHistoryService
         string $note,
         ?int $refOrder = null,
         ?int $proposalId = null,
+        ?array $revisionFields = null,
     ): NuirRevisionEvent {
         return NuirRevisionEvent::create([
             'nuir_submission_id' => $submission->id,
@@ -275,6 +281,7 @@ class NuirRevisionHistoryService
             'ref_order' => $refOrder,
             'nuir_proposal_id' => $proposalId,
             'note' => $note,
+            'revision_fields' => NuirReferenceRevisionFields::normalize($revisionFields) ?: null,
             'recorded_at' => now(),
         ]);
     }

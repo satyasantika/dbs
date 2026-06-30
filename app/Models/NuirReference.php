@@ -15,6 +15,7 @@ class NuirReference extends Model
 
     protected $casts = [
         'ref_approved' => 'boolean',
+        'ref_revision_fields' => 'array',
     ];
 
     public function submission(): BelongsTo

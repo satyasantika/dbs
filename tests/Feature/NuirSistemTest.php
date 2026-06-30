@@ -120,12 +120,14 @@ class NuirSistemTest extends TestCase
             $this->validator,
             false,
             'Link index tidak dapat diakses',
+            ['link_index'],
         );
 
         $ref->update([
             'link_index' => 'https://www.scopus.com/record/baru',
             'ref_approved' => null,
             'ref_note' => null,
+            'ref_revision_fields' => null,
         ]);
 
         $this->assertDatabaseHas('nuir_revision_events', [
@@ -134,6 +136,9 @@ class NuirSistemTest extends TestCase
             'ref_order' => 1,
             'note' => 'Link index tidak dapat diakses',
         ]);
+
+        $event = NuirRevisionEvent::query()->where('ref_order', 1)->first();
+        $this->assertEquals(['link_index'], $event->revision_fields);
     }
 
     public function test_histori_revisi_antarversi_mencakup_versi_induk(): void

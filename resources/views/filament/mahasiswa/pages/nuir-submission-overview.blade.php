@@ -88,6 +88,11 @@
                                         @foreach ($rejectedRefs as $ref)
                                             <li>
                                                 <span class="font-medium">#{{ $ref->ref_order }}</span>@if ($ref->indexer_name) — {{ $ref->indexer_name }}@endif
+                                                @if (filled($ref->ref_revision_fields))
+                                                    <span class="block text-xs text-danger-700">
+                                                        Bagian diperbaiki: {{ \App\Support\NuirReferenceRevisionFields::labelsText($ref->ref_revision_fields) }}
+                                                    </span>
+                                                @endif
                                                 @if ($ref->ref_note)
                                                     <span class="block text-xs text-danger-700">{{ $ref->ref_note }}</span>
                                                 @endif

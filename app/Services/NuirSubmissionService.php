@@ -422,6 +422,7 @@ class NuirSubmissionService
             if ($existing !== null) {
                 $attributes['ref_approved'] = null;
                 $attributes['ref_note'] = null;
+                $attributes['ref_revision_fields'] = null;
             }
 
             NuirReference::updateOrCreate(

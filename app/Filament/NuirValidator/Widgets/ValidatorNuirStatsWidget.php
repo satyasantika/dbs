@@ -2,10 +2,9 @@
 
 namespace App\Filament\NuirValidator\Widgets;
 
+use App\Filament\NuirValidator\Resources\NuirReferenceResource;
 use App\Filament\NuirValidator\Resources\NuirSubmissionResource;
-use App\Models\NuirAssignment;
-use App\Models\NuirReference;
-use App\Models\NuirSubmission;
+use App\Support\NuirValidatorReferenceStatus;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 use Illuminate\Database\Eloquent\Builder;
@@ -18,28 +17,22 @@ class ValidatorNuirStatsWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $validatorId = auth()->id();
+        $assignedSubmissionQuery = NuirSubmissionResource::getEloquentQuery();
+        $assignedReferenceQuery = NuirReferenceResource::assignedReferencesQuery();
 
-        $assignedCount = NuirAssignment::where('validator_id', $validatorId)->count();
-
-        $assignedSubmissionQuery = fn (): Builder => NuirSubmission::query()
-            ->whereHas('assignment', fn (Builder $query) => $query->where('validator_id', $validatorId));
-
-        $pendingReferences = NuirReference::query()
-            ->whereHas('submission.assignment', fn (Builder $query) => $query->where('validator_id', $validatorId))
-            ->whereNull('ref_approved')
-            ->count();
-
-        $reviewedReferences = NuirReference::query()
-            ->whereHas('submission.assignment', fn (Builder $query) => $query->where('validator_id', $validatorId))
-            ->whereNotNull('ref_approved')
-            ->count();
-
-        $revisionCount = $assignedSubmissionQuery()
-            ->where('status', 'revision')
-            ->count();
-
-        $indexUrl = NuirSubmissionResource::getUrl('index', panel: 'nuir-validator');
+        $assignedCount = (clone $assignedSubmissionQuery)->count();
+        $pendingReferences = $this->filteredReferenceCount(
+            $assignedReferenceQuery,
+            NuirReferenceResource::DASHBOARD_VIEW_PENDING_REFERENCES,
+        );
+        $validationCompleteCount = $this->filteredSubmissionCount(
+            $assignedSubmissionQuery,
+            NuirSubmissionResource::DASHBOARD_VIEW_VALIDATION_COMPLETE,
+        );
+        $awaitingRevalidation = $this->filteredReferenceCount(
+            $assignedReferenceQuery,
+            NuirReferenceResource::DASHBOARD_VIEW_AWAITING_REVALIDATION,
+        );
 
         return [
             Stat::make('Submission Ditugaskan', $assignedCount)
@@ -47,25 +40,35 @@ class ValidatorNuirStatsWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-inbox')
                 ->color('primary')
                 ->icon('heroicon-o-inbox-stack')
-                ->url($indexUrl),
+                ->url(NuirSubmissionResource::listUrl(NuirSubmissionResource::DASHBOARD_VIEW_ASSIGNED)),
             Stat::make('Referensi Pending', $pendingReferences)
-                ->description('Belum disetujui/ditolak')
+                ->description('Belum pernah divalidasi')
                 ->descriptionIcon('heroicon-m-clock')
                 ->color($pendingReferences > 0 ? 'warning' : 'success')
                 ->icon('heroicon-o-clock')
-                ->url($indexUrl),
-            Stat::make('Referensi Direview', $reviewedReferences)
-                ->description('Sudah disetujui atau ditolak')
+                ->url(NuirReferenceResource::listUrl(NuirReferenceResource::DASHBOARD_VIEW_PENDING_REFERENCES)),
+            Stat::make('Validasi Selesai', $validationCompleteCount)
+                ->description('Semua referensi disetujui')
                 ->descriptionIcon('heroicon-m-check-badge')
                 ->color('success')
                 ->icon('heroicon-o-check-badge')
-                ->url($indexUrl),
-            Stat::make('Permintaan Revisi', $revisionCount)
-                ->description('Submission status revision')
+                ->url(NuirSubmissionResource::listUrl(NuirSubmissionResource::DASHBOARD_VIEW_VALIDATION_COMPLETE)),
+            Stat::make('Permintaan Revisi', $awaitingRevalidation)
+                ->description('Sudah direvisi, menunggu validasi ulang')
                 ->descriptionIcon('heroicon-m-arrow-path')
-                ->color($revisionCount > 0 ? 'danger' : 'gray')
+                ->color($awaitingRevalidation > 0 ? 'danger' : 'gray')
                 ->icon('heroicon-o-arrow-path')
-                ->url($indexUrl),
+                ->url(NuirReferenceResource::listUrl(NuirReferenceResource::DASHBOARD_VIEW_AWAITING_REVALIDATION)),
         ];
+    }
+
+    protected function filteredReferenceCount(Builder $query, string $view): int
+    {
+        return NuirReferenceResource::applyDashboardViewFilter(clone $query, $view)->count();
+    }
+
+    protected function filteredSubmissionCount(Builder $query, string $view): int
+    {
+        return NuirSubmissionResource::applyDashboardViewFilter(clone $query, $view)->count();
     }
 }

@@ -110,10 +110,29 @@ class NuirValidatorRoleTest extends TestCase
             $this->validator,
             false,
             'DOI tidak dapat diverifikasi',
+            ['link_ojs', 'link_index'],
         );
 
         $this->assertFalse($ref->fresh()->ref_approved);
         $this->assertEquals('DOI tidak dapat diverifikasi', $ref->fresh()->ref_note);
+        $this->assertEquals(['link_ojs', 'link_index'], $ref->fresh()->ref_revision_fields);
+    }
+
+    public function test_minta_revisi_referensi_wajib_pilih_bagian(): void
+    {
+        $ref = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 3,
+        ]);
+
+        $this->expectException(ValidationException::class);
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator(
+            $ref,
+            $this->validator,
+            false,
+            'Perlu diperbaiki',
+            [],
+        );
     }
 
     public function test_minta_revisi_referensi_wajib_catatan(): void
@@ -181,6 +200,7 @@ class NuirValidatorRoleTest extends TestCase
             'link_index' => 'https://www.scopus.com/record/baru',
             'ref_approved' => null,
             'ref_note' => null,
+            'ref_revision_fields' => null,
         ]);
 
         app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref->fresh(), $this->validator, true);

@@ -33,11 +33,13 @@ class NuirRevisionEvent extends Model
         'ref_order',
         'nuir_proposal_id',
         'note',
+        'revision_fields',
         'recorded_at',
     ];
 
     protected $casts = [
         'recorded_at' => 'datetime',
+        'revision_fields' => 'array',
     ];
 
     public function submission(): BelongsTo

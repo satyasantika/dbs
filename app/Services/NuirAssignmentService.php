@@ -11,6 +11,7 @@ use App\Models\NuirRevisionEvent;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Support\NuirGuideSeatSync;
+use App\Support\NuirReferenceRevisionFields;
 use Illuminate\Validation\ValidationException;
 
 class NuirAssignmentService
@@ -60,8 +61,13 @@ class NuirAssignmentService
             ->exists();
     }
 
-    public function reviewReferenceAsValidator(NuirReference $reference, User $validator, bool $approved, ?string $note = null): void
-    {
+    public function reviewReferenceAsValidator(
+        NuirReference $reference,
+        User $validator,
+        bool $approved,
+        ?string $note = null,
+        ?array $revisionFields = null,
+    ): void {
         $submission = $reference->submission;
 
         if (! $this->validatorCanReview($submission, $validator)) {
@@ -81,15 +87,24 @@ class NuirAssignmentService
                 ]);
             }
 
+            NuirReferenceRevisionFields::assertSelectedForRevision($revisionFields);
+
             $this->revisionHistory->logReferenceRevision(
                 $reference,
                 $validator,
                 NuirRevisionEvent::ROLE_VALIDATOR,
                 $note,
+                NuirReferenceRevisionFields::normalize($revisionFields),
             );
         }
 
-        app(NuirReviewService::class)->reviewReference($reference, $approved, $note, recordHistory: false);
+        app(NuirReviewService::class)->reviewReference(
+            $reference,
+            $approved,
+            $note,
+            recordHistory: false,
+            revisionFields: $revisionFields,
+        );
     }
 
     public function reviewReferenceAsGuide(
