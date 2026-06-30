@@ -9,10 +9,15 @@ use App\Models\NuirReference;
 use App\Models\NuirReferenceReview;
 use App\Models\NuirSubmission;
 use App\Models\User;
+use App\Support\NuirGuideSeatSync;
 use Illuminate\Validation\ValidationException;
 
 class NuirAssignmentService
 {
+    public function __construct(private NuirGuideSeatSync $guideSeatSync)
+    {
+    }
+
     public function assignValidator(NuirSubmission $submission, User $validator, User $manajer): NuirAssignment
     {
         if (! $manajer->can('delegate nuir validator')) {
@@ -136,7 +141,7 @@ class NuirAssignmentService
 
         if (! $approved && blank($note)) {
             throw ValidationException::withMessages([
-                'note' => 'Catatan wajib diisi saat konten NUIR ditolak.',
+                'note' => 'Catatan wajib diisi saat meminta revisi.',
             ]);
         }
 
@@ -157,6 +162,13 @@ class NuirAssignmentService
                 'reviewed_at' => now(),
             ],
         );
+
+        $this->guideSeatSync->syncGuideSeat($proposal, $guide);
+    }
+
+    public function guideHasApprovedAllNuiFields(NuirProposal $proposal, User $guide): bool
+    {
+        return $this->guideSeatSync->guideHasApprovedAllNuiFields($proposal, $guide);
     }
 
     public function guideCanAcceptProposal(NuirProposal $proposal, User $guide): bool
@@ -166,6 +178,10 @@ class NuirAssignmentService
         }
 
         if (! $proposal->submission->isContentFinalForPembimbing()) {
+            return false;
+        }
+
+        if (! $this->guideHasApprovedAllNuiFields($proposal, $guide)) {
             return false;
         }
 
