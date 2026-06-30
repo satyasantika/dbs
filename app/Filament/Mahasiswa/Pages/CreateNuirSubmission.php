@@ -33,6 +33,10 @@ class CreateNuirSubmission extends Page
 
     public ?NuirSubmission $revisionParent = null;
 
+    public bool $referencesOnly = false;
+
+    public bool $titleSlotOnly = false;
+
     public function mount(NuirSubmissionService $submissionService): void
     {
         $result = $submissionService->createFormData(auth()->user());
@@ -48,6 +52,7 @@ class CreateNuirSubmission extends Page
         $this->stage = $result['stage'];
         $this->rejectedRefs = $result['rejectedRefs'];
         $this->revisionParent = $result['revisionParent'];
+        $this->titleSlotOnly = $result['titleSlotOnly'] ?? false;
     }
 
     protected static function mahasiswaAccessPermission(): string

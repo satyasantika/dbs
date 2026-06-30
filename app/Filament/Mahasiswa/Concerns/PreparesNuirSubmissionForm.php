@@ -24,6 +24,37 @@ trait PreparesNuirSubmissionForm
         return $references;
     }
 
+    /** @return array<int, bool|null> */
+    public function getRefStatusesForForm(): array
+    {
+        $statuses = [];
+
+        for ($order = 1; $order <= 10; $order++) {
+            $ref = $this->submission->references->firstWhere('ref_order', $order);
+            $statuses[$order] = $ref?->ref_approved;
+        }
+
+        return $statuses;
+    }
+
+    /** @return array<int, string|null> */
+    public function getRefNotesForForm(): array
+    {
+        $notes = [];
+
+        for ($order = 1; $order <= 10; $order++) {
+            $ref = $this->submission->references->firstWhere('ref_order', $order);
+            $notes[$order] = $ref?->ref_note;
+        }
+
+        return $notes;
+    }
+
+    public function getMinReferences(): int
+    {
+        return $this->setting->min_references_approved ?? 10;
+    }
+
     public function getNuiMaxWords(): int
     {
         return 300;

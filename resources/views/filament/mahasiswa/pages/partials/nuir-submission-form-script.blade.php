@@ -12,8 +12,11 @@ window.nuirSubmissionForm = function (config) {
     return {
         references: config.references ?? {},
         rejectedRefs: config.rejectedRefs ?? {},
+        refStatuses: config.refStatuses ?? {},
+        refNotes: config.refNotes ?? {},
         indexers: config.indexers ?? [],
         maxRefOrder: 10,
+        minReferences: config.minReferences ?? 10,
         maxWords: config.maxWords ?? 300,
         charLimits: config.charLimits ?? {},
         modalOpen: false,
@@ -28,11 +31,64 @@ window.nuirSubmissionForm = function (config) {
             return Object.values(ref).some((value) => String(value ?? '').trim() !== '');
         },
 
+        reviewStatus(order) {
+            const dbStatus = this.refStatuses[order];
+
+            if (dbStatus === true) {
+                return 'approved';
+            }
+
+            if (dbStatus === false) {
+                return 'rejected';
+            }
+
+            if (this.isReferenceFilled(this.references[order])) {
+                return 'pending';
+            }
+
+            return 'empty';
+        },
+
         filledOrders() {
             return Object.keys(this.references)
                 .map(Number)
                 .filter((order) => this.isReferenceFilled(this.references[order]))
                 .sort((a, b) => a - b);
+        },
+
+        editableOrders() {
+            return this.filledOrders().filter((order) => this.reviewStatus(order) !== 'approved');
+        },
+
+        groupedOrders(status) {
+            return this.filledOrders().filter((order) => this.reviewStatus(order) === status);
+        },
+
+        countByStatus(status) {
+            return this.groupedOrders(status).length;
+        },
+
+        canAddReference() {
+            if (this.nextOrder() === null) {
+                return false;
+            }
+
+            const approved = this.countByStatus('approved');
+            const pending = this.countByStatus('pending');
+
+            if (approved >= this.minReferences) {
+                return false;
+            }
+
+            if (approved + pending >= this.minReferences) {
+                return false;
+            }
+
+            return true;
+        },
+
+        referenceNote(order) {
+            return this.refNotes[order] ?? this.rejectedRefs[order] ?? '';
         },
 
         nextOrder() {
@@ -50,6 +106,10 @@ window.nuirSubmissionForm = function (config) {
         },
 
         openAddModal() {
+            if (! this.canAddReference()) {
+                return;
+            }
+
             const order = this.nextOrder();
 
             if (! order) {
@@ -62,6 +122,10 @@ window.nuirSubmissionForm = function (config) {
         },
 
         openEditModal(order) {
+            if (this.reviewStatus(order) === 'approved') {
+                return;
+            }
+
             this.editingOrder = order;
             this.modalForm = { ...this.references[order] };
             this.modalOpen = true;
@@ -83,6 +147,10 @@ window.nuirSubmissionForm = function (config) {
         },
 
         removeReference(order) {
+            if (this.reviewStatus(order) === 'approved') {
+                return;
+            }
+
             if (! confirm('Hapus referensi #' + order + '?')) {
                 return;
             }

@@ -47,6 +47,55 @@ class NuirSubmission extends Model
         return $this->hasOne(NuirAssignment::class);
     }
 
+    public function contentReviews(): HasMany
+    {
+        return $this->hasMany(NuirContentReview::class);
+    }
+
+    public function isTitleSlot(): bool
+    {
+        return $this->status === 'title_slot';
+    }
+
+    /**
+     * @return array{guide1: array{id: int, status: string}|null, guide2: array{id: int, status: string}|null}
+     */
+    public function lockedSeats(): array
+    {
+        $locked = ['guide1' => null, 'guide2' => null];
+
+        foreach ($this->proposals()->orderByDesc('id')->get() as $proposal) {
+            if ($locked['guide1'] === null && $proposal->guide1_status === 'accepted') {
+                $locked['guide1'] = ['id' => $proposal->guide1_id, 'status' => 'accepted'];
+            }
+
+            if ($locked['guide2'] === null && $proposal->guide2_status === 'accepted') {
+                $locked['guide2'] = ['id' => $proposal->guide2_id, 'status' => 'accepted'];
+            }
+        }
+
+        return $locked;
+    }
+
+    public function contentReviewFor(User $user, NuirProposal $proposal, string $field): ?NuirContentReview
+    {
+        $role = match ($user->id) {
+            $proposal->guide1_id => NuirContentReview::ROLE_GUIDE1,
+            $proposal->guide2_id => NuirContentReview::ROLE_GUIDE2,
+            default => null,
+        };
+
+        if (! $role) {
+            return null;
+        }
+
+        return $this->contentReviews()
+            ->where('user_id', $user->id)
+            ->where('role', $role)
+            ->where('field', $field)
+            ->first();
+    }
+
     public function isValidatorReviewable(): bool
     {
         return ! in_array($this->status, ['draft'], true);
@@ -59,7 +108,12 @@ class NuirSubmission extends Model
 
     public function isEditable(): bool
     {
-        return in_array($this->status, ['draft', 'revision'], true);
+        return in_array($this->status, ['title_slot', 'draft', 'revision'], true);
+    }
+
+    public function isReferencesEditable(): bool
+    {
+        return in_array($this->status, ['title_slot', 'draft', 'submitted', 'revision'], true);
     }
 
     public function hasActiveFinalProposal(): bool

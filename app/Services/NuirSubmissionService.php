@@ -61,6 +61,13 @@ class NuirSubmissionService
         }
 
         if ($this->nuirService->activeSubmission($user)) {
+            $active = $this->nuirService->activeSubmission($user);
+
+            if ($active->isTitleSlot()) {
+                return to_route('nuir.submission.edit', $active)
+                    ->with('info', 'Lanjutkan pengisian NUIR pada slot judul Anda.');
+            }
+
             abort(403);
         }
 
@@ -70,12 +77,17 @@ class NuirSubmissionService
             'stage' => $setting->stage,
             'rejectedRefs' => [],
             'revisionParent' => null,
+            'titleSlotOnly' => $setting->stage === 1,
         ];
     }
 
     public function editFormData(User $user, NuirSubmission $submission): array
     {
-        $this->authorizeSubmission($submission, editable: true);
+        $this->authorizeSubmission($submission, referencesEditable: true);
+
+        if (! $submission->isEditable() && ! $submission->isReferencesEditable()) {
+            abort(403);
+        }
 
         return [
             'setting' => $this->requireStageOneSetting($user),
@@ -83,6 +95,8 @@ class NuirSubmissionService
             'stage' => 1,
             'rejectedRefs' => [],
             'revisionParent' => null,
+            'referencesOnly' => ! $submission->isEditable() && $submission->isReferencesEditable(),
+            'titleSlotOnly' => false,
         ];
     }
 
@@ -100,6 +114,7 @@ class NuirSubmissionService
             'stage' => 1,
             'rejectedRefs' => $rejectedRefs,
             'revisionParent' => $submission,
+            'titleSlotOnly' => false,
         ];
     }
 
@@ -116,7 +131,11 @@ class NuirSubmissionService
         }
 
         if ($this->nuirService->activeSubmission($user)) {
-            abort(403);
+            $active = $this->nuirService->activeSubmission($user);
+
+            if (! $active->isTitleSlot()) {
+                abort(403);
+            }
         }
 
         if ($setting->stage === 2) {
@@ -129,6 +148,20 @@ class NuirSubmissionService
             ]);
 
             return to_route('nuir.proposal.create')->with('success', 'Judul tersimpan. Lanjutkan usulan calon pembimbing.');
+        }
+
+        if ($request->boolean('title_only')) {
+            $data = $request->validate(['title' => ['required', 'string']]);
+
+            NuirSubmission::create([
+                'user_id' => $user->id,
+                'year_generation' => $setting->year_generation,
+                'title' => $data['title'],
+                'status' => 'title_slot',
+            ]);
+
+            return to_route('nuir.submission.index')
+                ->with('success', 'Slot judul berhasil dibuat. Lanjutkan pengisian NUIR.');
         }
 
         $data = $this->validateSubmission($request, $setting);
@@ -150,20 +183,47 @@ class NuirSubmissionService
 
     public function update(Request $request, NuirSubmission $submission, User $user): RedirectResponse
     {
-        $this->authorizeSubmission($submission, editable: true);
-        $setting = $this->requireStageOneSetting($user);
-        $data = $this->validateSubmission($request, $setting);
+        $this->authorizeSubmission($submission, referencesEditable: true);
 
-        $submission->update([
-            'title' => $data['title'],
-            'novelty' => $data['novelty'],
-            'urgency' => $data['urgency'],
-            'impact' => $data['impact'],
-        ]);
+        if (! $submission->isEditable() && ! $submission->isReferencesEditable()) {
+            abort(403);
+        }
+
+        $setting = $this->requireStageOneSetting($user);
+
+        $wasTitleSlot = $submission->isTitleSlot();
+
+        if ($submission->isEditable()) {
+            if ($submission->isTitleSlot()) {
+                $data = $this->validateSubmission($request, $setting);
+                $submission->update([
+                    'title' => $data['title'],
+                    'novelty' => $data['novelty'],
+                    'urgency' => $data['urgency'],
+                    'impact' => $data['impact'],
+                    'status' => 'draft',
+                ]);
+            } else {
+                $data = $this->validateSubmission($request, $setting);
+
+                $submission->update([
+                    'title' => $data['title'],
+                    'novelty' => $data['novelty'],
+                    'urgency' => $data['urgency'],
+                    'impact' => $data['impact'],
+                ]);
+            }
+        }
 
         $this->syncReferences($submission, $request->input('references', []));
 
-        return to_route('nuir.submission.index')->with('success', 'Draft NUIR berhasil diperbarui.');
+        $message = match (true) {
+            $wasTitleSlot => 'NUIR berhasil disimpan. Lanjutkan untuk mengajukan.',
+            $submission->isEditable() => 'Draft NUIR berhasil diperbarui.',
+            default => 'Referensi berhasil diperbarui.',
+        };
+
+        return to_route('nuir.submission.index')->with('success', $message);
     }
 
     public function submit(NuirSubmission $submission, User $user): RedirectResponse
@@ -247,14 +307,19 @@ class NuirSubmissionService
 
     private function authorizeSubmission(
         NuirSubmission $submission,
-        bool $editable = false,
+        bool $contentEditable = false,
+        bool $referencesEditable = false,
         ?string $status = null,
     ): void {
         if ($submission->user_id !== auth()->id()) {
             abort(403);
         }
 
-        if ($editable && ! $submission->isEditable()) {
+        if ($contentEditable && ! $submission->isEditable()) {
+            abort(403);
+        }
+
+        if ($referencesEditable && ! $submission->isReferencesEditable()) {
             abort(403);
         }
 
@@ -295,27 +360,49 @@ class NuirSubmissionService
                 continue;
             }
 
+            $existing = NuirReference::query()
+                ->where('nuir_submission_id', $submission->id)
+                ->where('ref_order', $order)
+                ->first();
+
+            if ($existing?->ref_approved === true) {
+                $orders[] = $order;
+
+                continue;
+            }
+
+            $attributes = [
+                'link_ojs' => $ref['link_ojs'] ?? null,
+                'indexer_name' => $ref['indexer_name'] ?? null,
+                'link_index' => $ref['link_index'] ?? null,
+                'link_drive' => $ref['link_drive'] ?? null,
+                'quote' => $ref['quote'] ?? null,
+                'relevance' => $ref['relevance'] ?? null,
+            ];
+
+            if ($existing !== null) {
+                $attributes['ref_approved'] = null;
+                $attributes['ref_note'] = null;
+            }
+
             NuirReference::updateOrCreate(
                 [
                     'nuir_submission_id' => $submission->id,
                     'ref_order' => $order,
                 ],
-                [
-                    'link_ojs' => $ref['link_ojs'] ?? null,
-                    'indexer_name' => $ref['indexer_name'] ?? null,
-                    'link_index' => $ref['link_index'] ?? null,
-                    'link_drive' => $ref['link_drive'] ?? null,
-                    'quote' => $ref['quote'] ?? null,
-                    'relevance' => $ref['relevance'] ?? null,
-                ]
+                $attributes
             );
 
             $orders[] = $order;
         }
 
-        if ($orders !== []) {
-            $submission->references()->whereNotIn('ref_order', $orders)->delete();
-        }
+        $submission->references()
+            ->whereNotIn('ref_order', $orders)
+            ->where(function ($query) {
+                $query->whereNull('ref_approved')
+                    ->orWhere('ref_approved', false);
+            })
+            ->delete();
     }
 
     private function referenceFilled(array $ref): bool

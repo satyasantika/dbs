@@ -9,11 +9,13 @@ use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\SeedsNuirGuideQuota;
 use Tests\TestCase;
 
 class NuirDosenResponseTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsNuirGuideQuota;
 
     protected User $mahasiswa;
 
@@ -35,6 +37,8 @@ class NuirDosenResponseTest extends TestCase
         $this->ge = GuideExaminer::factory()->forStudent($this->mahasiswa)
             ->create(['year_generation' => '2022', 'guide1_id' => null, 'guide2_id' => null]);
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $this->seedGuideAllocation($this->dosen1);
+        $this->seedGuideAllocation($this->dosen2);
         $sub = NuirSubmission::factory()->contentOk()->create([
             'user_id' => $this->mahasiswa->id, 'year_generation' => '2022',
         ]);

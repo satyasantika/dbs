@@ -1,0 +1,44 @@
+@php
+    $user = filament()->auth()->user();
+@endphp
+
+<x-filament-widgets::widget class="fi-account-widget">
+    <x-filament::section>
+        <div class="flex items-center gap-x-3">
+            <x-filament-panels::avatar.user size="lg" :user="$user" />
+
+            <div class="flex-1">
+                <h2 class="grid flex-1 text-base font-semibold leading-6 text-gray-950 dark:text-white">
+                    Selamat datang
+                </h2>
+
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ filament()->getUserName($user) }}
+                </p>
+
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Portal mahasiswa — kelola pengajuan NUIR dan usulan calon pembimbing.
+                </p>
+            </div>
+
+            <form
+                action="{{ filament()->getLogoutUrl() }}"
+                method="post"
+                class="my-auto"
+            >
+                @csrf
+
+                <x-filament::button
+                    color="gray"
+                    icon="heroicon-m-arrow-left-on-rectangle"
+                    icon-alias="panels::widgets.account.logout-button"
+                    labeled-from="sm"
+                    tag="button"
+                    type="submit"
+                >
+                    Keluar
+                </x-filament::button>
+            </form>
+        </div>
+    </x-filament::section>
+</x-filament-widgets::widget>

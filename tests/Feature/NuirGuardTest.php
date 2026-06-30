@@ -10,11 +10,13 @@ use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\SeedsNuirGuideQuota;
 use Tests\TestCase;
 
 class NuirGuardTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsNuirGuideQuota;
 
     protected User $mahasiswa;
 
@@ -33,6 +35,8 @@ class NuirGuardTest extends TestCase
         $this->dosen2 = User::factory()->create()->assignRole('dosen');
         $this->dbs = User::factory()->create()->assignRole('dbs');
         GuideExaminer::factory()->forStudent($this->mahasiswa)->create(['year_generation' => '2022']);
+        $this->seedGuideAllocation($this->dosen1);
+        $this->seedGuideAllocation($this->dosen2);
     }
 
     public function test_mahasiswa_tidak_dapat_submit_setelah_deadline(): void

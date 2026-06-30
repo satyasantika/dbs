@@ -15,6 +15,10 @@
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                     {{ filament()->getUserName($user) }}
                 </p>
+
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Panel dosen — kelola usulan calon pembimbing dan penilaian ujian.
+                </p>
             </div>
 
             <form

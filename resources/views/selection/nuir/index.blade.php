@@ -64,6 +64,8 @@
                         <div class="mb-3">
                             @if ($submission->isEditable())
                                 <a href="{{ route('nuir.submission.edit', $submission) }}" class="btn btn-outline-primary btn-sm">Edit</a>
+                            @elseif ($submission->isReferencesEditable())
+                                <a href="{{ route('nuir.submission.edit', $submission) }}" class="btn btn-outline-primary btn-sm">Kelola Referensi</a>
                             @endif
                             @if ($submission->status === 'draft')
                                 <form action="{{ route('nuir.submission.submit', $submission) }}" method="POST" class="d-inline">

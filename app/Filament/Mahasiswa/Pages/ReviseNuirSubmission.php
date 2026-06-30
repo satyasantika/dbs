@@ -33,6 +33,10 @@ class ReviseNuirSubmission extends Page
 
     public ?NuirSubmission $revisionParent = null;
 
+    public bool $referencesOnly = false;
+
+    public bool $titleSlotOnly = false;
+
     public function mount(NuirSubmission $record): void
     {
         $data = app(NuirSubmissionService::class)->revisionFormData(auth()->user(), $record);
@@ -41,6 +45,7 @@ class ReviseNuirSubmission extends Page
         $this->stage = $data['stage'];
         $this->rejectedRefs = $data['rejectedRefs'];
         $this->revisionParent = $data['revisionParent'];
+        $this->titleSlotOnly = $data['titleSlotOnly'] ?? false;
     }
 
     protected static function mahasiswaAccessPermission(): string

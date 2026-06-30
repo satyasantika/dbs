@@ -25,6 +25,9 @@ class CreateNuirProposal extends Page
 
     public bool $previousRejected = false;
 
+    /** @var array{guide1: array{id: int, status: string}|null, guide2: array{id: int, status: string}|null} */
+    public array $lockedSeats = ['guide1' => null, 'guide2' => null];
+
     public Collection $lecturers;
 
     public function mount(NuirProposalService $proposalService): void
@@ -39,6 +42,7 @@ class CreateNuirProposal extends Page
 
         $this->submission = $result['submission'];
         $this->previousRejected = $result['previousRejected'];
+        $this->lockedSeats = $result['lockedSeats'];
         $this->lecturers = $result['lecturers'];
     }
 

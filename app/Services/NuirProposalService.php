@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\GuideAllocation;
 use App\Models\NuirProposal;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -9,13 +10,16 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class NuirProposalService
 {
     private const PROPOSABLE_STATUSES = ['submitted', 'revision', 'content_ok'];
 
-    public function __construct(private NuirService $nuirService)
-    {
+    public function __construct(
+        private NuirService $nuirService,
+        private NuirGuideQuotaService $quotaService,
+    ) {
     }
 
     public function getIndexData(User $user): array
@@ -63,10 +67,13 @@ class NuirProposalService
             })
             ->exists();
 
+        $lockedSeats = $submission->lockedSeats();
+
         return [
             'submission' => $submission,
             'previousRejected' => $previousRejected,
-            'lecturers' => $this->lecturers($user),
+            'lockedSeats' => $lockedSeats,
+            'lecturers' => $this->lecturers($user, $submission->year_generation, $lockedSeats),
         ];
     }
 
@@ -92,6 +99,21 @@ class NuirProposalService
             'guide2_id' => ['required', 'different:guide1_id', Rule::exists('users', 'id')],
         ]);
 
+        $submission = NuirSubmission::findOrFail($data['nuir_submission_id']);
+        $lockedSeats = $submission->lockedSeats();
+
+        if ($lockedSeats['guide1'] && (int) $data['guide1_id'] !== $lockedSeats['guide1']['id']) {
+            throw ValidationException::withMessages([
+                'guide1_id' => 'Kursi Pembimbing 1 sudah terisi dan tidak dapat diganti.',
+            ]);
+        }
+
+        if ($lockedSeats['guide2'] && (int) $data['guide2_id'] !== $lockedSeats['guide2']['id']) {
+            throw ValidationException::withMessages([
+                'guide2_id' => 'Kursi Pembimbing 2 sudah terisi dan tidak dapat diganti.',
+            ]);
+        }
+
         $guide1 = User::find($data['guide1_id']);
         $guide2 = User::find($data['guide2_id']);
 
@@ -107,18 +129,84 @@ class NuirProposalService
             return back()->withErrors(['guide2_id' => 'Usulan dengan pasangan dosen yang sama masih pending.'])->withInput();
         }
 
+        $guide1Status = $lockedSeats['guide1'] ? 'accepted' : 'pending';
+        $guide2Status = $lockedSeats['guide2'] ? 'accepted' : 'pending';
+
+        if ($guide1Status === 'pending' && $this->needsQuotaConsumption($submission, (int) $data['guide1_id'], 1)) {
+            $this->quotaService->consume($guide1, 1, $submission->year_generation);
+        }
+
+        if ($guide2Status === 'pending' && $this->needsQuotaConsumption($submission, (int) $data['guide2_id'], 2)) {
+            $this->quotaService->consume($guide2, 2, $submission->year_generation);
+        }
+
         NuirProposal::create([
             'nuir_submission_id' => $data['nuir_submission_id'],
             'guide1_id' => $data['guide1_id'],
             'guide2_id' => $data['guide2_id'],
+            'guide1_status' => $guide1Status,
+            'guide2_status' => $guide2Status,
+            'guide1_responded_at' => $lockedSeats['guide1'] ? now() : null,
+            'guide2_responded_at' => $lockedSeats['guide2'] ? now() : null,
         ]);
 
         return to_route('nuir.proposal.index')->with('success', 'Usulan calon pembimbing berhasil diajukan.');
     }
 
-    public function lecturers(User $user): Collection
+    public function lecturers(User $user, string $yearGeneration, array $lockedSeats = ['guide1' => null, 'guide2' => null]): Collection
     {
-        return User::role('dosen')->where('id', '!=', $user->id)->orderBy('name')->get();
+        return User::role('dosen')
+            ->where('id', '!=', $user->id)
+            ->orderBy('name')
+            ->get()
+            ->filter(function (User $lecturer) use ($yearGeneration, $lockedSeats) {
+                $p1Ok = $lockedSeats['guide1'] !== null
+                    || $this->quotaService->hasQuota($lecturer, 1, $yearGeneration);
+                $p2Ok = $lockedSeats['guide2'] !== null
+                    || $this->quotaService->hasQuota($lecturer, 2, $yearGeneration);
+
+                return $p1Ok || $p2Ok;
+            })
+            ->values();
+    }
+
+    public function releaseSeatQuota(NuirProposal $proposal, int $guideOrder): void
+    {
+        $submission = $proposal->submission;
+        $lecturerId = $guideOrder === 1 ? $proposal->guide1_id : $proposal->guide2_id;
+
+        if (! $this->needsQuotaRelease($submission, $lecturerId, $guideOrder, $proposal->id)) {
+            return;
+        }
+
+        $lecturer = User::find($lecturerId);
+
+        if ($lecturer) {
+            $this->quotaService->release($lecturer, $guideOrder, $submission->year_generation);
+        }
+    }
+
+    private function needsQuotaConsumption(NuirSubmission $submission, int $lecturerId, int $guideOrder): bool
+    {
+        $statusColumn = $guideOrder === 1 ? 'guide1_status' : 'guide2_status';
+        $guideColumn = $guideOrder === 1 ? 'guide1_id' : 'guide2_id';
+
+        return ! NuirProposal::where('nuir_submission_id', $submission->id)
+            ->where($guideColumn, $lecturerId)
+            ->whereIn($statusColumn, ['pending', 'accepted'])
+            ->exists();
+    }
+
+    private function needsQuotaRelease(NuirSubmission $submission, int $lecturerId, int $guideOrder, int $excludeProposalId): bool
+    {
+        $statusColumn = $guideOrder === 1 ? 'guide1_status' : 'guide2_status';
+        $guideColumn = $guideOrder === 1 ? 'guide1_id' : 'guide2_id';
+
+        return ! NuirProposal::where('nuir_submission_id', $submission->id)
+            ->where('id', '!=', $excludeProposalId)
+            ->where($guideColumn, $lecturerId)
+            ->whereIn($statusColumn, ['pending', 'accepted'])
+            ->exists();
     }
 
     private function hasFinalProposal(User $user): bool

@@ -46,6 +46,7 @@ class MahasiswaPanelSmokeTest extends TestCase
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
             ->assertOk()
             ->assertSee('Selamat datang')
+            ->assertSee('Portal mahasiswa')
             ->assertSee('Status NUIR');
     }
 
@@ -74,8 +75,9 @@ class MahasiswaPanelSmokeTest extends TestCase
         $this->actingAs($this->mahasiswa)
             ->get(CreateNuirSubmission::getUrl(panel: 'mahasiswa'))
             ->assertOk()
-            ->assertSee('Tambah Referensi')
-            ->assertSee('Simpan Referensi');
+            ->assertSee('Buat Slot Judul')
+            ->assertSee('Judul')
+            ->assertDontSee('Tambah Referensi');
     }
 
     public function test_nuir_submission_edit_menampilkan_form_card_dan_modal_referensi(): void
@@ -98,7 +100,108 @@ class MahasiswaPanelSmokeTest extends TestCase
             ->assertOk()
             ->assertSee('Tambah Referensi')
             ->assertSee('Kutipan contoh referensi')
-            ->assertSee('data-nui-autoresize');
+            ->assertSee('data-nui-autoresize')
+            ->assertSee('Ringkasan Status Referensi');
+    }
+
+    public function test_edit_form_meneruskan_status_referensi_dan_min_references_ke_alpine(): void
+    {
+        NuirSetting::factory()->create([
+            'year_generation' => '2022',
+            'stage' => 1,
+            'active' => true,
+            'min_references_approved' => 2,
+        ]);
+        $submission = NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'status' => 'draft',
+        ]);
+        NuirReference::factory()->approved()->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 1,
+            'indexer_name' => 'Scopus',
+            'quote' => 'Referensi disetujui',
+        ]);
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 2,
+            'indexer_name' => 'WoS',
+            'quote' => 'Referensi menunggu review',
+        ]);
+
+        $response = $this->actingAs($this->mahasiswa)
+            ->get(EditNuirSubmission::getUrl(['record' => $submission], panel: 'mahasiswa'));
+
+        $response->assertOk()
+            ->assertSee('Kuota referensi tercapai')
+            ->assertSee('Masih Direview')
+            ->assertSee('Disetujui');
+
+        $html = $response->getContent();
+        $this->assertStringContainsString('minReferences', $html);
+        $this->assertStringContainsString('refStatuses', $html);
+        $this->assertStringContainsString(':true', $html);
+    }
+
+    public function test_submitted_submission_menampilkan_form_kelola_referensi(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->get(EditNuirSubmission::getUrl(['record' => $submission], panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Konten NUIR sudah diajukan')
+            ->assertSee('Simpan Referensi')
+            ->assertDontSee('Simpan Draft');
+
+        $this->actingAs($this->mahasiswa)
+            ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Kelola Referensi');
+    }
+
+    public function test_overview_mengelompokkan_referensi_menurut_status_review(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $submission = NuirSubmission::factory()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'status' => 'submitted',
+        ]);
+        NuirReference::factory()->approved()->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 1,
+            'indexer_name' => 'Scopus',
+        ]);
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 2,
+            'indexer_name' => 'WoS',
+            'quote' => 'Menunggu',
+        ]);
+        NuirReference::factory()->rejected('Kurang relevan')->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 3,
+            'indexer_name' => 'DOAJ',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Status Referensi')
+            ->assertSee('Masih Direview')
+            ->assertSee('#2')
+            ->assertSee('WoS')
+            ->assertSee('Disetujui')
+            ->assertSee('Scopus')
+            ->assertSee('Ditolak')
+            ->assertSee('DOAJ')
+            ->assertSee('Kurang relevan');
     }
 
     public function test_old_nuir_proposal_route_redirects_to_filament(): void

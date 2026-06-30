@@ -23,6 +23,16 @@
         background: rgb(254 242 242);
     }
 
+    .fi-nuir-submission-form .reference-card--pending {
+        border-color: rgb(253 230 138);
+        background: rgb(255 251 235);
+    }
+
+    .fi-nuir-submission-form .reference-card--approved {
+        border-color: rgb(134 239 172);
+        background: rgb(240 253 244);
+    }
+
     .dark .fi-nuir-submission-form .reference-card--rejected {
         border-color: rgb(239 68 68 / 0.4);
         background: rgb(69 10 10 / 0.25);
