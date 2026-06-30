@@ -8,7 +8,7 @@ class WelcomeWidget extends Widget
 {
     protected static bool $isLazy = false;
 
-    protected static string $view = 'filament.dosen.widgets.welcome-widget';
+    protected static string $view = 'filament.mahasiswa.widgets.welcome-widget';
 
     protected static ?int $sort = 1;
 

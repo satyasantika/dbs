@@ -6,7 +6,10 @@
         x-data="nuirSubmissionForm(@js([
             'references' => $this->getReferencesForForm(),
             'rejectedRefs' => $this->rejectedRefs,
+            'refStatuses' => $this->getRefStatusesForForm(),
+            'refNotes' => $this->getRefNotesForForm(),
             'indexers' => $this->getIndexerOptions(),
+            'minReferences' => $this->getMinReferences(),
             'maxWords' => $this->getNuiMaxWords(),
             'charLimits' => $this->getNuiCharLimits(),
         ]))"
@@ -14,6 +17,19 @@
     >
         <x-filament::section>
             <p><strong>Mahasiswa:</strong> {{ auth()->user()->name }} ({{ auth()->user()->username }})</p>
+
+            @if ($this->submission->isTitleSlot())
+                <div class="mt-3 rounded-lg border border-warning-200 bg-warning-50 px-3 py-2 text-sm text-warning-800">
+                    Slot judul sudah dibuat. Lengkapi Novelty, Urgency, Impact, dan referensi untuk melanjutkan.
+                </div>
+            @endif
+
+            @if ($this->referencesOnly)
+                <div class="mt-3 rounded-lg border border-info-200 bg-info-50 px-3 py-2 text-sm text-info-800">
+                    Konten NUIR sudah diajukan. Anda dapat menambah atau memperbaiki referensi selama kuota masih tersedia.
+                </div>
+                <p class="mt-3"><strong>Judul:</strong> {{ $this->submission->title }}</p>
+            @endif
 
             <form
                 method="POST"
@@ -24,75 +40,97 @@
                 @if ($this->submission->id)
                     @method('PUT')
                 @endif
+                @if ($this->titleSlotOnly)
+                    <input type="hidden" name="title_only" value="1">
+                @endif
 
-                @foreach (['title' => 'Judul', 'novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'] as $field => $label)
-                    @if ($field === 'title' || $this->stage === 1)
-                        <div>
-                            <div class="mb-1 flex items-center justify-between gap-3">
-                                <label class="block text-sm font-medium" for="{{ $field }}">{{ $label }}</label>
-                                @if ($field !== 'title')
-                                    <span
-                                        class="text-xs text-gray-500"
-                                        x-text="(() => {
-                                            const value = $refs['{{ $field }}']?.value ?? '';
-                                            const charLimit = charLimits['{{ $field }}'];
-                                            if (charLimit) {
-                                                return `${charCount(value)} / ${charLimit} karakter`;
-                                            }
-                                            return `${wordCount(value)} / ${maxWords} kata`;
-                                        })()"
-                                    ></span>
-                                @endif
+                @if (! $this->referencesOnly)
+                    @foreach (['title' => 'Judul', 'novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'] as $field => $label)
+                        @if ($field === 'title' || ($this->stage === 1 && ! $this->titleSlotOnly))
+                            <div>
+                                <div class="mb-1 flex items-center justify-between gap-3">
+                                    <label class="block text-sm font-medium" for="{{ $field }}">{{ $label }}</label>
+                                    @if ($field !== 'title')
+                                        <span
+                                            class="text-xs text-gray-500"
+                                            x-text="(() => {
+                                                const value = $refs['{{ $field }}']?.value ?? '';
+                                                const charLimit = charLimits['{{ $field }}'];
+                                                if (charLimit) {
+                                                    return `${charCount(value)} / ${charLimit} karakter`;
+                                                }
+                                                return `${wordCount(value)} / ${maxWords} kata`;
+                                            })()"
+                                        ></span>
+                                    @endif
+                                </div>
+                                <textarea
+                                    id="{{ $field }}"
+                                    name="{{ $field }}"
+                                    x-ref="{{ $field }}"
+                                    @if ($field === 'title')
+                                        rows="2"
+                                        class="fi-input block w-full rounded-lg border-gray-300 shadow-sm @error($field) border-danger-600 @enderror"
+                                    @else
+                                        rows="1"
+                                        data-nui-autoresize
+                                        x-init="$nextTick(() => autoResize({ target: $el }))"
+                                        @input="autoResize($event)"
+                                        class="fi-input nui-field block w-full rounded-lg border-gray-300 shadow-sm @error($field) border-danger-600 @enderror"
+                                    @endif
+                                    @if($this->stage === 1 || $field === 'title') required @endif
+                                >{{ old($field, $this->submission->{$field}) }}</textarea>
+                                @error($field)
+                                    <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
+                                @enderror
                             </div>
-                            <textarea
-                                id="{{ $field }}"
-                                name="{{ $field }}"
-                                x-ref="{{ $field }}"
-                                @if ($field === 'title')
-                                    rows="2"
-                                    class="fi-input block w-full rounded-lg border-gray-300 shadow-sm @error($field) border-danger-600 @enderror"
-                                @else
-                                    rows="1"
-                                    data-nui-autoresize
-                                    x-init="$nextTick(() => autoResize({ target: $el }))"
-                                    @input="autoResize($event)"
-                                    class="fi-input nui-field block w-full rounded-lg border-gray-300 shadow-sm @error($field) border-danger-600 @enderror"
-                                @endif
-                                @if($this->stage === 1 || $field === 'title') required @endif
-                            >{{ old($field, $this->submission->{$field}) }}</textarea>
-                            @error($field)
-                                <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    @endif
-                @endforeach
+                        @endif
+                    @endforeach
+                @endif
 
-                @if ($this->stage === 1)
+                @if (($this->stage === 1 && ! $this->titleSlotOnly) || $this->referencesOnly)
                     <div class="space-y-4">
                         <div class="flex flex-wrap items-center justify-between gap-3">
-                            <h6 class="text-base font-semibold">Referensi</h6>
+                            <div>
+                                <h6 class="text-base font-semibold">Referensi</h6>
+                                <p class="text-xs text-gray-500">
+                                    Minimum {{ $this->getMinReferences() }} referensi disetujui atau menunggu review.
+                                    <span x-text="`${countByStatus('approved')} disetujui, ${countByStatus('pending')} menunggu review`"></span>
+                                </p>
+                            </div>
                             <x-filament::button
                                 type="button"
                                 size="sm"
                                 color="gray"
-                                x-show="nextOrder() !== null"
+                                x-show="canAddReference()"
                                 @click="openAddModal()"
                             >
                                 Tambah Referensi
                             </x-filament::button>
                         </div>
 
-                        <template x-if="filledOrders().length === 0">
+                        <p
+                            x-show="!canAddReference() && nextOrder() !== null"
+                            x-cloak
+                            class="rounded-lg border border-info-200 bg-info-50 px-3 py-2 text-sm text-info-800"
+                        >
+                            Kuota referensi tercapai
+                            (<span x-text="minReferences"></span> disetujui atau menunggu review).
+                            Hapus atau perbaiki referensi ditolak untuk menambah slot baru.
+                        </p>
+
+                        <template x-if="editableOrders().length === 0 && groupedOrders('approved').length === 0">
                             <div class="rounded-lg border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">
-                                Belum ada referensi. Klik <strong>Tambah Referensi</strong> untuk menambahkan (maks. 10).
+                                Belum ada referensi. Klik <strong>Tambah Referensi</strong> untuk menambahkan
+                                (minimum {{ $this->getMinReferences() }}, maks. 10).
                             </div>
                         </template>
 
                         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                            <template x-for="order in filledOrders()" :key="order">
+                            <template x-for="order in editableOrders()" :key="'edit-' + order">
                                 <div
                                     class="reference-card"
-                                    :class="rejectedRefs[order] ? 'reference-card--rejected' : ''"
+                                    :class="reviewStatus(order) === 'rejected' ? 'reference-card--rejected' : ''"
                                 >
                                     <div class="mb-3 flex items-start justify-between gap-3">
                                         <div>
@@ -109,8 +147,11 @@
                                         </div>
                                     </div>
 
-                                    <template x-if="rejectedRefs[order]">
-                                        <p class="mb-2 text-xs text-danger-600" x-text="'Ditolak DBS: ' + rejectedRefs[order]"></p>
+                                    <template x-if="reviewStatus(order) === 'rejected' && referenceNote(order)">
+                                        <p class="mb-2 text-xs text-danger-600" x-text="'Ditolak validator: ' + referenceNote(order)"></p>
+                                    </template>
+                                    <template x-if="reviewStatus(order) === 'pending'">
+                                        <p class="mb-2 text-xs text-warning-600">Menunggu review validator</p>
                                     </template>
 
                                     <dl class="space-y-2 text-sm">
@@ -139,6 +180,53 @@
                             </template>
                         </div>
 
+                        <div class="space-y-4 border-t border-gray-200 pt-4">
+                            <h6 class="text-sm font-semibold text-gray-700">Ringkasan Status Referensi</h6>
+
+                            <template x-if="groupedOrders('pending').length > 0">
+                                <div class="rounded-lg border border-warning-200 bg-warning-50 p-3">
+                                    <p class="mb-2 text-sm font-semibold text-warning-800">Masih Direview</p>
+                                    <ul class="space-y-1 text-sm text-warning-900">
+                                        <template x-for="order in groupedOrders('pending')" :key="'pending-summary-' + order">
+                                            <li>
+                                                #<span x-text="order"></span>
+                                                <span x-show="references[order].indexer_name"> — <span x-text="references[order].indexer_name"></span></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+
+                            <template x-if="groupedOrders('approved').length > 0">
+                                <div class="rounded-lg border border-success-200 bg-success-50 p-3">
+                                    <p class="mb-2 text-sm font-semibold text-success-800">Disetujui</p>
+                                    <ul class="space-y-1 text-sm text-success-900">
+                                        <template x-for="order in groupedOrders('approved')" :key="'approved-summary-' + order">
+                                            <li>
+                                                #<span x-text="order"></span>
+                                                <span x-show="references[order].indexer_name"> — <span x-text="references[order].indexer_name"></span></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+
+                            <template x-if="groupedOrders('rejected').length > 0">
+                                <div class="rounded-lg border border-danger-200 bg-danger-50 p-3">
+                                    <p class="mb-2 text-sm font-semibold text-danger-800">Ditolak</p>
+                                    <ul class="space-y-2 text-sm text-danger-900">
+                                        <template x-for="order in groupedOrders('rejected')" :key="'rejected-summary-' + order">
+                                            <li>
+                                                <span class="font-medium">#<span x-text="order"></span></span>
+                                                <span x-show="references[order].indexer_name"> — <span x-text="references[order].indexer_name"></span></span>
+                                                <span x-show="referenceNote(order)" class="block text-xs text-danger-700" x-text="referenceNote(order)"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                        </div>
+
                         @for ($order = 1; $order <= 10; $order++)
                             <template x-if="isReferenceFilled(references[{{ $order }}])">
                                 <div class="hidden">
@@ -156,7 +244,15 @@
 
                 <div class="flex gap-2">
                     <x-filament::button type="submit" size="sm">
-                        {{ $this->stage === 2 ? 'Simpan' : 'Simpan Draft' }}
+                        @if ($this->titleSlotOnly)
+                            Buat Slot Judul
+                        @elseif ($this->referencesOnly)
+                            Simpan Referensi
+                        @elseif ($this->stage === 2)
+                            Simpan
+                        @else
+                            Simpan Draft
+                        @endif
                     </x-filament::button>
                     <x-filament::button
                         tag="a"

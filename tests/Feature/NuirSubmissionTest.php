@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GuideExaminer;
+use App\Models\NuirReference;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
@@ -170,12 +171,64 @@ class NuirSubmissionTest extends TestCase
         $this->assertEquals('submitted', $sub->fresh()->status);
     }
 
-    public function test_submission_yang_sudah_submitted_tidak_bisa_diedit(): void
+    public function test_submission_yang_sudah_submitted_tidak_bisa_edit_konten_tapi_bisa_kelola_referensi(): void
     {
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
-        $sub = NuirSubmission::factory()->submitted()->create([
+        $sub = NuirSubmission::factory()->submitted()->withNUI()->create([
             'user_id' => $this->mahasiswa->id,
             'year_generation' => '2022',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->followingRedirects()
+            ->get("/nuir/submission/{$sub->id}/edit")
+            ->assertOk()
+            ->assertSee('Konten NUIR sudah diajukan')
+            ->assertSee('Simpan Referensi');
+    }
+
+    public function test_mahasiswa_dapat_perbarui_referensi_pada_submission_submitted(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $sub = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+        NuirReference::factory()->rejected('DOI tidak valid')->create([
+            'nuir_submission_id' => $sub->id,
+            'ref_order' => 1,
+            'indexer_name' => 'Scopus',
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->put("/nuir/submission/{$sub->id}", [
+                'references' => [
+                    1 => [
+                        'link_ojs' => 'https://ojs.example.com/article/1',
+                        'indexer_name' => 'Scopus',
+                        'link_index' => 'https://scopus.example.com/1',
+                        'link_drive' => 'https://drive.example.com/1',
+                        'quote' => 'Kutipan diperbaiki',
+                        'relevance' => 'Relevansi diperbaiki',
+                    ],
+                ],
+            ])
+            ->assertRedirect(route('nuir.submission.index'));
+
+        $ref = NuirReference::where('nuir_submission_id', $sub->id)->where('ref_order', 1)->first();
+        $this->assertEquals('Kutipan diperbaiki', $ref->quote);
+        $this->assertNull($ref->ref_approved);
+        $this->assertNull($ref->ref_note);
+        $this->assertEquals('submitted', $sub->fresh()->status);
+    }
+
+    public function test_submission_content_ok_tidak_bisa_kelola_referensi(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        $sub = NuirSubmission::factory()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'status' => 'content_ok',
         ]);
 
         $this->actingAs($this->mahasiswa)
@@ -188,5 +241,23 @@ class NuirSubmissionTest extends TestCase
         $this->actingAs($this->dbs)
             ->get('/nuir/submission')
             ->assertForbidden();
+    }
+
+    public function test_mahasiswa_buat_slot_judul_terlebih_dulu(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+
+        $this->actingAs($this->mahasiswa)
+            ->post('/nuir/submission', [
+                'title' => 'Judul Awal Slot',
+                'title_only' => '1',
+            ])
+            ->assertRedirect(route('nuir.submission.index'));
+
+        $this->assertDatabaseHas('nuir_submissions', [
+            'user_id' => $this->mahasiswa->id,
+            'title' => 'Judul Awal Slot',
+            'status' => 'title_slot',
+        ]);
     }
 }

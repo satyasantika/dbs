@@ -111,6 +111,9 @@ Route::middleware('auth')->group(function () {
             Route::patch('nuir/dosen/{nuirProposal}/references/{nuirReference}', [App\Http\Controllers\Dosen\NuirProposalController::class, 'reviewReference'])
                 ->name('nuir.dosen.review-reference')
                 ->middleware('can:respond nuir proposal');
+            Route::patch('nuir/dosen/{nuirProposal}/content', [App\Http\Controllers\Dosen\NuirProposalController::class, 'reviewContent'])
+                ->name('nuir.dosen.review-content')
+                ->middleware('can:respond nuir proposal');
         });
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');
         // doshboard mahasiswa

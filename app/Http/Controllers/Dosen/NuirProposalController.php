@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Dosen;
 use App\Http\Controllers\Controller;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirSubmission;
 use App\Services\NuirAssignmentService;
+use App\Services\NuirProposalService;
 use App\Services\NuirService;
 use Illuminate\Http\Request;
 
@@ -14,6 +16,7 @@ class NuirProposalController extends Controller
     public function __construct(
         private NuirService $nuirService,
         private NuirAssignmentService $assignmentService,
+        private NuirProposalService $proposalService,
     ) {
     }
 
@@ -36,7 +39,7 @@ class NuirProposalController extends Controller
     public function show(NuirProposal $nuirProposal)
     {
         $this->authorizeProposal($nuirProposal);
-        $nuirProposal->load(['submission.user', 'submission.references.reviews', 'guide1', 'guide2']);
+        $nuirProposal->load(['submission.user', 'submission.references.reviews', 'submission.contentReviews', 'guide1', 'guide2']);
         $user = auth()->user();
 
         return view('dosen.nuir.proposal-show', [
@@ -88,12 +91,14 @@ class NuirProposalController extends Controller
                 'guide1_note' => $data['note'],
                 'guide1_responded_at' => now(),
             ]);
+            $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 1);
         } else {
             $nuirProposal->update([
                 'guide2_status' => 'rejected',
                 'guide2_note' => $data['note'],
                 'guide2_responded_at' => now(),
             ]);
+            $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 2);
         }
 
         return to_route('nuir.dosen.index')->with('success', 'Usulan calon pembimbing ditolak.');
@@ -124,6 +129,31 @@ class NuirProposalController extends Controller
         );
 
         return back()->with('success', 'Review referensi disimpan.');
+    }
+
+    public function reviewContent(Request $request, NuirProposal $nuirProposal)
+    {
+        $this->authorizeProposal($nuirProposal);
+        $this->ensureCanRespond($nuirProposal);
+
+        $data = $request->validate([
+            'field' => ['required', 'in:novelty,urgency,impact'],
+            'approved' => ['required', 'in:0,1'],
+            'note' => ['nullable', 'string', 'required_if:approved,0'],
+        ]);
+
+        $approved = (bool) (int) $data['approved'];
+
+        $this->assignmentService->reviewContentAsGuide(
+            $nuirProposal->submission,
+            $nuirProposal,
+            auth()->user(),
+            $data['field'],
+            $approved,
+            $data['note'] ?? null,
+        );
+
+        return back()->with('success', 'Review konten NUIR disimpan.');
     }
 
     private function authorizeProposal(NuirProposal $proposal): void

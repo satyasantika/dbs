@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\NuirAssignment;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirReferenceReview;
@@ -102,6 +103,55 @@ class NuirAssignmentService
                 'role' => $role,
             ],
             [
+                'approved' => $approved,
+                'note' => $approved ? null : $note,
+                'reviewed_at' => now(),
+            ],
+        );
+    }
+
+    public function reviewContentAsGuide(
+        NuirSubmission $submission,
+        NuirProposal $proposal,
+        User $guide,
+        string $field,
+        bool $approved,
+        ?string $note = null,
+    ): void {
+        if (! $guide->can('respond nuir proposal')) {
+            abort(403);
+        }
+
+        if ($proposal->guide1_id !== $guide->id && $proposal->guide2_id !== $guide->id) {
+            abort(403);
+        }
+
+        if ($proposal->nuir_submission_id !== $submission->id) {
+            abort(403);
+        }
+
+        if (! in_array($field, NuirContentReview::FIELDS, true)) {
+            abort(422);
+        }
+
+        if (! $approved && blank($note)) {
+            throw ValidationException::withMessages([
+                'note' => 'Catatan wajib diisi saat konten NUIR ditolak.',
+            ]);
+        }
+
+        $role = $guide->id === $proposal->guide1_id
+            ? NuirContentReview::ROLE_GUIDE1
+            : NuirContentReview::ROLE_GUIDE2;
+
+        NuirContentReview::updateOrCreate(
+            [
+                'nuir_submission_id' => $submission->id,
+                'user_id' => $guide->id,
+                'field' => $field,
+            ],
+            [
+                'role' => $role,
                 'approved' => $approved,
                 'note' => $approved ? null : $note,
                 'reviewed_at' => now(),

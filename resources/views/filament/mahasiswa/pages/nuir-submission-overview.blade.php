@@ -49,36 +49,53 @@
                         </div>
                     @endif
 
-                    @php($reviewedRefs = $this->submission->references()->whereNotNull('ref_approved')->orderBy('ref_order')->get())
-                    @if ($reviewedRefs->isNotEmpty())
-                        <div class="rounded-lg border border-gray-200 p-3 text-sm">
-                            <h6 class="mb-2 font-semibold">Feedback Validator NUIR</h6>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr class="border-b">
-                                            <th class="px-2 py-1 text-left">#</th>
-                                            <th class="px-2 py-1 text-left">Status</th>
-                                            <th class="px-2 py-1 text-left">Catatan</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($reviewedRefs as $ref)
-                                            <tr class="border-b">
-                                                <td class="px-2 py-1">{{ $ref->ref_order }}</td>
-                                                <td class="px-2 py-1">
-                                                    @if ($ref->ref_approved)
-                                                        <x-filament::badge color="success">Disetujui</x-filament::badge>
-                                                    @else
-                                                        <x-filament::badge color="danger">Ditolak</x-filament::badge>
-                                                    @endif
-                                                </td>
-                                                <td class="px-2 py-1">{{ $ref->ref_note ?? '—' }}</td>
-                                            </tr>
+                    @php
+                        $pendingRefs = $this->submission->references()->whereNull('ref_approved')->orderBy('ref_order')->get();
+                        $approvedRefs = $this->submission->references()->where('ref_approved', true)->orderBy('ref_order')->get();
+                        $rejectedRefs = $this->submission->references()->where('ref_approved', false)->orderBy('ref_order')->get();
+                    @endphp
+
+                    @if ($pendingRefs->isNotEmpty() || $approvedRefs->isNotEmpty() || $rejectedRefs->isNotEmpty())
+                        <div class="space-y-3 rounded-lg border border-gray-200 p-3 text-sm">
+                            <h6 class="font-semibold">Status Referensi</h6>
+
+                            @if ($pendingRefs->isNotEmpty())
+                                <div class="rounded-lg border border-warning-200 bg-warning-50 p-3">
+                                    <p class="mb-2 font-medium text-warning-800">Masih Direview</p>
+                                    <ul class="space-y-1 text-warning-900">
+                                        @foreach ($pendingRefs as $ref)
+                                            <li>#{{ $ref->ref_order }}@if ($ref->indexer_name) — {{ $ref->indexer_name }}@endif</li>
                                         @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if ($approvedRefs->isNotEmpty())
+                                <div class="rounded-lg border border-success-200 bg-success-50 p-3">
+                                    <p class="mb-2 font-medium text-success-800">Disetujui</p>
+                                    <ul class="space-y-1 text-success-900">
+                                        @foreach ($approvedRefs as $ref)
+                                            <li>#{{ $ref->ref_order }}@if ($ref->indexer_name) — {{ $ref->indexer_name }}@endif</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            @if ($rejectedRefs->isNotEmpty())
+                                <div class="rounded-lg border border-danger-200 bg-danger-50 p-3">
+                                    <p class="mb-2 font-medium text-danger-800">Ditolak</p>
+                                    <ul class="space-y-2 text-danger-900">
+                                        @foreach ($rejectedRefs as $ref)
+                                            <li>
+                                                <span class="font-medium">#{{ $ref->ref_order }}</span>@if ($ref->indexer_name) — {{ $ref->indexer_name }}@endif
+                                                @if ($ref->ref_note)
+                                                    <span class="block text-xs text-danger-700">{{ $ref->ref_note }}</span>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                         </div>
                     @endif
 
@@ -87,27 +104,6 @@
                             <strong>Diminta Revisi</strong>
                             <div>{{ $this->submission->dbs_note }}</div>
                         </div>
-                        @php($rejected = $this->submission->references()->where('ref_approved', false)->get())
-                        @if ($rejected->isNotEmpty())
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-sm">
-                                    <thead>
-                                        <tr class="border-b">
-                                            <th class="px-2 py-1 text-left">#</th>
-                                            <th class="px-2 py-1 text-left">Catatan Validator</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($rejected as $ref)
-                                            <tr class="border-b">
-                                                <td class="px-2 py-1">{{ $ref->ref_order }}</td>
-                                                <td class="px-2 py-1">{{ $ref->ref_note }}</td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @endif
                         @if (!\App\Models\NuirSubmission::where('parent_submission_id', $this->submission->id)->exists())
                             <x-filament::button
                                 tag="a"
@@ -129,6 +125,15 @@
                                 color="gray"
                             >
                                 Edit
+                            </x-filament::button>
+                        @elseif ($this->submission->isReferencesEditable())
+                            <x-filament::button
+                                tag="a"
+                                href="{{ \App\Filament\Mahasiswa\Pages\EditNuirSubmission::getUrl(['record' => $this->submission], panel: 'mahasiswa') }}"
+                                size="sm"
+                                color="gray"
+                            >
+                                Kelola Referensi
                             </x-filament::button>
                         @endif
                         @if ($this->submission->status === 'draft')

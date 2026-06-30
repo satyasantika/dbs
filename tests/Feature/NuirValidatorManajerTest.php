@@ -17,11 +17,13 @@ use App\Services\NuirAssignmentService;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\SeedsNuirGuideQuota;
 use Tests\TestCase;
 
 class NuirValidatorManajerTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsNuirGuideQuota;
 
     protected User $manajer;
 
@@ -48,6 +50,8 @@ class NuirValidatorManajerTest extends TestCase
 
         GuideExaminer::factory()->forStudent($this->mahasiswa)->create(['year_generation' => '2022']);
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true, 'min_references_approved' => 2]);
+        $this->seedGuideAllocation($this->dosen1);
+        $this->seedGuideAllocation($this->dosen2);
 
         $this->submission = NuirSubmission::factory()->submitted()->withNUI()->create([
             'user_id' => $this->mahasiswa->id,
@@ -160,7 +164,8 @@ class NuirValidatorManajerTest extends TestCase
 
         Livewire::actingAs($this->mahasiswa)
             ->test(NuirSubmissionOverview::class)
-            ->assertSee('Feedback Validator NUIR')
+            ->assertSee('Status Referensi')
+            ->assertSee('Ditolak')
             ->assertSee('DOI tidak valid');
     }
 

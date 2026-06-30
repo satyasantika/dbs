@@ -23,15 +23,45 @@ class NuirModelTest extends TestCase
 
     public function test_nuir_submission_is_editable_only_in_draft_and_revision(): void
     {
+        $titleSlot = NuirSubmission::factory()->titleSlot()->create();
         $draft = NuirSubmission::factory()->create(['status' => 'draft']);
         $revision = NuirSubmission::factory()->create(['status' => 'revision']);
         $submitted = NuirSubmission::factory()->create(['status' => 'submitted']);
         $ok = NuirSubmission::factory()->create(['status' => 'content_ok']);
 
+        $this->assertTrue($titleSlot->isEditable());
+        $this->assertTrue($titleSlot->isTitleSlot());
         $this->assertTrue($draft->isEditable());
         $this->assertTrue($revision->isEditable());
         $this->assertFalse($submitted->isEditable());
         $this->assertFalse($ok->isEditable());
+    }
+
+    public function test_nuir_submission_locked_seats_from_accepted_proposals(): void
+    {
+        $sub = NuirSubmission::factory()->create();
+        NuirProposal::factory()->guide1Accepted()->guide2Rejected('x')->create([
+            'nuir_submission_id' => $sub->id,
+        ]);
+
+        $locked = $sub->fresh()->lockedSeats();
+        $this->assertNotNull($locked['guide1']);
+        $this->assertNull($locked['guide2']);
+    }
+
+    public function test_nuir_submission_references_editable_before_content_ok(): void
+    {
+        $draft = NuirSubmission::factory()->create(['status' => 'draft']);
+        $submitted = NuirSubmission::factory()->create(['status' => 'submitted']);
+        $revision = NuirSubmission::factory()->create(['status' => 'revision']);
+        $ok = NuirSubmission::factory()->create(['status' => 'content_ok']);
+        $finalized = NuirSubmission::factory()->create(['status' => 'finalized']);
+
+        $this->assertTrue($draft->isReferencesEditable());
+        $this->assertTrue($submitted->isReferencesEditable());
+        $this->assertTrue($revision->isReferencesEditable());
+        $this->assertFalse($ok->isReferencesEditable());
+        $this->assertFalse($finalized->isReferencesEditable());
     }
 
     public function test_nuir_submission_version_chain_via_parent(): void

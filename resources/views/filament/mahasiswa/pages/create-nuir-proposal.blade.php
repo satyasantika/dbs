@@ -11,6 +11,23 @@
             @csrf
             <input type="hidden" name="nuir_submission_id" value="{{ $this->submission->id }}">
 
+            @if ($this->lockedSeats['guide1'])
+                <input type="hidden" name="guide1_id" value="{{ $this->lockedSeats['guide1']['id'] }}">
+                <p class="text-sm text-gray-600">
+                    <strong>Pembimbing 1 (terkunci):</strong>
+                    {{ $this->lecturers->firstWhere('id', $this->lockedSeats['guide1']['id'])?->name ?? 'Dosen #' . $this->lockedSeats['guide1']['id'] }}
+                </p>
+            @endif
+
+            @if ($this->lockedSeats['guide2'])
+                <input type="hidden" name="guide2_id" value="{{ $this->lockedSeats['guide2']['id'] }}">
+                <p class="text-sm text-gray-600">
+                    <strong>Pembimbing 2 (terkunci):</strong>
+                    {{ $this->lecturers->firstWhere('id', $this->lockedSeats['guide2']['id'])?->name ?? 'Dosen #' . $this->lockedSeats['guide2']['id'] }}
+                </p>
+            @endif
+
+            @if (! $this->lockedSeats['guide1'])
             <div>
                 <label class="mb-1 block text-sm font-medium" for="guide1_id">Pembimbing 1</label>
                 <select
@@ -28,7 +45,9 @@
                     <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
                 @enderror
             </div>
+            @endif
 
+            @if (! $this->lockedSeats['guide2'])
             <div>
                 <label class="mb-1 block text-sm font-medium" for="guide2_id">Pembimbing 2</label>
                 <select
@@ -46,6 +65,7 @@
                     <p class="mt-1 text-sm text-danger-600">{{ $message }}</p>
                 @enderror
             </div>
+            @endif
 
             <div class="flex gap-2">
                 <x-filament::button type="submit" size="sm">Kirim Usulan</x-filament::button>

@@ -9,11 +9,13 @@ use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Concerns\SeedsNuirGuideQuota;
 use Tests\TestCase;
 
 class NuirStageTest extends TestCase
 {
     use RefreshDatabase;
+    use SeedsNuirGuideQuota;
 
     protected User $mahasiswa;
 
@@ -29,6 +31,8 @@ class NuirStageTest extends TestCase
         $this->dosen1 = User::factory()->create()->assignRole('dosen');
         $this->dosen2 = User::factory()->create()->assignRole('dosen');
         GuideExaminer::factory()->forStudent($this->mahasiswa)->create(['year_generation' => '2022']);
+        $this->seedGuideAllocation($this->dosen1);
+        $this->seedGuideAllocation($this->dosen2);
     }
 
     public function test_stage2_store_langsung_content_ok_tanpa_review_dbs(): void
@@ -83,6 +87,7 @@ class NuirStageTest extends TestCase
             'user_id' => $this->mahasiswa->id, 'year_generation' => '2022',
         ]);
         $dosenBaru = User::factory()->create()->assignRole('dosen');
+        $this->seedGuideAllocation($dosenBaru);
 
         NuirProposal::factory()->guide2Rejected('tidak bisa')->create([
             'nuir_submission_id' => $sub->id,

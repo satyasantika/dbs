@@ -47,6 +47,16 @@ class NuirSubmissionFactory extends Factory
         return $this->state(fn () => ['status' => 'finalized']);
     }
 
+    public function titleSlot(): static
+    {
+        return $this->state(fn () => [
+            'status' => 'title_slot',
+            'novelty' => null,
+            'urgency' => null,
+            'impact' => null,
+        ]);
+    }
+
     public function withNUI(): static
     {
         return $this->state(fn () => [
