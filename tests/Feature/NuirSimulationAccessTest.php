@@ -6,12 +6,16 @@ use App\Filament\Dbs\Resources\NuirProposalResource;
 use App\Filament\Dbs\Resources\NuirSettingResource;
 use App\Filament\Dbs\Resources\NuirSubmissionResource;
 use App\Filament\Mahasiswa\Pages\Dashboard;
+use App\Filament\NuirManajer\Resources\GuideAllocationResource;
+use App\Filament\NuirManajer\Resources\NuirSubmissionResource as ManajerNuirSubmissionResource;
+use App\Filament\NuirValidator\Resources\NuirSubmissionResource as ValidatorNuirSubmissionResource;
 use App\Models\User;
 use Database\Seeders\NuirSeeder;
 use Database\Seeders\NuirSimulationAccountSeeder;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class NuirSimulationAccessTest extends TestCase
@@ -98,6 +102,14 @@ class NuirSimulationAccessTest extends TestCase
         $this->actingAs($manajer)
             ->get('/nuir-manajer')
             ->assertOk();
+
+        $this->actingAs($manajer)
+            ->get(GuideAllocationResource::getUrl('index', panel: 'nuir-manajer'))
+            ->assertOk();
+
+        $this->actingAs($manajer)
+            ->get(ManajerNuirSubmissionResource::getUrl('index', panel: 'nuir-manajer'))
+            ->assertOk();
     }
 
     public function test_validator_simulasi_dapat_akses_panel(): void
@@ -106,6 +118,10 @@ class NuirSimulationAccessTest extends TestCase
 
         $this->actingAs($validator)
             ->get('/nuir-validator')
+            ->assertOk();
+
+        $this->actingAs($validator)
+            ->get(ValidatorNuirSubmissionResource::getUrl('index', panel: 'nuir-validator'))
             ->assertOk();
     }
 
@@ -125,5 +141,31 @@ class NuirSimulationAccessTest extends TestCase
         $this->actingAs($mahasiswa1)
             ->get(NuirSettingResource::getUrl('index', panel: 'dbs'))
             ->assertForbidden();
+    }
+
+    public function test_mahasiswa7_melihat_histori_penolakan_simulasi(): void
+    {
+        $mahasiswa7 = User::where('username', 'mahasiswa7')->first();
+
+        Livewire::actingAs($mahasiswa7)
+            ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
+            ->assertSee('Histori Revisi')
+            ->assertSee('Kuota bimbingan penuh');
+    }
+
+    public function test_pembimbing1_melihat_histori_penolakan_mahasiswa7(): void
+    {
+        $proposal = \App\Models\NuirProposal::query()
+            ->whereHas('submission.user', fn ($q) => $q->where('username', 'mahasiswa7'))
+            ->where('guide1_status', 'pending')
+            ->first();
+
+        $this->assertNotNull($proposal);
+
+        $this->actingAs(User::where('username', 'pembimbing1')->first())
+            ->get("/nuir/dosen/{$proposal->id}")
+            ->assertOk()
+            ->assertSee('Histori Penolakan Usulan')
+            ->assertSee('Kuota bimbingan penuh');
     }
 }
