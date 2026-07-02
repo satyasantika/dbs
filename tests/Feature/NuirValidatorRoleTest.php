@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\NuirValidator\Resources\NuirSubmissionResource;
 use App\Models\GuideExaminer;
 use App\Models\NuirAssignment;
 use App\Models\NuirReference;
@@ -11,8 +12,10 @@ use App\Models\User;
 use App\Services\NuirAssignmentService;
 use App\Support\NuirReferenceExistence;
 use Database\Seeders\PermissionSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class NuirValidatorRoleTest extends TestCase
@@ -46,6 +49,8 @@ class NuirValidatorRoleTest extends TestCase
             'user_id' => $this->mahasiswa->id,
             'year_generation' => '2022',
         ]);
+
+        Filament::setCurrentPanel(Filament::getPanel('nuir-validator'));
 
         NuirAssignment::create([
             'nuir_submission_id' => $this->submission->id,
@@ -96,6 +101,72 @@ class NuirValidatorRoleTest extends TestCase
 
         $this->expectException(ValidationException::class);
         app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, true);
+    }
+
+    public function test_validator_dapat_membatalkan_persetujuan_referensi(): void
+    {
+        $ref = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, true);
+        $this->assertTrue($ref->fresh()->ref_approved);
+
+        app(NuirAssignmentService::class)->cancelReferenceApprovalAsValidator($ref->fresh(), $this->validator);
+
+        $this->assertNull($ref->fresh()->ref_approved);
+    }
+
+    public function test_validator_lain_tidak_dapat_membatalkan_persetujuan_referensi(): void
+    {
+        $ref = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, true);
+
+        $this->actingAs($this->validatorLain);
+        $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
+        app(NuirAssignmentService::class)->cancelReferenceApprovalAsValidator($ref->fresh(), $this->validatorLain);
+    }
+
+    public function test_referensi_disetujui_menampilkan_tombol_batalkan_persetujuan(): void
+    {
+        $ref = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        $this->actingAs($this->validator)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertDontSee('Batalkan Persetujuan');
+
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, true);
+
+        $this->actingAs($this->validator)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('Batalkan Persetujuan');
+    }
+
+    public function test_cancel_reference_approval_livewire_action_mengembalikan_ke_pending(): void
+    {
+        $ref = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref, $this->validator, true);
+
+        Livewire::actingAs($this->validator)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, ['record' => $this->submission->getRouteKey()])
+            ->call('cancelReferenceApproval', $ref->id)
+            ->assertHasNoErrors();
+
+        $this->assertNull($ref->fresh()->ref_approved);
     }
 
     public function test_validator_dapat_minta_revisi_per_referensi_dengan_catatan(): void

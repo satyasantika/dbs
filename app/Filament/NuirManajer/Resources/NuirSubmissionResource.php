@@ -6,10 +6,16 @@ use App\Filament\Concerns\AuthorizesNuirRolePanelAccess;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
+use App\Models\User;
+use App\Services\NuirAssignmentService;
+use Filament\Forms;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Validation\ValidationException;
 
 class NuirSubmissionResource extends Resource
 {
@@ -48,7 +54,43 @@ class NuirSubmissionResource extends Resource
                 Tables\Columns\TextColumn::make('year_generation')->label('Angkatan')->sortable(),
                 Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
                 Tables\Columns\TextColumn::make('status')->label('Status')->badge(),
-                Tables\Columns\TextColumn::make('assignment.validator.name')->label('Validator')->placeholder('Belum ditugaskan'),
+                Tables\Columns\SelectColumn::make('assignment.validator_id')
+                    ->label('Validator')
+                    ->placeholder('Belum ditugaskan')
+                    ->options(fn () => app(NuirAssignmentService::class)->validators()->pluck('name', 'id'))
+                    ->getStateUsing(fn (NuirSubmission $record): ?int => $record->assignment?->validator_id)
+                    ->updateStateUsing(function (NuirSubmission $record, $state) {
+                        if (blank($state)) {
+                            return null;
+                        }
+
+                        $validator = User::find($state);
+
+                        if (! $validator) {
+                            return null;
+                        }
+
+                        try {
+                            app(NuirAssignmentService::class)->assignValidator($record, $validator, auth()->user());
+
+                            Notification::make()
+                                ->success()
+                                ->title('Validator berhasil didelegasikan.')
+                                ->send();
+                        } catch (ValidationException $exception) {
+                            Notification::make()
+                                ->danger()
+                                ->title(collect($exception->errors())->flatten()->first())
+                                ->send();
+                        }
+
+                        return $state;
+                    })
+                    ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false),
+                Tables\Columns\TextColumn::make('assignment.validator.name')
+                    ->label('Validator')
+                    ->placeholder('Belum ditugaskan')
+                    ->visible(fn (): bool => ! (auth()->user()?->can('delegate nuir validator') ?? false)),
                 Tables\Columns\TextColumn::make('references_validated_count')
                     ->label('Referensi Divalidasi')
                     ->formatStateUsing(fn ($state, NuirSubmission $record): string => ($state ?? 0).'/'.($record->references_total_count ?? 0))
@@ -115,6 +157,55 @@ class NuirSubmissionResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkAction::make('delegateValidator')
+                    ->label('Delegasikan Validator')
+                    ->icon('heroicon-o-user-plus')
+                    ->color('primary')
+                    ->form([
+                        Forms\Components\Select::make('validator_id')
+                            ->label('Validator NUIR')
+                            ->options(fn () => app(NuirAssignmentService::class)->validators()->pluck('name', 'id'))
+                            ->required()
+                            ->searchable(),
+                    ])
+                    ->action(function (Collection $records, array $data): void {
+                        $validator = User::find($data['validator_id']);
+
+                        if (! $validator) {
+                            return;
+                        }
+
+                        $errors = collect();
+                        $delegated = 0;
+
+                        foreach ($records as $record) {
+                            try {
+                                app(NuirAssignmentService::class)->assignValidator($record, $validator, auth()->user());
+                                $delegated++;
+                            } catch (ValidationException $exception) {
+                                $errors->push($record->user?->name.': '.collect($exception->errors())->flatten()->first());
+                            }
+                        }
+
+                        if ($delegated > 0) {
+                            Notification::make()
+                                ->success()
+                                ->title('Validator berhasil didelegasikan ke '.$delegated.' submission.')
+                                ->send();
+                        }
+
+                        if ($errors->isNotEmpty()) {
+                            Notification::make()
+                                ->danger()
+                                ->title('Sebagian submission gagal didelegasikan')
+                                ->body($errors->implode("\n"))
+                                ->send();
+                        }
+                    })
+                    ->deselectRecordsAfterCompletion()
+                    ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false),
             ])
             ->defaultSort('updated_at', 'desc');
     }

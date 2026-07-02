@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\GuideAllocation;
 use App\Models\NuirProposal;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -246,6 +247,19 @@ class NuirProposalService
             ]);
         }
 
+        NuirRevisionEvent::create([
+            'nuir_submission_id' => $submission->id,
+            'submission_version' => $submission->version ?? 1,
+            'actor_id'           => $user->id,
+            'target_user_id'     => $guideId,
+            'actor_role'         => NuirRevisionEvent::ROLE_MAHASISWA,
+            'event_type'         => NuirRevisionEvent::TYPE_PROPOSAL_SELECTION,
+            'subject'            => 'guide'.$seat,
+            'nuir_proposal_id'   => $proposal->id,
+            'note'               => '',
+            'recorded_at'        => now(),
+        ]);
+
         if (! $locked && $this->needsQuotaConsumption($submission, $guideId, $seat)) {
             $this->quotaService->consume($guide, $seat, $submission->year_generation);
         }
@@ -271,6 +285,49 @@ class NuirProposalService
             ->values();
     }
 
+    /**
+     * @return list<array{id: int, name: string, remaining_quota: int, selectable: bool}>
+     */
+    public function lecturerSeatOptions(User $user, string $yearGeneration, int $guideOrder, array $lockedSeats): array
+    {
+        if ($guideOrder === 1 && $lockedSeats['guide1']) {
+            return $this->singleLecturerSeatOption(
+                (int) $lockedSeats['guide1']['id'],
+                1,
+                $yearGeneration,
+                selectable: false,
+            );
+        }
+
+        if ($guideOrder === 2 && $lockedSeats['guide2']) {
+            return $this->singleLecturerSeatOption(
+                (int) $lockedSeats['guide2']['id'],
+                2,
+                $yearGeneration,
+                selectable: false,
+            );
+        }
+
+        $lecturerIds = GuideAllocation::query()
+            ->where('year', (int) $yearGeneration)
+            ->where('active', true)
+            ->pluck('user_id');
+
+        return User::role('dosen')
+            ->where('id', '!=', $user->id)
+            ->whereIn('id', $lecturerIds)
+            ->orderBy('name')
+            ->get()
+            ->map(fn (User $lecturer): array => [
+                'id' => $lecturer->id,
+                'name' => $lecturer->name,
+                'remaining_quota' => $this->quotaService->remainingQuota($lecturer, $guideOrder, $yearGeneration),
+                'selectable' => $this->quotaService->hasQuota($lecturer, $guideOrder, $yearGeneration),
+            ])
+            ->values()
+            ->all();
+    }
+
     public function lecturers(User $user, string $yearGeneration, array $lockedSeats = ['guide1' => null, 'guide2' => null]): Collection
     {
         return User::role('dosen')
@@ -286,6 +343,44 @@ class NuirProposalService
                 return $p1Ok || $p2Ok;
             })
             ->values();
+    }
+
+    public function cancelSeat(NuirProposal $proposal, int $seat, User $actor, ?string $note = null, string $actorRole = NuirRevisionEvent::ROLE_MANAJER): void
+    {
+        if (! in_array($seat, [1, 2], true)) {
+            return;
+        }
+
+        $guideIdColumn  = $seat === 1 ? 'guide1_id' : 'guide2_id';
+        $statusColumn   = $seat === 1 ? 'guide1_status' : 'guide2_status';
+        $noteColumn     = $seat === 1 ? 'guide1_note' : 'guide2_note';
+        $respondedCol   = $seat === 1 ? 'guide1_responded_at' : 'guide2_responded_at';
+
+        if (! $proposal->{$guideIdColumn}) {
+            return;
+        }
+
+        $this->releaseSeatQuota($proposal, $seat);
+
+        NuirRevisionEvent::create([
+            'nuir_submission_id' => $proposal->nuir_submission_id,
+            'submission_version' => $proposal->submission?->version ?? 1,
+            'actor_id'           => $actor->id,
+            'target_user_id'     => $proposal->{$guideIdColumn},
+            'actor_role'         => $actorRole,
+            'event_type'         => NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION,
+            'subject'            => 'guide'.$seat,
+            'nuir_proposal_id'   => $proposal->id,
+            'note'               => $note ?? '',
+            'recorded_at'        => now(),
+        ]);
+
+        $proposal->update([
+            $guideIdColumn => null,
+            $statusColumn  => 'pending',
+            $noteColumn    => null,
+            $respondedCol  => null,
+        ]);
     }
 
     public function releaseSeatQuota(NuirProposal $proposal, int $guideOrder): void
@@ -332,5 +427,28 @@ class NuirProposalService
         return NuirProposal::whereHas('submission', fn ($q) => $q->where('user_id', $user->id))
             ->where('final', true)
             ->exists();
+    }
+
+    /**
+     * @return list<array{id: int, name: string, remaining_quota: int, selectable: bool}>
+     */
+    private function singleLecturerSeatOption(
+        int $lecturerId,
+        int $guideOrder,
+        string $yearGeneration,
+        bool $selectable,
+    ): array {
+        $lecturer = User::find($lecturerId);
+
+        if (! $lecturer) {
+            return [];
+        }
+
+        return [[
+            'id' => $lecturer->id,
+            'name' => $lecturer->name,
+            'remaining_quota' => $this->quotaService->remainingQuota($lecturer, $guideOrder, $yearGeneration),
+            'selectable' => $selectable,
+        ]];
     }
 }

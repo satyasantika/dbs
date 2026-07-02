@@ -51,6 +51,15 @@ class NuirReviewService
         ]);
     }
 
+    public function cancelReferenceApproval(NuirReference $reference): void
+    {
+        $reference->update([
+            'ref_approved' => null,
+            'ref_note' => null,
+            'ref_revision_fields' => null,
+        ]);
+    }
+
     public function reviewSubmission(NuirSubmission $submission, string $action, ?string $dbsNote = null): void
     {
         if ($action === 'revision' && blank($dbsNote)) {

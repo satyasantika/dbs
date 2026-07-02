@@ -7,6 +7,7 @@ use App\Filament\Mahasiswa\Concerns\HidesNuirNavigationWhenInactive;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Services\NuirMahasiswaWorkspaceService;
+use App\Services\NuirProposalService;
 use App\Support\NuirMahasiswaFieldStatus;
 use App\Support\NuirTextLimits;
 use Filament\Notifications\Notification;
@@ -64,6 +65,10 @@ class NuirSubmissionOverview extends Page
     public ?int $guide1Selection = null;
 
     public ?int $guide2Selection = null;
+
+    public string $nuirDocumentLink = '';
+
+    public bool $showDocumentCard = false;
 
     public function mount(NuirMahasiswaWorkspaceService $workspace): void
     {
@@ -289,6 +294,39 @@ class NuirSubmissionOverview extends Page
         }
     }
 
+    public function toggleDocumentCard(): void
+    {
+        $this->showDocumentCard = ! $this->showDocumentCard;
+    }
+
+    public function saveDocumentLink(NuirMahasiswaWorkspaceService $workspace): void
+    {
+        if (! $this->submission) {
+            return;
+        }
+
+        try {
+            $workspace->saveDocumentLink($this->submission, auth()->user(), $this->nuirDocumentLink);
+            $this->refreshWorkspace($workspace);
+            $this->showDocumentCard = filled($this->nuirDocumentLink);
+
+            Notification::make()
+                ->success()
+                ->title(filled($this->nuirDocumentLink)
+                    ? 'Link dokumen NUIR berhasil disimpan.'
+                    : 'Link dokumen NUIR dihapus.')
+                ->send();
+        } catch (ValidationException $exception) {
+            Notification::make()
+                ->danger()
+                ->title(collect($exception->errors())->flatten()->first())
+                ->send();
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->notifyDanger('Link dokumen gagal disimpan', 'Terjadi kesalahan. Coba lagi beberapa saat.');
+        }
+    }
+
     public function proposeGuide(int $seat, NuirMahasiswaWorkspaceService $workspace): void
     {
         if (! $this->submission) {
@@ -303,6 +341,18 @@ class NuirSubmissionOverview extends Page
             return;
         }
 
+        $selectedOption = collect($this->guideLecturerOptions($seat))
+            ->firstWhere('id', (int) $guideId);
+
+        if ($selectedOption === null || ! $selectedOption['selectable']) {
+            Notification::make()
+                ->danger()
+                ->title('Kuota Pembimbing '.$seat.' dosen ini sudah habis.')
+                ->send();
+
+            return;
+        }
+
         try {
             $workspace->proposeGuideSeat($this->submission, auth()->user(), $seat, (int) $guideId);
             $this->refreshWorkspace($workspace);
@@ -312,6 +362,24 @@ class NuirSubmissionOverview extends Page
         } catch (\Throwable $exception) {
             report($exception);
             $this->notifyDanger('Usulan gagal dikirim', 'Terjadi kesalahan. Coba lagi beberapa saat.');
+        }
+    }
+
+    public function cancelGuide(int $seat, NuirMahasiswaWorkspaceService $workspace): void
+    {
+        if (! $this->submission) {
+            return;
+        }
+
+        try {
+            $workspace->cancelGuideSeat($this->submission, auth()->user(), $seat);
+            $this->refreshWorkspace($workspace);
+            Notification::make()->success()->title('Usulan Pembimbing '.$seat.' dibatalkan.')->send();
+        } catch (ValidationException $exception) {
+            Notification::make()->danger()->title(collect($exception->errors())->flatten()->first())->send();
+        } catch (\Throwable $exception) {
+            report($exception);
+            $this->notifyDanger('Usulan gagal dibatalkan', 'Terjadi kesalahan. Coba lagi beberapa saat.');
         }
     }
 
@@ -368,6 +436,15 @@ class NuirSubmissionOverview extends Page
         }
 
         return app(NuirMahasiswaWorkspaceService::class)->fieldHistory($this->submission, $field);
+    }
+
+    public function proposalSeatHistory(int $seat): array
+    {
+        if (! $this->submission) {
+            return [];
+        }
+
+        return app(NuirMahasiswaWorkspaceService::class)->proposalSeatHistory($this->submission, $seat);
     }
 
     public function workspaceFieldUi(string $field, string $label): array
@@ -507,6 +584,23 @@ class NuirSubmissionOverview extends Page
         return app(NuirMahasiswaWorkspaceService::class)->guideSeatState($this->submission, $proposal, $seat);
     }
 
+    /**
+     * @return list<array{id: int, name: string, remaining_quota: int, selectable: bool}>
+     */
+    public function guideLecturerOptions(int $seat): array
+    {
+        if (! $this->submission) {
+            return [];
+        }
+
+        return app(NuirProposalService::class)->lecturerSeatOptions(
+            auth()->user(),
+            $this->submission->year_generation,
+            $seat,
+            $this->submission->lockedSeats(),
+        );
+    }
+
     protected function nuiFieldLabel(string $field): string
     {
         return match ($field) {
@@ -588,6 +682,8 @@ class NuirSubmissionOverview extends Page
             $proposal = $workspace->activeProposal($this->submission);
             $this->guide1Selection = $proposal?->guide1_id;
             $this->guide2Selection = $proposal?->guide2_id;
+            $this->nuirDocumentLink = (string) ($this->submission->nuir_document_link ?? '');
+            $this->showDocumentCard = filled($this->submission->nuir_document_link);
         }
 
         unset($this->activeProposal, $this->rejectionHistory, $this->referenceSlots, $this->lecturersP1, $this->lecturersP2);

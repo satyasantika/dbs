@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dosen;
 
 use App\Http\Controllers\Controller;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirSubmission;
@@ -11,6 +12,7 @@ use App\Services\NuirProposalService;
 use App\Services\NuirRevisionHistoryService;
 use App\Services\NuirService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class NuirProposalController extends Controller
 {
@@ -130,13 +132,27 @@ class NuirProposalController extends Controller
         return back()->with('success', 'Review referensi disimpan.');
     }
 
+    public function cancelReferenceReview(NuirProposal $nuirProposal, NuirReference $nuirReference)
+    {
+        $this->authorizeProposal($nuirProposal);
+        $this->ensureCanReview($nuirProposal);
+
+        if ($nuirReference->nuir_submission_id !== $nuirProposal->nuir_submission_id) {
+            abort(404);
+        }
+
+        $this->assignmentService->cancelReferenceReviewAsGuide($nuirReference, $nuirProposal, auth()->user());
+
+        return back()->with('success', 'Persetujuan referensi dibatalkan.');
+    }
+
     public function reviewContent(Request $request, NuirProposal $nuirProposal)
     {
         $this->authorizeProposal($nuirProposal);
         $this->ensureCanReview($nuirProposal);
 
         $data = $request->validate([
-            'field' => ['required', 'in:novelty,urgency,impact'],
+            'field' => ['required', Rule::in(NuirContentReview::FIELDS)],
             'approved' => ['required', 'in:0,1'],
             'note' => ['nullable', 'string', 'required_if:approved,0'],
         ]);
@@ -155,6 +171,25 @@ class NuirProposalController extends Controller
         app(\App\Support\NuirGuideSeatSync::class)->tryFinalize($nuirProposal->fresh());
 
         return back()->with('success', $approved ? 'Elemen NUI disetujui.' : 'Permintaan revisi elemen NUI disimpan.');
+    }
+
+    public function cancelContentReview(Request $request, NuirProposal $nuirProposal)
+    {
+        $this->authorizeProposal($nuirProposal);
+        $this->ensureCanReview($nuirProposal);
+
+        $data = $request->validate([
+            'field' => ['required', Rule::in(NuirContentReview::FIELDS)],
+        ]);
+
+        $this->assignmentService->cancelContentReviewAsGuide(
+            $nuirProposal->submission,
+            $nuirProposal,
+            auth()->user(),
+            $data['field'],
+        );
+
+        return back()->with('success', 'Persetujuan elemen NUI dibatalkan.');
     }
 
     private function authorizeProposal(NuirProposal $proposal): void

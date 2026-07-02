@@ -12,6 +12,7 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\NuirSettingSeeder;
 use Database\Seeders\NuirSimulationAccountSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -29,6 +30,11 @@ class NuirSeederTest extends TestCase
         $this->assertNotNull($setting);
         $this->assertTrue($setting->active);
         $this->assertSame(1, $setting->stage);
+
+        $setting2026 = NuirSetting::where('year_generation', NuirSettingSeeder::YEAR_2026)->first();
+        $this->assertNotNull($setting2026);
+        $this->assertTrue($setting2026->active);
+        $this->assertSame(1, $setting2026->stage);
 
         // Simulation mode: 8 students × 1 submission each (no DBS revision chain / v2)
         $this->assertGreaterThanOrEqual(8, NuirSubmission::count());
@@ -80,9 +86,17 @@ class NuirSeederTest extends TestCase
 
         NuirProposal::all()->each(function (NuirProposal $proposal) {
             $this->assertContains($proposal->submission?->status, ['submitted', 'content_ok', 'finalized']);
-            $this->assertTrue($proposal->guide1?->hasRole('dosen'));
-            $this->assertTrue($proposal->guide2?->hasRole('dosen'));
-            $this->assertNotSame($proposal->guide1_id, $proposal->guide2_id);
+            // guide1/guide2 can be null when manajer cancelled the seat
+            if ($proposal->guide1_id) {
+                $this->assertTrue($proposal->guide1?->hasRole('dosen'));
+            }
+            if ($proposal->guide2_id) {
+                $this->assertTrue($proposal->guide2?->hasRole('dosen'));
+            }
+            // If both guides exist, they must be different
+            if ($proposal->guide1_id && $proposal->guide2_id) {
+                $this->assertNotSame($proposal->guide1_id, $proposal->guide2_id);
+            }
         });
 
         $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
@@ -116,6 +130,19 @@ class NuirSeederTest extends TestCase
                 ->orWhere('guide2_id', $pembimbing1?->id)
                 ->exists()
         );
+        $this->assertTrue($pembimbing1?->hasRole('dosen'));
+        $this->assertTrue(
+            $pembimbing1?->hasRole('manajer nuir'),
+            'pembimbing1 harus punya role manajer nuir agar bisa menjelajahi panel /nuir-manajer saat simulasi.',
+        );
+        $this->assertTrue(
+            $pembimbing1?->hasRole('validator nuir'),
+            'pembimbing1 harus punya role validator nuir agar bisa menjelajahi panel /nuir-validator saat simulasi.',
+        );
+
+        $pembimbing2 = User::where('username', 'pembimbing2')->first();
+        $this->assertFalse($pembimbing2?->hasRole('manajer nuir'));
+        $this->assertFalse($pembimbing2?->hasRole('validator nuir'));
 
         $yearInt = (int) $year;
         $this->assertGreaterThanOrEqual(
@@ -146,6 +173,19 @@ class NuirSeederTest extends TestCase
             0,
             NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_PROPOSAL_REJECTION)->count(),
         );
+        $this->assertGreaterThan(
+            0,
+            NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION)->count(),
+            'Harus ada histori pembatalan calon pembimbing oleh manajer.',
+        );
+
+        // mahasiswa5: P2 dibatalkan manajer, guide2_id harus null
+        $mahasiswa5 = User::where('username', 'mahasiswa5')->first();
+        $cancelledProposal = NuirProposal::whereHas('submission', fn ($q) => $q->where('user_id', $mahasiswa5?->id))
+            ->whereNull('guide2_id')
+            ->where('guide2_status', 'pending')
+            ->first();
+        $this->assertNotNull($cancelledProposal, 'mahasiswa5 harus punya proposal dengan P2 dibatalkan (guide2_id null).');
 
         $mahasiswa6 = User::where('username', 'mahasiswa6')->first();
         $partialSubmission = NuirSubmission::where('user_id', $mahasiswa6?->id)
@@ -153,7 +193,7 @@ class NuirSeederTest extends TestCase
             ->first();
         $this->assertNotNull($partialSubmission);
         $this->assertSame(
-            3,
+            count(NuirContentReview::FIELDS),
             NuirContentReview::where('nuir_submission_id', $partialSubmission->id)
                 ->where('user_id', $pembimbing1?->id)
                 ->where('approved', true)

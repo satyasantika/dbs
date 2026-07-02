@@ -17,6 +17,7 @@
             $isVerifiable = NuirReferenceExistence::isVerifiable($reference);
             $isApproved = $reference->ref_approved === true;
             $canActOnReference = $canReview && ! $isApproved;
+            $canCancelApproval = $canReview && $isApproved;
             $statusLabel = match ($reference->ref_approved) {
                 true => 'Disetujui',
                 false => 'Diminta revisi',
@@ -130,10 +131,6 @@
                         </div>
                     @endif
 
-                    @include('filament.nuir-manajer.infolists.partials.revision-accordion', [
-                        'history' => $history,
-                    ])
-
                     @if ($canActOnReference)
                         <div
                             x-data="{
@@ -141,6 +138,29 @@
                                 note: @js($reference->ref_note ?? ''),
                                 fields: @js($reference->ref_revision_fields ?? []),
                                 fieldOptions: @js($revisionFieldOptions),
+                                toggleField(key, label, checked) {
+                                    const prefix = '(' + label + '):';
+
+                                    if (checked) {
+                                        if (! this.fields.includes(key)) {
+                                            this.fields.push(key);
+                                        }
+
+                                        const hasLine = this.note.split('\n').some(line => line.trim().startsWith(prefix));
+
+                                        if (! hasLine) {
+                                            this.note = this.note.replace(/\s+$/, '') === ''
+                                                ? prefix + ' '
+                                                : this.note.replace(/\n*$/, '') + '\n' + prefix + ' ';
+                                        }
+                                    } else {
+                                        this.fields = this.fields.filter(f => f !== key);
+                                        this.note = this.note
+                                            .split('\n')
+                                            .filter(line => ! line.trim().startsWith(prefix))
+                                            .join('\n');
+                                    }
+                                },
                             }"
                             class="space-y-3 border-t border-gray-100 pt-3 dark:border-gray-800"
                         >
@@ -160,7 +180,8 @@
                                                 type="checkbox"
                                                 class="mt-0.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-950"
                                                 :value="key"
-                                                x-model="fields"
+                                                :checked="fields.includes(key)"
+                                                x-on:change="toggleField(key, label, $event.target.checked)"
                                             />
                                             <span x-text="label"></span>
                                         </label>
@@ -174,7 +195,7 @@
                                     x-model="note"
                                     rows="4"
                                     class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-teal-500 focus:ring-teal-500 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
-                                    placeholder="Jelaskan perbaikan yang diperlukan..."
+                                    placeholder="Centang bagian di atas untuk menambahkan barisnya secara otomatis, contoh: (Link OJS): catatannya"
                                 ></textarea>
                                 <div class="mt-3 flex justify-end gap-2">
                                     <x-filament::button color="gray" size="sm" x-on:click="revisionOpen = false">
@@ -190,7 +211,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex flex-wrap items-center gap-2">
+                            <div x-show="! revisionOpen" class="flex flex-wrap items-center gap-2">
                                 <x-filament::button
                                     color="success"
                                     size="sm"
@@ -212,7 +233,25 @@
                                 </x-filament::button>
                             </div>
                         </div>
+                    @elseif ($canCancelApproval)
+                        <div class="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3 dark:border-gray-800">
+                            <x-filament::button
+                                color="gray"
+                                size="sm"
+                                icon="heroicon-o-arrow-uturn-left"
+                                wire:click="cancelReferenceApproval({{ $reference->id }})"
+                                wire:loading.attr="disabled"
+                                wire:target="cancelReferenceApproval({{ $reference->id }})"
+                                wire:confirm="Batalkan persetujuan referensi #{{ $reference->ref_order }} ini?"
+                            >
+                                Batalkan Persetujuan
+                            </x-filament::button>
+                        </div>
                     @endif
+
+                    @include('filament.nuir-manajer.infolists.partials.revision-accordion', [
+                        'history' => $history,
+                    ])
                 </div>
             </div>
         </div>

@@ -98,6 +98,21 @@ class ViewNuirSubmission extends ViewRecord
         }
     }
 
+    public function cancelReferenceApproval(int $referenceId): void
+    {
+        $reference = $this->findOwnedReference($referenceId);
+
+        try {
+            app(NuirAssignmentService::class)->cancelReferenceApprovalAsValidator($reference, auth()->user());
+
+            $this->refreshReferences();
+
+            Notification::make()->success()->title('Persetujuan referensi dibatalkan.')->send();
+        } catch (ValidationException $exception) {
+            Notification::make()->danger()->title(collect($exception->errors())->flatten()->first())->send();
+        }
+    }
+
     public function requestReferenceRevision(int $referenceId, ?string $refNote = null, array $revisionFields = []): void
     {
         $reference = $this->findOwnedReference($referenceId);

@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
         Route::put('/setting/examregistrations/{examregistration}/mark-sent', [App\Http\Controllers\Setting\Examination\ExamScoreController::class, 'markSent'])->name('examregistrations.examscores.mark-sent');
         Route::post('/setting/examregistrations/paste-import',[App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImport'])->name('examregistrations.paste-import');
         Route::post('/setting/examregistrations/paste-import-check-duplicates', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteImportCheckDuplicates'])->name('examregistrations.paste-import-check-duplicates');
+        Route::post('/setting/guideallocations/paste-import', [App\Http\Controllers\Setting\Nuir\GuideAllocationController::class, 'pasteImport'])->name('guideallocations.paste-import');
+        Route::post('/setting/guideallocations/paste-import-check-duplicates', [App\Http\Controllers\Setting\Nuir\GuideAllocationController::class, 'pasteImportCheckDuplicates'])->name('guideallocations.paste-import-check-duplicates');
         Route::post('/setting/examregistrations/paste-bulk-edit-resolve', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEditResolve'])->name('examregistrations.paste-bulk-edit-resolve');
         Route::post('/setting/examregistrations/paste-bulk-edit', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'pasteBulkEdit'])->name('examregistrations.paste-bulk-edit');
         Route::get('/setting/examregistrations/{examregistration}/whatsapp/invite', [App\Http\Controllers\Setting\Examination\ExamRegistrationController::class, 'whatsappInvite'])->name('examregistrations.whatsapp-invite');
@@ -111,8 +113,14 @@ Route::middleware('auth')->group(function () {
             Route::patch('nuir/dosen/{nuirProposal}/references/{nuirReference}', [App\Http\Controllers\Dosen\NuirProposalController::class, 'reviewReference'])
                 ->name('nuir.dosen.review-reference')
                 ->middleware('can:respond nuir proposal');
+            Route::delete('nuir/dosen/{nuirProposal}/references/{nuirReference}', [App\Http\Controllers\Dosen\NuirProposalController::class, 'cancelReferenceReview'])
+                ->name('nuir.dosen.cancel-reference-review')
+                ->middleware('can:respond nuir proposal');
             Route::patch('nuir/dosen/{nuirProposal}/content', [App\Http\Controllers\Dosen\NuirProposalController::class, 'reviewContent'])
                 ->name('nuir.dosen.review-content')
+                ->middleware('can:respond nuir proposal');
+            Route::delete('nuir/dosen/{nuirProposal}/content', [App\Http\Controllers\Dosen\NuirProposalController::class, 'cancelContentReview'])
+                ->name('nuir.dosen.cancel-content-review')
                 ->middleware('can:respond nuir proposal');
         });
         Route::resource('selection/stages', App\Http\Controllers\Selection\StageController::class)->only('store');

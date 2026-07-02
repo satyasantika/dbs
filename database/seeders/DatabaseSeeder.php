@@ -16,10 +16,11 @@ class DatabaseSeeder extends Seeder
             ExamSeeder::class,
             PermissionSeeder::class,
             CreateAdminUserSeeder::class,
-            // UserSeeder::class, // Nonaktif sementara: impor CSV dosen/mahasiswa memperlambat migrate --seed simulasi NUIR.
+            // UserSeeder::class, // Nonaktif untuk simulasi NUIR — dosen/mahasiswa dari NuirSimulationAccountSeeder.
+            NuirSimulationAccountSeeder::class,
             ExamRegistrationSeeder::class,
             GuideAllocationGroupSeeder::class,
-            NuirSimulationAccountSeeder::class,
+            NuirSettingSeeder::class,
             NuirSeeder::class,
         ]);
 

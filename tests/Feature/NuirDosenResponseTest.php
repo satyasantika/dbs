@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\GuideExaminer;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
@@ -162,8 +163,10 @@ class NuirDosenResponseTest extends TestCase
     }
 
     /** @param list<string> $fields */
-    private function approveAllNuiFields(User $dosen, array $fields = ['novelty', 'urgency', 'impact']): void
+    private function approveAllNuiFields(User $dosen, ?array $fields = null): void
     {
+        $fields ??= NuirContentReview::FIELDS;
+
         foreach ($fields as $field) {
             $this->actingAs($dosen)
                 ->patch("/nuir/dosen/{$this->proposal->id}/content", [

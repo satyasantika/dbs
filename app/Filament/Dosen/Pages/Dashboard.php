@@ -2,6 +2,8 @@
 
 namespace App\Filament\Dosen\Pages;
 
+use App\Filament\Dosen\Widgets\DosenNuirManajerWidget;
+use App\Filament\Dosen\Widgets\DosenNuirValidatorWidget;
 use App\Filament\Dosen\Widgets\DosenStatsWidget;
 use App\Filament\Dosen\Widgets\WelcomeWidget;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -15,6 +17,8 @@ class Dashboard extends BaseDashboard
         return [
             WelcomeWidget::class,
             DosenStatsWidget::class,
+            DosenNuirManajerWidget::class,
+            DosenNuirValidatorWidget::class,
         ];
     }
 

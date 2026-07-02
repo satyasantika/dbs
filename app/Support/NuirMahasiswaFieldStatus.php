@@ -459,7 +459,7 @@ class NuirMahasiswaFieldStatus
 
     private static function contextualLabel(string $elementLabel, string $statusMessage, string $versionLabel): string
     {
-        return "{$elementLabel}: ".mb_strtolower($statusMessage);
+        return "{$elementLabel} ({$versionLabel}): ".mb_strtolower($statusMessage);
     }
 
     private static function statusMessageFromKey(string $key): string
@@ -486,7 +486,7 @@ class NuirMahasiswaFieldStatus
 
     private static function versionSuffix(?string $versionLabel): string
     {
-        return '';
+        return filled($versionLabel) ? " ({$versionLabel})" : '';
     }
 
     /**

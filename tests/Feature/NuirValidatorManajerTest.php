@@ -219,7 +219,7 @@ class NuirValidatorManajerTest extends TestCase
             'guide2_id' => $this->dosen2->id,
         ]);
 
-        foreach (['novelty', 'urgency', 'impact'] as $field) {
+        foreach (\App\Models\NuirContentReview::FIELDS as $field) {
             $this->actingAs($this->dosen1)
                 ->patch("/nuir/dosen/{$proposal->id}/content", [
                     'field' => $field,

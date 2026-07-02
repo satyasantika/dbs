@@ -16,6 +16,39 @@ class NuirSimulationAccountSeeder extends Seeder
     public const EMPTY_NUIR_STUDENT_USERNAME = 'mahasiswa9';
 
     /**
+     * Dosen simulasi dengan kode inisial (untuk import kuota / dropdown pembimbing).
+     *
+     * @var array<string, string> initial => nama lengkap
+     */
+    public const SIMULATION_LECTURERS = [
+        'DVR' => 'Dr. Diar Veni Rahayu',
+        'HET' => 'Dr. Hetty Patmawati',
+        'MEG' => 'Dr. Mega Nur Prabawati',
+        'NAN' => 'Dr. Nani Ratnaningsih',
+        'PUJ' => 'Dr. Puji Lestari',
+        'MAD' => 'Dr. Sri Tirto Madawistama',
+        'SUP' => 'Dr. Supratman',
+        'YEN' => 'Dr. Yeni Heryani',
+        'ELS' => 'Elis Nurhayati, M.Pd.',
+        'EVA' => 'Eva Mulyani, M.Pd.',
+        'IPH' => 'Ipah Muzdalipah, M.Pd.',
+        'RAT' => 'Ratna Rustina, M.Pd.',
+        'VEP' => 'Vepi Apiati, M.Pd.',
+        'DDM' => 'Dedi Muhtadi, M.Pd.',
+        'DPA' => 'Depi Ardian Nugraha, M.Pd.',
+        'DPS' => 'Depi Setialesmana, M.Pd.',
+        'DNK' => 'Dian Kurniawan, M.Pd.',
+        'EKO' => 'Dr. Eko Yulianto',
+        'SIN' => 'Dr. Sinta Verawati Dewi',
+        'SUK' => 'Dr. Sukirwan',
+        'IKE' => 'Ike Natalliasari, M.Pd.',
+        'LIN' => 'Linda Herawati, M.Pd.',
+        'RED' => 'Redi Hermanto, M.Pd.',
+        'SAT' => 'Satya Santika, M.Pd.',
+        'SIS' => 'Siska Ryane Muslim, M.Pd.',
+    ];
+
+    /**
      * Akun sementara untuk uji coba alur NUIR per role.
      * Password semua akun: {@see self::PASSWORD}
      */
@@ -23,7 +56,17 @@ class NuirSimulationAccountSeeder extends Seeder
     {
         $this->seedAccount('dbs', 'DBS Simulasi', 'dbs@simulasi.test', 'dbs', active: false);
 
-        foreach (['pembimbing1', 'pembimbing2', 'penguji1', 'penguji2', 'penguji3'] as $index => $username) {
+        foreach (self::SIMULATION_LECTURERS as $initial => $name) {
+            $this->seedAccount(
+                strtolower($initial),
+                $name,
+                strtolower($initial).'@simulasi.test',
+                'dosen',
+                initial: $initial,
+            );
+        }
+
+        foreach (['pembimbing1', 'pembimbing2', 'penguji1', 'penguji2', 'penguji3'] as $username) {
             $labels = [
                 'pembimbing1' => 'Pembimbing Satu',
                 'pembimbing2' => 'Pembimbing Dua',
@@ -31,7 +74,12 @@ class NuirSimulationAccountSeeder extends Seeder
                 'penguji2' => 'Penguji Dua',
                 'penguji3' => 'Penguji Tiga',
             ];
-            $this->seedAccount($username, $labels[$username], "{$username}@simulasi.test", 'dosen');
+            // pembimbing1 juga diberi role manajer & validator agar satu akun bisa
+            // menjelajahi ketiga panel NUIR (Dosen, Manajer, Validator) saat simulasi.
+            $roles = $username === 'pembimbing1'
+                ? ['dosen', 'manajer nuir', 'validator nuir']
+                : ['dosen'];
+            $this->seedAccount($username, $labels[$username], "{$username}@simulasi.test", $roles);
         }
 
         foreach (range(1, 8) as $number) {
@@ -54,28 +102,41 @@ class NuirSimulationAccountSeeder extends Seeder
         $this->seedAccount('validator1', 'Validator NUIR Simulasi', 'validator1@simulasi.test', 'validator nuir');
 
         $this->command?->info('NuirSimulationAccountSeeder: akun simulasi NUIR siap (password: '.self::PASSWORD.').');
+        $this->command?->info('Dosen inisial: '.count(self::SIMULATION_LECTURERS).' akun + 5 akun skenario (pembimbing1/2, penguji1/2/3).');
         $this->command?->info('Angkatan simulasi: '.self::SIMULATION_YEAR.' — lihat docs/nuir-simulasi.md untuk panduan per role.');
         $this->command?->info('Mahasiswa belum NUIR: '.self::EMPTY_NUIR_STUDENT_USERNAME.' (password: '.self::PASSWORD.').');
     }
 
+    /**
+     * @param  string|list<string>  $roles
+     */
     private function seedAccount(
         string $username,
         string $name,
         string $email,
-        string $role,
+        string|array $roles,
         bool $active = true,
+        ?string $initial = null,
     ): User {
+        $attributes = [
+            'name' => $name,
+            'email' => $email,
+            'password' => Hash::make(self::PASSWORD),
+        ];
+
+        if ($initial !== null) {
+            $attributes['initial'] = strtoupper($initial);
+        }
+
         $user = User::updateOrCreate(
             ['username' => $username],
-            [
-                'name' => $name,
-                'email' => $email,
-                'password' => Hash::make(self::PASSWORD),
-            ],
+            $attributes,
         );
 
-        if (! $user->hasRole($role)) {
-            $user->assignRole($role);
+        foreach (is_array($roles) ? $roles : [$roles] as $role) {
+            if (! $user->hasRole($role)) {
+                $user->assignRole($role);
+            }
         }
 
         if ($active && ! $user->can('active')) {
