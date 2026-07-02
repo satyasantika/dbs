@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
+use App\Support\NuirExternalUrl;
 use App\Support\NuirMahasiswaFieldStatus;
 use App\Support\NuirRevisionGate;
 use App\Support\NuirTextLimits;
@@ -224,6 +226,36 @@ class NuirMahasiswaWorkspaceService
         $this->maybePromoteToSubmitted($submission->fresh(), $setting);
     }
 
+    public function saveDocumentLink(NuirSubmission $submission, User $user, ?string $link): void
+    {
+        $this->authorizeOwner($submission, $user);
+        $this->requireWritableSetting($user);
+
+        if ($submission->hasActiveFinalProposal()) {
+            throw ValidationException::withMessages([
+                'nuir_document_link' => 'Pengajuan sudah final dan tidak dapat diubah.',
+            ]);
+        }
+
+        $link = trim((string) $link);
+
+        if ($link === '') {
+            $submission->update(['nuir_document_link' => null]);
+
+            return;
+        }
+
+        $normalized = NuirExternalUrl::normalizeGoogleDrive($link);
+
+        if ($normalized === null) {
+            throw ValidationException::withMessages([
+                'nuir_document_link' => 'Link harus berupa tautan Google Drive yang valid (drive.google.com atau docs.google.com).',
+            ]);
+        }
+
+        $submission->update(['nuir_document_link' => $normalized]);
+    }
+
     public function proposeGuideSeat(NuirSubmission $submission, User $user, int $seat, int $guideId): NuirProposal
     {
         $this->authorizeOwner($submission, $user);
@@ -351,6 +383,175 @@ class NuirMahasiswaWorkspaceService
             ->first();
     }
 
+    /**
+     * Build a chronological timeline of events for a single guide seat.
+     *
+     * Each item: ['type' => string, 'at' => Carbon, 'guide_name' => ?string, 'actor_name' => ?string, 'note' => ?string]
+     * Types: 'proposed', 'rejected', 'cancelled', 'accepted'
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function proposalSeatHistory(NuirSubmission $submission, int $seat): array
+    {
+        $seatKey     = 'guide'.$seat;
+        $statusCol   = $seatKey.'_status';
+        $respondedCol = $seatKey.'_responded_at';
+
+        $events = NuirRevisionEvent::where('nuir_submission_id', $submission->id)
+            ->whereIn('event_type', [
+                NuirRevisionEvent::TYPE_PROPOSAL_SELECTION,
+                NuirRevisionEvent::TYPE_PROPOSAL_REJECTION,
+                NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION,
+            ])
+            ->where('subject', $seatKey)
+            ->with(['actor', 'target'])
+            ->orderBy('recorded_at')
+            ->orderBy('id')
+            ->get();
+
+        $hasSelectionEvents = $events
+            ->where('event_type', NuirRevisionEvent::TYPE_PROPOSAL_SELECTION)
+            ->isNotEmpty();
+
+        // Primary path: selection events give us full timestamps
+        if ($hasSelectionEvents) {
+            $timeline = $this->buildTimelineFromEvents($events);
+        } else {
+            // Fallback: synthesize from proposal records (seeder/legacy data without events)
+            $timeline = $this->buildFallbackTimeline($submission, $seat, $events);
+        }
+
+        // Synthesize acceptance event from proposal record (not logged as a revision event)
+        $acceptedProposal = $submission->proposals()
+            ->with([$seatKey])
+            ->where($statusCol, 'accepted')
+            ->whereNotNull($respondedCol)
+            ->orderBy($respondedCol)
+            ->first();
+
+        if ($acceptedProposal && ! collect($timeline)->contains('type', 'accepted')) {
+            $guide = $acceptedProposal->{'guide'.$seat};
+            $timeline[] = [
+                'type'       => 'accepted',
+                'at'         => $acceptedProposal->{$respondedCol},
+                'guide_name' => $guide?->name ?? '—',
+                'actor_name' => null,
+                'note'       => null,
+            ];
+
+            usort($timeline, static fn ($a, $b) => $a['at'] <=> $b['at']);
+        }
+
+        return $timeline;
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, NuirRevisionEvent> $events */
+    private function buildTimelineFromEvents(Collection $events): array
+    {
+        $timeline = [];
+
+        foreach ($events as $event) {
+            $item = match ($event->event_type) {
+                NuirRevisionEvent::TYPE_PROPOSAL_SELECTION => [
+                    'type'       => 'proposed',
+                    'at'         => $event->recorded_at,
+                    'guide_name' => $event->target?->name ?? '—',
+                    'actor_name' => null,
+                    'note'       => null,
+                ],
+                NuirRevisionEvent::TYPE_PROPOSAL_REJECTION => [
+                    'type'       => 'rejected',
+                    'at'         => $event->recorded_at,
+                    'guide_name' => $event->actor?->name ?? '—',
+                    'actor_name' => null,
+                    'note'       => $event->note,
+                ],
+                NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION => [
+                    'type'       => 'cancelled',
+                    'at'         => $event->recorded_at,
+                    'guide_name' => $event->target?->name,
+                    'actor_name' => $event->actor?->name ?? '—',
+                    'actor_role' => $event->actor_role,
+                    'note'       => $event->note,
+                ],
+                default => null,
+            };
+
+            if ($item !== null) {
+                $timeline[] = $item;
+            }
+        }
+
+        return $timeline;
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, NuirRevisionEvent> $events */
+    private function buildFallbackTimeline(NuirSubmission $submission, int $seat, Collection $events): array
+    {
+        $seatKey      = 'guide'.$seat;
+        $guideIdCol   = $seatKey.'_id';
+        $statusCol    = $seatKey.'_status';
+        $noteCol      = $seatKey.'_note';
+        $respondedCol = $seatKey.'_responded_at';
+
+        $proposals = $submission->proposals()->with(['guide1', 'guide2'])->orderBy('id')->get();
+
+        $timeline = [];
+
+        foreach ($proposals as $proposal) {
+            $guide  = $proposal->{'guide'.$seat};
+            $status = $proposal->{$statusCol};
+
+            if ($guide) {
+                $timeline[] = [
+                    'type'       => 'proposed',
+                    'at'         => $proposal->created_at,
+                    'guide_name' => $guide->name,
+                    'actor_name' => null,
+                    'note'       => null,
+                ];
+            }
+
+            if ($status === 'rejected') {
+                $timeline[] = [
+                    'type'       => 'rejected',
+                    'at'         => $proposal->{$respondedCol} ?? $proposal->created_at,
+                    'guide_name' => $guide?->name ?? '—',
+                    'actor_name' => null,
+                    'note'       => $proposal->{$noteCol},
+                ];
+            } elseif ($status === 'accepted') {
+                $timeline[] = [
+                    'type'       => 'accepted',
+                    'at'         => $proposal->{$respondedCol},
+                    'guide_name' => $guide?->name ?? '—',
+                    'actor_name' => null,
+                    'note'       => null,
+                ];
+            }
+        }
+
+        // Append cancellation events (may exist even without selection events)
+        foreach ($events as $event) {
+            if ($event->event_type !== NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION) {
+                continue;
+            }
+
+            $timeline[] = [
+                'type'       => 'cancelled',
+                'at'         => $event->recorded_at,
+                'guide_name' => $event->target?->name,
+                'actor_name' => $event->actor?->name ?? '—',
+                'actor_role' => $event->actor_role,
+                'note'       => $event->note,
+            ];
+        }
+
+        usort($timeline, static fn ($a, $b) => $a['at'] <=> $b['at']);
+
+        return $timeline;
+    }
+
     public function guideSeatState(NuirSubmission $submission, NuirProposal $proposal, int $seat): array
     {
         $guideId = $seat === 1 ? $proposal->guide1_id : $proposal->guide2_id;
@@ -367,7 +568,35 @@ class NuirMahasiswaWorkspaceService
             'locked' => $locked,
             'can_change' => $canChange && ! $submission->hasActiveFinalProposal(),
             'is_readonly' => filled($guideId) && $status !== 'rejected',
+            'can_cancel' => filled($guideId) && $status === 'pending' && ! $submission->hasActiveFinalProposal(),
         ];
+    }
+
+    public function cancelGuideSeat(NuirSubmission $submission, User $user, int $seat): void
+    {
+        $this->authorizeOwner($submission, $user);
+
+        $proposal = $this->activeProposal($submission);
+
+        if (! $proposal) {
+            return;
+        }
+
+        $status = $seat === 1 ? $proposal->guide1_status : $proposal->guide2_status;
+
+        if ($status !== 'pending') {
+            throw ValidationException::withMessages([
+                'guide' => 'Usulan hanya dapat dibatalkan selagi menunggu respons pembimbing.',
+            ]);
+        }
+
+        $this->proposalService->cancelSeat(
+            $proposal->load('submission'),
+            $seat,
+            $user,
+            null,
+            NuirRevisionEvent::ROLE_MAHASISWA,
+        );
     }
 
     protected function maybePromoteToSubmitted(NuirSubmission $submission, NuirSetting $setting): void

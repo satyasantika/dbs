@@ -2,7 +2,6 @@
 
 namespace App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
 
-use App\Filament\NuirManajer\Pages\Dashboard;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -49,9 +48,9 @@ class ListNuirSubmissions extends ListRecords
     {
         return [
             Actions\Action::make('dashboard')
-                ->label(filled($this->dashboardView) ? 'Kembali ke Dashboard' : 'Dashboard')
+                ->label('Dashboard')
                 ->icon('heroicon-o-home')
-                ->url(Dashboard::getUrl(panel: 'nuir-manajer')),
+                ->url(route('home')),
         ];
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Filament\NuirValidator\Resources\NuirSubmissionResource\Pages;
 
-use App\Filament\NuirValidator\Pages\Dashboard;
 use App\Filament\NuirValidator\Resources\NuirSubmissionResource;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
@@ -42,9 +41,9 @@ class ListNuirSubmissions extends ListRecords
     {
         return [
             Actions\Action::make('dashboard')
-                ->label(filled($this->dashboardView) ? 'Kembali ke Dashboard' : 'Dashboard')
+                ->label('Dashboard')
                 ->icon('heroicon-o-home')
-                ->url(Dashboard::getUrl(panel: 'nuir-validator')),
+                ->url(route('home')),
         ];
     }
 }

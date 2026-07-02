@@ -8,9 +8,11 @@ use App\Models\GuideAllocation;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class GuideAllocationResource extends Resource
 {
@@ -88,13 +90,101 @@ class GuideAllocationResource extends Resource
                     ->boolean(),
             ])
             ->filters([
-                Tables\Filters\TernaryFilter::make('active')->label('Status Aktif'),
                 Tables\Filters\SelectFilter::make('year')
                     ->label('Tahun')
-                    ->options(fn () => GuideAllocation::distinct()->pluck('year', 'year')),
+                    ->options(fn (): array => GuideAllocation::query()
+                        ->distinct()
+                        ->orderByDesc('year')
+                        ->pluck('year')
+                        ->mapWithKeys(fn ($year) => [(string) $year => (string) $year])
+                        ->all())
+                    ->searchable()
+                    ->preload()
+                    ->default(function (): ?string {
+                        $year = GuideAllocation::query()->max('year');
+
+                        return $year !== null ? (string) $year : null;
+                    })
+                    ->indicator('Tahun'),
+                Tables\Filters\TernaryFilter::make('active')->label('Status Aktif'),
             ])
+            ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
+            ->filtersFormColumns(2)
+            ->persistFiltersInSession()
             ->actions([
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('toggleActive')
+                    ->label(fn (GuideAllocation $record): string => $record->active ? 'Nonaktifkan' : 'Aktifkan')
+                    ->icon(fn (GuideAllocation $record): string => $record->active
+                        ? 'heroicon-o-x-circle'
+                        : 'heroicon-o-check-circle')
+                    ->color(fn (GuideAllocation $record): string => $record->active ? 'danger' : 'success')
+                    ->action(function (GuideAllocation $record): void {
+                        $activating = ! $record->active;
+                        $record->update(['active' => $activating]);
+
+                        Notification::make()
+                            ->success()
+                            ->title($activating ? 'Kuota diaktifkan' : 'Kuota dinonaktifkan')
+                            ->body(($record->lecture?->name ?? 'Dosen').' · tahun '.$record->year)
+                            ->send();
+                    }),
+                Tables\Actions\DeleteAction::make()
+                    ->label('Hapus')
+                    ->modalHeading('Hapus kuota pembimbing')
+                    ->modalDescription(fn (GuideAllocation $record): string => 'Yakin hapus kuota '
+                        .($record->lecture?->name ?? 'dosen')
+                        .' tahun '
+                        .$record->year
+                        .'? Tindakan ini tidak dapat dibatalkan.')
+                    ->modalSubmitActionLabel('Hapus')
+                    ->successNotification(
+                        fn (GuideAllocation $record) => Notification::make()
+                            ->success()
+                            ->title('Kuota dihapus')
+                            ->body(($record->lecture?->name ?? 'Dosen').' · tahun '.$record->year.' berhasil dihapus.'),
+                    ),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\BulkAction::make('activate')
+                        ->label('Aktifkan terpilih')
+                        ->icon('heroicon-o-check-circle')
+                        ->color('success')
+                        ->requiresConfirmation()
+                        ->modalHeading('Aktifkan kuota terpilih')
+                        ->modalDescription(fn (Collection $records): string => 'Aktifkan '
+                            .$records->count()
+                            .' baris kuota pembimbing? Dosen terpilih akan muncul kembali di alokasi NUIR.')
+                        ->action(function (Collection $records): void {
+                            $records->each(fn (GuideAllocation $record) => $record->update(['active' => true]));
+
+                            Notification::make()
+                                ->success()
+                                ->title('Kuota diaktifkan')
+                                ->body($records->count().' baris diubah menjadi aktif.')
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                    Tables\Actions\BulkAction::make('deactivate')
+                        ->label('Nonaktifkan terpilih')
+                        ->icon('heroicon-o-x-circle')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalHeading('Nonaktifkan kuota terpilih')
+                        ->modalDescription(fn (Collection $records): string => 'Nonaktifkan '
+                            .$records->count()
+                            .' baris kuota pembimbing? Dosen terpilih tidak akan ditawarkan di alokasi NUIR.')
+                        ->action(function (Collection $records): void {
+                            $records->each(fn (GuideAllocation $record) => $record->update(['active' => false]));
+
+                            Notification::make()
+                                ->success()
+                                ->title('Kuota dinonaktifkan')
+                                ->body($records->count().' baris diubah menjadi nonaktif.')
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
+                ]),
             ])
             ->defaultSort('year', 'desc');
     }
@@ -113,6 +203,7 @@ class GuideAllocationResource extends Resource
     {
         return [
             'index' => Pages\ListGuideAllocations::route('/'),
+            'import' => Pages\ImportGuideAllocations::route('/import'),
             'create' => Pages\CreateGuideAllocation::route('/create'),
             'edit' => Pages\EditGuideAllocation::route('/{record}/edit'),
         ];

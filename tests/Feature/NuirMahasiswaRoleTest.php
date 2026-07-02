@@ -8,12 +8,15 @@ use App\Models\GuideExaminer;
 use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
+use App\Services\NuirMahasiswaWorkspaceService;
 use App\Services\NuirProposalService;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Concerns\SeedsNuirGuideQuota;
 use Tests\TestCase;
@@ -272,6 +275,61 @@ class NuirMahasiswaRoleTest extends TestCase
         $this->assertContains($this->dosenP2Only->id, $p2Ids);
     }
 
+    public function test_lecturer_seat_options_menampilkan_sisa_kuota_dan_menandai_habis(): void
+    {
+        GuideAllocation::where('user_id', $this->dosenP2Only->id)->update(['guide1_quota' => 0]);
+
+        $options = app(NuirProposalService::class)->lecturerSeatOptions(
+            $this->mahasiswa,
+            '2022',
+            1,
+            ['guide1' => null, 'guide2' => null],
+        );
+
+        $p2Only = collect($options)->firstWhere('id', $this->dosenP2Only->id);
+        $this->assertNotNull($p2Only);
+        $this->assertSame(0, $p2Only['remaining_quota']);
+        $this->assertFalse($p2Only['selectable']);
+
+        $p1 = collect($options)->firstWhere('id', $this->dosenP1->id);
+        $this->assertSame(2, $p1['remaining_quota']);
+        $this->assertTrue($p1['selectable']);
+    }
+
+    public function test_workspace_menampilkan_sisa_kuota_pembimbing(): void
+    {
+        NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        GuideAllocation::where('user_id', $this->dosenP2Only->id)->update(['guide1_quota' => 0]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSee('sisa kuota P1: 2')
+            ->assertSee('sisa kuota P1: 0');
+    }
+
+    public function test_propose_guide_ditolak_jika_kuota_habis(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        GuideAllocation::where('user_id', $this->dosenP2Only->id)->update(['guide1_quota' => 0]);
+
+        $this->expectException(ValidationException::class);
+
+        app(NuirMahasiswaWorkspaceService::class)->proposeGuideSeat(
+            $submission,
+            $this->mahasiswa,
+            1,
+            $this->dosenP2Only->id,
+        );
+    }
+
     public function test_isi_ulang_kursi_kosong_dengan_dosen_pengganti_posisi_sama(): void
     {
         $submission = NuirSubmission::factory()->contentOk()->create([
@@ -431,7 +489,7 @@ class NuirMahasiswaRoleTest extends TestCase
             ->call('saveNuiField', 'novelty', $novelty)
             ->assertHasNoErrors()
             ->assertSee('Diperbarui')
-            ->assertSee('Novelty: tersimpan');
+            ->assertSee('Novelty (v1): tersimpan');
 
         $submission->refresh();
 
@@ -516,6 +574,118 @@ class NuirMahasiswaRoleTest extends TestCase
             'nuir_submission_id' => $submission->id,
             'guide1_id' => $this->dosenP1->id,
             'guide1_status' => 'pending',
+        ]);
+    }
+
+    public function test_mahasiswa_dapat_membatalkan_usulan_pembimbing_yang_masih_menunggu(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+            'title_saved_at' => now(),
+            'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+            'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+            'impact' => implode(' ', array_fill(0, 15, 'impact')),
+        ]);
+
+        $proposal = NuirProposal::create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->dosenP1->id,
+            'guide1_status' => 'pending',
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSee('Batalkan Usulan')
+            ->call('cancelGuide', 1)
+            ->assertNotified('Usulan Pembimbing 1 dibatalkan.');
+
+        $this->assertDatabaseHas('nuir_proposals', [
+            'id' => $proposal->id,
+            'guide1_id' => null,
+            'guide1_status' => 'pending',
+        ]);
+
+        $this->assertDatabaseHas('nuir_revision_events', [
+            'nuir_proposal_id' => $proposal->id,
+            'event_type' => NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION,
+            'actor_role' => NuirRevisionEvent::ROLE_MAHASISWA,
+            'actor_id' => $this->mahasiswa->id,
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSee('Dibatalkan Mahasiswa')
+            ->assertDontSee('Dibatalkan Manajer');
+    }
+
+    public function test_mahasiswa_tidak_dapat_membatalkan_usulan_yang_sudah_diterima(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+            'title_saved_at' => now(),
+            'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+            'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+            'impact' => implode(' ', array_fill(0, 15, 'impact')),
+        ]);
+
+        $proposal = NuirProposal::create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->dosenP1->id,
+            'guide1_status' => 'accepted',
+            'guide1_responded_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertDontSee('Batalkan Usulan')
+            ->call('cancelGuide', 1);
+
+        $this->assertDatabaseHas('nuir_proposals', [
+            'id' => $proposal->id,
+            'guide1_id' => $this->dosenP1->id,
+            'guide1_status' => 'accepted',
+        ]);
+    }
+
+    public function test_card_dokumen_nuir_tersembunyi_hingga_ditrigger(): void
+    {
+        NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSee('Lampirkan dokumen NUIR (Google Drive)')
+            ->assertDontSee('Simpan Link Dokumen')
+            ->call('toggleDocumentCard')
+            ->assertSee('Simpan Link Dokumen');
+    }
+
+    public function test_mahasiswa_dapat_menyimpan_link_dokumen_google_drive(): void
+    {
+        NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        $rawLink = 'drive.google.com/file/d/abc123/view?usp=sharing';
+        $expectedLink = 'https://drive.google.com/file/d/abc123/view?usp=sharing';
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->set('showDocumentCard', true)
+            ->set('nuirDocumentLink', $rawLink)
+            ->call('saveDocumentLink')
+            ->assertNotified('Link dokumen NUIR berhasil disimpan.');
+
+        $this->assertDatabaseHas('nuir_submissions', [
+            'user_id' => $this->mahasiswa->id,
+            'nuir_document_link' => $expectedLink,
         ]);
     }
 }

@@ -107,6 +107,21 @@ class NuirAssignmentService
         );
     }
 
+    public function cancelReferenceApprovalAsValidator(NuirReference $reference, User $validator): void
+    {
+        $submission = $reference->submission;
+
+        if (! $this->validatorCanReview($submission, $validator)) {
+            abort(403);
+        }
+
+        if ($reference->ref_approved !== true) {
+            return;
+        }
+
+        app(NuirReviewService::class)->cancelReferenceApproval($reference);
+    }
+
     public function reviewReferenceAsGuide(
         NuirReference $reference,
         NuirProposal $proposal,
@@ -148,6 +163,67 @@ class NuirAssignmentService
                 'reviewed_at' => now(),
             ],
         );
+    }
+
+    public function cancelReferenceReviewAsGuide(
+        NuirReference $reference,
+        NuirProposal $proposal,
+        User $guide,
+    ): void {
+        if (! $guide->can('respond nuir proposal')) {
+            abort(403);
+        }
+
+        if ($proposal->guide1_id !== $guide->id && $proposal->guide2_id !== $guide->id) {
+            abort(403);
+        }
+
+        if ($reference->nuir_submission_id !== $proposal->nuir_submission_id) {
+            abort(403);
+        }
+
+        $role = $guide->id === $proposal->guide1_id
+            ? NuirReferenceReview::ROLE_GUIDE1
+            : NuirReferenceReview::ROLE_GUIDE2;
+
+        NuirReferenceReview::query()
+            ->where('nuir_reference_id', $reference->id)
+            ->where('user_id', $guide->id)
+            ->where('role', $role)
+            ->where('approved', true)
+            ->delete();
+    }
+
+    public function cancelContentReviewAsGuide(
+        NuirSubmission $submission,
+        NuirProposal $proposal,
+        User $guide,
+        string $field,
+    ): void {
+        if (! $guide->can('respond nuir proposal')) {
+            abort(403);
+        }
+
+        if ($proposal->guide1_id !== $guide->id && $proposal->guide2_id !== $guide->id) {
+            abort(403);
+        }
+
+        if ($proposal->nuir_submission_id !== $submission->id) {
+            abort(403);
+        }
+
+        if (! in_array($field, NuirContentReview::FIELDS, true)) {
+            abort(422);
+        }
+
+        NuirContentReview::query()
+            ->where('nuir_submission_id', $submission->id)
+            ->where('user_id', $guide->id)
+            ->where('field', $field)
+            ->where('approved', true)
+            ->delete();
+
+        $this->guideSeatSync->syncGuideSeat($proposal, $guide);
     }
 
     public function reviewContentAsGuide(

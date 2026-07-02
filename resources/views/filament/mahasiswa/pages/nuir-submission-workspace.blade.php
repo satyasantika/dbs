@@ -253,18 +253,17 @@
      CARD USULAN CALON PEMBIMBING
      ═══════════════════════════════════════════════════════ --}}
 <x-filament::section heading="Usulan Calon Pembimbing">
-    <div class="grid gap-4 md:grid-cols-2">
-        @foreach ([1 => $this->lecturersP1, 2 => $this->lecturersP2] as $seat => $lecturers)
+    <div class="grid items-start gap-4 md:grid-cols-2">
+        @foreach ([1, 2] as $seat)
             @php
                 $seatState      = $this->guideSeatState($seat);
                 $otherSeatState = $this->guideSeatState($seat === 1 ? 2 : 1);
                 $selModel       = $seat === 1 ? 'guide1Selection' : 'guide2Selection';
-                $selectedGuide  = $lecturers->firstWhere('id', $seatState['guide_id']);
-                // Exclude the guide already chosen for the other seat (unless they were rejected)
+                $lecturerOptions = $this->guideLecturerOptions($seat);
+                $selectedGuide  = collect($lecturerOptions)->firstWhere('id', $seatState['guide_id']);
                 $excludeId      = ($otherSeatState['status'] !== 'rejected')
                                     ? $otherSeatState['guide_id']
                                     : null;
-                $filteredLecturers = $lecturers->reject(fn ($l) => $l->id !== null && $l->id === $excludeId);
             @endphp
 
             <div class="rounded-xl border border-gray-200 p-4 dark:border-gray-700">
@@ -274,10 +273,11 @@
 
                 @if ($seatState['is_readonly'] && $selectedGuide)
                     <p class="mb-1 text-sm font-medium text-gray-800 dark:text-gray-200">
-                        {{ $selectedGuide->name }}
+                        {{ $selectedGuide['name'] }}
                     </p>
                     <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                        Tidak dapat diubah kecuali pembimbing menolak usulan.
+                        Sisa kuota P{{ $seat }}: {{ $selectedGuide['remaining_quota'] }} ·
+                        tidak dapat diubah kecuali pembimbing menolak usulan.
                     </p>
                     <x-filament::badge :color="match ($seatState['status']) {
                         'accepted' => 'success',
@@ -296,15 +296,43 @@
                         </p>
                     @endif
 
+                    @if ($seatState['can_cancel'])
+                        <x-filament::button
+                            type="button"
+                            size="sm"
+                            color="danger"
+                            outlined
+                            icon="heroicon-m-x-circle"
+                            class="mt-3"
+                            wire:click="cancelGuide({{ $seat }})"
+                            wire:loading.attr="disabled"
+                            wire:target="cancelGuide({{ $seat }})"
+                            wire:confirm="Batalkan usulan Pembimbing {{ $seat }} ini?"
+                        >
+                            Batalkan Usulan
+                        </x-filament::button>
+                    @endif
+
                 @elseif ($seatState['can_change'])
                     <div class="space-y-2">
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            Pilih dosen dengan sisa kuota P{{ $seat }} &gt; 0. Angka kuota diperbarui sesuai data terkini.
+                        </p>
                         <select
                             wire:model.live="{{ $selModel }}"
                             class="block w-full rounded-lg border-gray-300 text-sm shadow-sm dark:border-gray-600 dark:bg-gray-950"
                         >
                             <option value="">— Pilih dosen —</option>
-                            @foreach ($filteredLecturers as $lecturer)
-                                <option value="{{ $lecturer->id }}">{{ $lecturer->name }}</option>
+                            @foreach ($lecturerOptions as $option)
+                                @if ($option['id'] === $excludeId)
+                                    @continue
+                                @endif
+                                <option
+                                    value="{{ $option['id'] }}"
+                                    @disabled(! $option['selectable'])
+                                >
+                                    {{ $option['name'] }} — sisa kuota P{{ $seat }}: {{ $option['remaining_quota'] }}
+                                </option>
                             @endforeach
                         </select>
                         <x-filament::button
@@ -319,10 +347,86 @@
                         </x-filament::button>
                     </div>
                 @endif
+
+                @include('filament.mahasiswa.pages.partials.proposal-history', [
+                    'history' => $this->proposalSeatHistory($seat),
+                    'seat'    => $seat,
+                ])
             </div>
         @endforeach
     </div>
 </x-filament::section>
+
+@php
+    $documentLinkHref = \App\Support\NuirExternalUrl::normalize($this->nuirDocumentLink);
+@endphp
+
+<p class="mt-1 text-center">
+    <button
+        type="button"
+        wire:click="toggleDocumentCard"
+        class="text-xs text-gray-500 underline decoration-dotted underline-offset-2 transition hover:text-primary-600 dark:text-gray-400 dark:hover:text-primary-400"
+    >
+        Lampirkan dokumen NUIR (Google Drive)
+    </button>
+</p>
+
+@if ($this->showDocumentCard)
+    <x-filament::section heading="Dokumen NUIR" class="mt-3">
+        <p class="mb-3 text-sm text-gray-600 dark:text-gray-400">
+            Opsional. Tempel tautan Google Drive ke dokumen NUIR yang sudah Anda siapkan.
+            Pastikan akses file diatur agar pembimbing dan validator dapat membuka tautan.
+        </p>
+
+        <div class="space-y-3">
+            <div>
+                <div class="mb-1 flex items-center justify-between">
+                    <label class="text-xs font-medium text-gray-600 dark:text-gray-400">Link Google Drive</label>
+                    @if ($documentLinkHref)
+                        <a
+                            href="{{ $documentLinkHref }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-xs text-primary-600 hover:text-primary-800 dark:text-primary-400"
+                        >
+                            Buka tautan &nearr;
+                        </a>
+                    @endif
+                </div>
+                <textarea
+                    wire:model="nuirDocumentLink"
+                    rows="2"
+                    placeholder="https://drive.google.com/file/d/…/view?usp=sharing"
+                    class="block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+                ></textarea>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+                <x-filament::button
+                    type="button"
+                    size="sm"
+                    icon="heroicon-m-link"
+                    wire:click="saveDocumentLink"
+                    wire:loading.attr="disabled"
+                    wire:target="saveDocumentLink"
+                >
+                    Simpan Link Dokumen
+                </x-filament::button>
+
+                @if (filled($this->nuirDocumentLink))
+                    <x-filament::button
+                        type="button"
+                        size="sm"
+                        color="gray"
+                        wire:click="$set('nuirDocumentLink', '')"
+                    >
+                        Kosongkan
+                    </x-filament::button>
+                @endif
+            </div>
+        </div>
+    </x-filament::section>
+@endif
 
 
 {{-- ═══════════════════════════════════════════════════════

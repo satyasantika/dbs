@@ -2,9 +2,11 @@
 
 namespace App\Filament\NuirManajer\Concerns;
 
+use App\Models\NuirRevisionEvent;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Services\NuirRevisionHistoryService;
+use App\Support\NuirExternalUrl;
 use App\Support\NuirTextLimits;
 use Filament\Infolists;
 use Filament\Infolists\Components\Actions\Action;
@@ -35,6 +37,14 @@ trait BuildsManajerNuirSubmissionInfolist
             TextEntry::make('dbs_note')
                 ->label('Catatan Revisi')
                 ->placeholder('—')
+                ->columnSpanFull(),
+            TextEntry::make('nuir_document_link')
+                ->label('Dokumen NUIR (Google Drive)')
+                ->placeholder('Belum dilampirkan')
+                ->formatStateUsing(fn (?string $state): string => NuirExternalUrl::normalize($state) ?? (string) $state)
+                ->url(fn (?string $state): ?string => filled($state) ? NuirExternalUrl::normalize($state) : null)
+                ->openUrlInNewTab()
+                ->color(fn (?string $state): string => filled($state) ? 'primary' : 'gray')
                 ->columnSpanFull(),
         ];
     }
@@ -113,6 +123,39 @@ trait BuildsManajerNuirSubmissionInfolist
             'versionLabel' => $historyService->contentFieldVersionLabel($record, $field),
             'showRevisionBadge' => $historyService->contentFieldHasRevisionHistory($record, $field),
             'revisionHistory' => $historyService->contentFieldHistory($record, $field)->all(),
+        ];
+    }
+
+    /**
+     * @return array<int, Infolists\Components\Component>
+     */
+    protected function manajerProposalSchema(): array
+    {
+        return [
+            Infolists\Components\ViewEntry::make('proposals_panel')
+                ->label('')
+                ->view('filament.nuir-manajer.infolists.proposal-card')
+                ->viewData(fn (NuirSubmission $record): array => self::proposalsPanelViewData($record)),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function proposalsPanelViewData(NuirSubmission $record): array
+    {
+        $proposals = $record->proposals()->with(['guide1', 'guide2'])->orderByDesc('id')->get();
+
+        $cancellations = NuirRevisionEvent::where('nuir_submission_id', $record->id)
+            ->where('event_type', NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION)
+            ->with('actor')
+            ->orderByDesc('recorded_at')
+            ->get()
+            ->groupBy('nuir_proposal_id');
+
+        return [
+            'proposals'     => $proposals,
+            'cancellations' => $cancellations,
         ];
     }
 

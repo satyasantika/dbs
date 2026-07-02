@@ -20,7 +20,7 @@
             <p><strong>Impact:</strong><br>{!! nl2br(e($proposal->submission->impact)) !!}</p>
 
             @if ($canReviewReferences)
-                <h6 class="mt-4">Review Konten NUIR (Novelty, Urgency, Impact)</h6>
+                <h6 class="mt-4">Review Konten NUIR (Judul, Novelty, Urgency, Impact)</h6>
                 <table class="table table-sm">
                     <thead>
                         <tr>
@@ -31,7 +31,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (['novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'] as $field => $label)
+                        @foreach (['title' => 'Judul', 'novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'] as $field => $label)
                             @php($contentReview = $proposal->submission->contentReviewFor(auth()->user(), $proposal, $field))
                             <tr>
                                 <td>{{ $label }}</td>
@@ -42,21 +42,30 @@
                                 </td>
                                 <td>{{ $contentReview?->note }}</td>
                                 <td>
-                                    <form method="POST" action="{{ route('nuir.dosen.review-content', $proposal) }}" class="d-inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="field" value="{{ $field }}">
-                                        <input type="hidden" name="approved" value="1">
-                                        <button class="btn btn-success btn-sm">Setujui</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('nuir.dosen.review-content', $proposal) }}" class="d-inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="field" value="{{ $field }}">
-                                        <input type="hidden" name="approved" value="0">
-                                        <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Catatan revisi" required>
-                                        <button class="btn btn-warning btn-sm">Minta Revisi</button>
-                                    </form>
+                                    @if ($contentReview?->approved === true)
+                                        <form method="POST" action="{{ route('nuir.dosen.cancel-content-review', $proposal) }}" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="field" value="{{ $field }}">
+                                            <button class="btn btn-outline-secondary btn-sm">Batalkan</button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('nuir.dosen.review-content', $proposal) }}" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="field" value="{{ $field }}">
+                                            <input type="hidden" name="approved" value="1">
+                                            <button class="btn btn-success btn-sm">Setujui</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('nuir.dosen.review-content', $proposal) }}" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="field" value="{{ $field }}">
+                                            <input type="hidden" name="approved" value="0">
+                                            <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Catatan revisi" required>
+                                            <button class="btn btn-warning btn-sm">Minta Revisi</button>
+                                        </form>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
@@ -106,19 +115,27 @@
                             <td>{{ $guideReview?->note }}</td>
                             @if ($canReviewReferences)
                                 <td>
-                                    <form method="POST" action="{{ route('nuir.dosen.review-reference', [$proposal, $ref]) }}" class="d-inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="approved" value="1">
-                                        <button class="btn btn-success btn-sm">Setujui</button>
-                                    </form>
-                                    <form method="POST" action="{{ route('nuir.dosen.review-reference', [$proposal, $ref]) }}" class="d-inline">
-                                        @csrf
-                                        @method('PATCH')
-                                        <input type="hidden" name="approved" value="0">
-                                        <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Alasan penolakan" required>
-                                        <button class="btn btn-danger btn-sm">Tolak</button>
-                                    </form>
+                                    @if ($guideReview?->approved === true)
+                                        <form method="POST" action="{{ route('nuir.dosen.cancel-reference-review', [$proposal, $ref]) }}" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-outline-secondary btn-sm">Batalkan</button>
+                                        </form>
+                                    @else
+                                        <form method="POST" action="{{ route('nuir.dosen.review-reference', [$proposal, $ref]) }}" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="approved" value="1">
+                                            <button class="btn btn-success btn-sm">Setujui</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('nuir.dosen.review-reference', [$proposal, $ref]) }}" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <input type="hidden" name="approved" value="0">
+                                            <input type="text" name="note" class="form-control form-control-sm d-inline-block w-auto" placeholder="Alasan penolakan" required>
+                                            <button class="btn btn-danger btn-sm">Tolak</button>
+                                        </form>
+                                    @endif
                                 </td>
                             @endif
                         </tr>

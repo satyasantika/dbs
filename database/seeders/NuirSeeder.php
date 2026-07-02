@@ -260,7 +260,7 @@ class NuirSeeder extends Seeder
             $attributes['chief_id'] = $this->penguji1?->id;
         }
 
-        return GuideExaminer::firstOrCreate(['user_id' => $student->id], $attributes);
+        return GuideExaminer::updateOrCreate(['user_id' => $student->id], $attributes);
     }
 
     private function seedDraftSubmission(User $student): void
@@ -410,11 +410,13 @@ class NuirSeeder extends Seeder
         $submission = $this->createContentOkSubmission($student, 'Proposal Pending');
         [$guide1, $guide2] = $this->pickGuidePair(0);
 
-        NuirProposal::create([
+        $proposal = NuirProposal::create([
             'nuir_submission_id' => $submission->id,
             'guide1_id' => $guide1->id,
             'guide2_id' => $guide2->id,
         ]);
+
+        $this->seedProposalSelectionEvents($submission, $proposal, $student, $guide1, $guide2, now()->subDays(3));
     }
 
     private function seedContentOkWithPartialAcceptance(User $student): void
@@ -422,13 +424,15 @@ class NuirSeeder extends Seeder
         $submission = $this->createContentOkSubmission($student, 'Proposal Sebagian Diterima');
         [$guide1, $guide2] = $this->pickGuidePair(0);
 
-        NuirProposal::create([
+        $proposal = NuirProposal::create([
             'nuir_submission_id' => $submission->id,
             'guide1_id' => $guide1->id,
             'guide2_id' => $guide2->id,
             'guide1_status' => 'accepted',
             'guide1_responded_at' => now()->subDay(),
         ]);
+
+        $this->seedProposalSelectionEvents($submission, $proposal, $student, $guide1, $guide2, now()->subDays(3));
     }
 
     private function seedContentOkWithRetriedProposal(User $student): void
@@ -437,7 +441,7 @@ class NuirSeeder extends Seeder
         [$rejectedGuide1, $rejectedGuide2] = $this->pickGuidePair(2);
         [$pendingGuide1, $pendingGuide2] = $this->pickGuidePair(0);
 
-        NuirProposal::create([
+        $oldProposal = NuirProposal::create([
             'nuir_submission_id' => $submission->id,
             'guide1_id' => $rejectedGuide1->id,
             'guide2_id' => $rejectedGuide2->id,
@@ -449,11 +453,27 @@ class NuirSeeder extends Seeder
             'guide2_responded_at' => now()->subDays(4),
         ]);
 
-        NuirProposal::create([
+        // Selection events for original (rejected) proposal
+        $this->seedProposalSelectionEvents($submission, $oldProposal, $student, $rejectedGuide1, $rejectedGuide2, now()->subDays(7));
+
+        // Rejection events for original guides
+        NuirRevisionEvent::updateOrCreate(
+            ['nuir_submission_id' => $submission->id, 'event_type' => NuirRevisionEvent::TYPE_PROPOSAL_REJECTION, 'subject' => 'guide1', 'nuir_proposal_id' => $oldProposal->id],
+            ['submission_version' => $submission->version ?? 1, 'actor_id' => $rejectedGuide1->id, 'actor_role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Kuota bimbingan penuh.', 'recorded_at' => now()->subDays(5)],
+        );
+        NuirRevisionEvent::updateOrCreate(
+            ['nuir_submission_id' => $submission->id, 'event_type' => NuirRevisionEvent::TYPE_PROPOSAL_REJECTION, 'subject' => 'guide2', 'nuir_proposal_id' => $oldProposal->id],
+            ['submission_version' => $submission->version ?? 1, 'actor_id' => $rejectedGuide2->id, 'actor_role' => NuirRevisionEvent::ROLE_GUIDE2, 'note' => 'Tidak sesuai minat bimbingan.', 'recorded_at' => now()->subDays(4)],
+        );
+
+        $newProposal = NuirProposal::create([
             'nuir_submission_id' => $submission->id,
             'guide1_id' => $pendingGuide1->id,
             'guide2_id' => $pendingGuide2->id,
         ]);
+
+        // Selection events for re-proposed guides
+        $this->seedProposalSelectionEvents($submission, $newProposal, $student, $pendingGuide1, $pendingGuide2, now()->subDays(3));
     }
 
     private function seedFinalizedFlow(User $student): void
@@ -470,6 +490,8 @@ class NuirSeeder extends Seeder
             'guide1_responded_at' => now()->subDays(2),
             'guide2_responded_at' => now()->subDay(),
         ]);
+
+        $this->seedProposalSelectionEvents($submission, $proposal, $student, $guide1, $guide2, now()->subDays(5));
 
         app(NuirService::class)->finalizeProposal($proposal->fresh());
 
@@ -582,6 +604,7 @@ class NuirSeeder extends Seeder
         $this->seedSimulationContentReviews();
         $this->seedSimulationRevisionHistory();
         $this->seedManajerRevisionDemo();
+        $this->seedProposalCancellationDemo();
         $this->syncSimulationQuotaFilled();
     }
 
@@ -964,6 +987,55 @@ class NuirSeeder extends Seeder
         }
     }
 
+    private function seedProposalCancellationDemo(): void
+    {
+        if (! $this->manajer || ! $this->pembimbing1 || ! $this->pembimbing2) {
+            return;
+        }
+
+        // mahasiswa5 (content_ok, pending proposal): P2 dibatalkan oleh manajer
+        $submission = $this->latestSubmissionFor('mahasiswa5', 'content_ok');
+
+        if (! $submission) {
+            return;
+        }
+
+        $proposal = NuirProposal::where('nuir_submission_id', $submission->id)
+            ->where('final', false)
+            ->latest('id')
+            ->first();
+
+        if (! $proposal || ! $proposal->guide2_id) {
+            return;
+        }
+
+        $cancelledGuide2Id = $proposal->guide2_id;
+
+        NuirRevisionEvent::updateOrCreate(
+            [
+                'nuir_submission_id' => $submission->id,
+                'event_type'         => NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION,
+                'subject'            => 'guide2',
+                'nuir_proposal_id'   => $proposal->id,
+                'actor_id'           => $this->manajer->id,
+            ],
+            [
+                'submission_version' => $submission->version ?? 1,
+                'target_user_id'     => $cancelledGuide2Id,
+                'actor_role'         => NuirRevisionEvent::ROLE_MANAJER,
+                'note'               => 'Kuota P2 dosen yang dipilih sudah habis berdasarkan sistem alokasi terbaru.',
+                'recorded_at'        => now()->subDays(2),
+            ],
+        );
+
+        $proposal->update([
+            'guide2_id'           => null,
+            'guide2_status'       => 'pending',
+            'guide2_note'         => null,
+            'guide2_responded_at' => null,
+        ]);
+    }
+
     private function latestSubmissionFor(string $username, string $status): ?NuirSubmission
     {
         $user = User::where('username', $username)->first();
@@ -983,6 +1055,24 @@ class NuirSeeder extends Seeder
     private function titleText(string $base): string
     {
         return $this->padWords($base, self::MIN_TITLE_WORDS);
+    }
+
+    private function seedProposalSelectionEvents(
+        NuirSubmission $submission,
+        NuirProposal $proposal,
+        User $student,
+        User $guide1,
+        User $guide2,
+        \Carbon\Carbon $at,
+    ): void {
+        NuirRevisionEvent::updateOrCreate(
+            ['nuir_submission_id' => $submission->id, 'event_type' => NuirRevisionEvent::TYPE_PROPOSAL_SELECTION, 'subject' => 'guide1', 'nuir_proposal_id' => $proposal->id, 'target_user_id' => $guide1->id],
+            ['submission_version' => $submission->version ?? 1, 'actor_id' => $student->id, 'actor_role' => NuirRevisionEvent::ROLE_MAHASISWA, 'note' => '', 'recorded_at' => $at],
+        );
+        NuirRevisionEvent::updateOrCreate(
+            ['nuir_submission_id' => $submission->id, 'event_type' => NuirRevisionEvent::TYPE_PROPOSAL_SELECTION, 'subject' => 'guide2', 'nuir_proposal_id' => $proposal->id, 'target_user_id' => $guide2->id],
+            ['submission_version' => $submission->version ?? 1, 'actor_id' => $student->id, 'actor_role' => NuirRevisionEvent::ROLE_MAHASISWA, 'note' => '', 'recorded_at' => $at],
+        );
     }
 
     private function nuiText(string $base): string

@@ -7,6 +7,8 @@ use App\Models\NuirProposal;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class NuirService
 {
@@ -65,5 +67,51 @@ class NuirService
                     ->orWhere('guide2_status', 'pending');
             })
             ->exists();
+    }
+
+    public function deleteSubmission(NuirSubmission $submission, User $actor): void
+    {
+        if (! $actor->can('delete nuir submission')) {
+            abort(403);
+        }
+
+        if ($submission->childSubmissions()->exists()) {
+            throw ValidationException::withMessages([
+                'submission' => 'Submission ini punya versi lebih baru — hapus versi terbaru terlebih dahulu.',
+            ]);
+        }
+
+        if ($submission->status === 'finalized') {
+            throw ValidationException::withMessages([
+                'submission' => 'Submission yang sudah finalized tidak dapat dihapus.',
+            ]);
+        }
+
+        DB::transaction(function () use ($submission): void {
+            $quotaService = app(NuirGuideQuotaService::class);
+            $seatsToRelease = [];
+
+            foreach ($submission->proposals as $proposal) {
+                foreach ([1 => $proposal->guide1_id, 2 => $proposal->guide2_id] as $guideOrder => $guideId) {
+                    $status = $guideOrder === 1 ? $proposal->guide1_status : $proposal->guide2_status;
+
+                    if ($guideId && in_array($status, ['pending', 'accepted'], true)) {
+                        $seatsToRelease[$guideId.':'.$guideOrder] = ['lecturer_id' => $guideId, 'guide_order' => $guideOrder];
+                    }
+                }
+            }
+
+            foreach ($seatsToRelease as $seat) {
+                $lecturer = User::find($seat['lecturer_id']);
+
+                if ($lecturer) {
+                    $quotaService->release($lecturer, $seat['guide_order'], $submission->year_generation);
+                }
+            }
+
+            $submission->references()->delete();
+            $submission->proposals()->delete();
+            $submission->delete();
+        });
     }
 }

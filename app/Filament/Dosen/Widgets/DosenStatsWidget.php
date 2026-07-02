@@ -6,8 +6,6 @@ use App\Filament\Dosen\Pages\GraduationEvidence;
 use App\Filament\Dosen\Pages\GuideSupervision;
 use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Filament\Dosen\Pages\Scoring;
-use App\Filament\NuirManajer\Pages\Dashboard as NuirManajerDashboard;
-use App\Filament\NuirValidator\Pages\Dashboard as NuirValidatorDashboard;
 use App\Models\ExamScore;
 use App\Models\GuideExaminer;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
@@ -83,24 +81,6 @@ class DosenStatsWidget extends BaseWidget
             ->color('success')
             ->icon('heroicon-o-check-circle')
             ->url(GraduationEvidence::getUrl());
-
-        if (auth()->user()?->can('access dashboard validator nuir')) {
-            $stats[] = Stat::make('Validasi NUIR', 'Panel Validator')
-                ->description('Validasi referensi submission yang ditugaskan')
-                ->descriptionIcon('heroicon-m-check-badge')
-                ->color('warning')
-                ->icon('heroicon-o-clipboard-document-check')
-                ->url(NuirValidatorDashboard::getUrl(panel: 'nuir-validator'));
-        }
-
-        if (auth()->user()?->can('access dashboard manajer nuir')) {
-            $stats[] = Stat::make('Manajemen NUIR', 'Panel Manajer')
-                ->description('Delegasi validator dan kelola submission NUIR')
-                ->descriptionIcon('heroicon-m-inbox-stack')
-                ->color('primary')
-                ->icon('heroicon-o-squares-2x2')
-                ->url(NuirManajerDashboard::getUrl(panel: 'nuir-manajer'));
-        }
 
         return $stats;
     }

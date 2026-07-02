@@ -91,6 +91,89 @@ class NuirDosenRoleTest extends TestCase
         ]);
     }
 
+    public function test_dosen_dapat_setujui_judul(): void
+    {
+        $this->actingAs($this->dosenP1)
+            ->patch("/nuir/dosen/{$this->proposal->id}/content", [
+                'field' => 'title',
+                'approved' => '1',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('nuir_content_reviews', [
+            'nuir_submission_id' => $this->submission->id,
+            'user_id' => $this->dosenP1->id,
+            'field' => NuirContentReview::FIELD_TITLE,
+            'approved' => true,
+        ]);
+    }
+
+    public function test_dosen_dapat_membatalkan_persetujuan_elemen_nui(): void
+    {
+        $this->actingAs($this->dosenP1)
+            ->patch("/nuir/dosen/{$this->proposal->id}/content", [
+                'field' => 'novelty',
+                'approved' => '1',
+            ]);
+
+        $this->assertDatabaseHas('nuir_content_reviews', [
+            'user_id' => $this->dosenP1->id,
+            'field' => NuirContentReview::FIELD_NOVELTY,
+            'approved' => true,
+        ]);
+
+        $this->actingAs($this->dosenP1)
+            ->delete("/nuir/dosen/{$this->proposal->id}/content", ['field' => 'novelty'])
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('nuir_content_reviews', [
+            'user_id' => $this->dosenP1->id,
+            'field' => NuirContentReview::FIELD_NOVELTY,
+        ]);
+    }
+
+    public function test_membatalkan_persetujuan_elemen_nui_mengembalikan_kursi_ke_pending(): void
+    {
+        $this->approveAllNuiFields($this->dosenP1, $this->proposal);
+        $this->assertEquals('accepted', $this->proposal->fresh()->guide1_status);
+
+        $this->actingAs($this->dosenP1)
+            ->delete("/nuir/dosen/{$this->proposal->id}/content", ['field' => 'novelty']);
+
+        $this->assertEquals('pending', $this->proposal->fresh()->guide1_status);
+    }
+
+    public function test_dosen_dapat_membatalkan_persetujuan_referensi(): void
+    {
+        $reference = \App\Models\NuirReference::factory()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        $this->actingAs($this->dosenP1)
+            ->patch("/nuir/dosen/{$this->proposal->id}/references/{$reference->id}", [
+                'approved' => '1',
+            ]);
+
+        $this->assertDatabaseHas('nuir_reference_reviews', [
+            'nuir_reference_id' => $reference->id,
+            'user_id' => $this->dosenP1->id,
+            'approved' => true,
+        ]);
+
+        $this->actingAs($this->dosenP1)
+            ->delete("/nuir/dosen/{$this->proposal->id}/references/{$reference->id}")
+            ->assertRedirect()
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('nuir_reference_reviews', [
+            'nuir_reference_id' => $reference->id,
+            'user_id' => $this->dosenP1->id,
+        ]);
+    }
+
     public function test_minta_revisi_wajib_catatan(): void
     {
         $this->actingAs($this->dosenP1)

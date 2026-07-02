@@ -60,13 +60,14 @@ class NuirSettingResource extends Resource
     {
         return [
             'index' => Pages\ListNuirSettings::route('/'),
+            'create' => Pages\CreateNuirSettings::route('/create'),
             'edit' => Pages\EditNuirSettings::route('/{record}/edit'),
         ];
     }
 
     public static function canCreate(): bool
     {
-        return false;
+        return static::canViewAny();
     }
 
     public static function canDelete($record): bool

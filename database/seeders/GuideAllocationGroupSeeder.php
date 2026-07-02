@@ -16,7 +16,7 @@ class GuideAllocationGroupSeeder extends Seeder
      */
     public function run(): void
     {
-        if (! User::whereNotNull('initial')->where('initial', '!=', '')->exists()) {
+        if (! User::where('initial', 'DDN')->exists()) {
             $this->command?->warn('GuideAllocationGroupSeeder: data pengguna dari UserSeeder tidak tersedia, dilewati.');
 
             return;

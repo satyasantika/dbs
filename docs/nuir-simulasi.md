@@ -40,7 +40,7 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | `dbs` | DBS | `simulasi` | `/dbs` |
 | `manajer1` | Manajer NUIR | `simulasi` | `/nuir-manajer` |
 | `validator1` | Validator NUIR | `simulasi` | `/nuir-validator` |
-| `pembimbing1` | Dosen (calon P1) | `simulasi` | `/home` → `/nuir/dosen` |
+| `pembimbing1` | Dosen (calon P1) + Manajer NUIR + Validator NUIR | `simulasi` | `/home` → `/nuir/dosen`, `/nuir-manajer`, `/nuir-validator` |
 | `pembimbing2` | Dosen (calon P2) | `simulasi` | `/home` → `/nuir/dosen` |
 | `penguji1` | Dosen (penguji) | `simulasi` | `/home` |
 | `penguji2` | Dosen (penguji) | `simulasi` | `/home` |
@@ -49,6 +49,8 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | `mahasiswa9` | Mahasiswa (belum mengajukan NUIR) | `simulasi` | `/mahasiswa` |
 
 > **Catatan:** Akun ini hanya untuk development/staging. Jangan dipakai di production.
+
+> **Catatan `pembimbing1`:** akun ini sengaja diberi role tambahan **Manajer NUIR** dan **Validator NUIR** (selain **Dosen**) agar satu login bisa dipakai menjelajahi ketiga panel NUIR (`/home` → `/nuir/dosen`, `/nuir-manajer`, `/nuir-validator`) tanpa perlu berpindah akun saat simulasi.
 
 ---
 
@@ -60,7 +62,7 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | `mahasiswa2` | `submitted` + proposal + histori revisi | **Impact**: revisi ganda P1+P2 (belum diperbaiki); referensi campuran + histori validator |
 | `mahasiswa3` | `submitted` + 10 ref disetujui | Semua referensi lulus validasi; siap diajukan ke pembimbing |
 | `mahasiswa4` | `submitted` + **3 ref diminta revisi** + revisi NUI | Referensi #5–7 ditolak validator (catatan spesifik); Novelty diminta revisi P1, Impact diminta revisi P2 |
-| `mahasiswa5` | `content_ok` + proposal pending | Kedua pembimbing setujui semua NUI; menunggu konfirmasi kursi |
+| `mahasiswa5` | `content_ok` + **P2 dibatalkan manajer** | P1 pending; P2 dibatalkan oleh `manajer1` (histori tercatat); mahasiswa dapat pilih ulang calon P2 |
 | `mahasiswa6` | `content_ok` + P1 accepted, P2 pending | P1 sudah terima kursi; P2 belum merespons |
 | `mahasiswa7` | `content_ok` + penolakan penguji + proposal ulang | Histori penolakan usulan + kursi baru ke pembimbing1/2 |
 | `mahasiswa8` | `finalized` | Keduanya accepted; pembimbing terisi di `guide_examiners` |
@@ -170,12 +172,28 @@ Peran manajer: **monitor submission**, **delegasi validator**, dan **atur konfig
 | Menu | URL | Kegunaan |
 |---|---|---|
 | Dashboard | `/nuir-manajer` | Ringkasan kartu statistik |
-| Submission NUIR | `/nuir-manajer/nuir-submissions` | Daftar submission (bukan draft); kolom validator & progress validasi referensi |
-| Detail submission | `/nuir-manajer/nuir-submissions/{id}` | Lihat konten/referensi + histori revisi; **Delegasikan/Ubah** validator |
+| Submission NUIR | `/nuir-manajer/nuir-submissions` | Daftar submission (bukan draft); kolom validator & progress validasi referensi; tombol **Dashboard** di kanan atas kembali ke halaman **`/home`** (rute otomatis sesuai role — dosen/manajer/validator tetap ke `/home`) |
+| Detail submission | `/nuir-manajer/nuir-submissions/{id}` | Lihat konten/referensi + histori revisi; **Delegasikan/Ubah** validator; **Batalkan Calon P1/P2**; tombol **Kembali ke Daftar Submission** di kanan atas kembali ke `/nuir-manajer/nuir-submissions` |
 | Konfigurasi NUIR | `/nuir-manajer/nuir-settings` | Batas kata (judul & NUI), min/max referensi, deadline |
 | Kuota Pembimbing | `/nuir-manajer/guide-allocations` | Atur kuota P1/P2 per dosen (tahun 2099) |
 
 Filter daftar: `?view=unassigned`, `?view=submitted`, `?view=revision`, `?view=content_ok`.
+
+### Card Pengusulan Pembimbing
+
+Setiap halaman detail submission (`/nuir-manajer/nuir-submissions/{id}`) memiliki section **Pengusulan Pembimbing** yang:
+- Menampilkan daftar semua usulan dari yang terbaru ke yang lama.
+- Untuk usulan aktif (non-final): tombol **Batalkan Calon P1** / **Batalkan Calon P2** di sudut kanan atas section.
+- Setiap seat menampilkan nama dosen, badge status (Menunggu respons / Diterima / Ditolak), catatan penolakan bila ada.
+- Jika sebuah seat pernah dibatalkan manajer, muncul informasi pembatalan (tanggal + aktor + alasan) di bawah nama seat tersebut.
+
+**Alur pembatalan:**
+1. Buka detail submission `mahasiswa5` (`/nuir-manajer/nuir-submissions/{id}`).
+2. Section **Pengusulan Pembimbing** → klik **Batalkan Calon P2**.
+3. Isi catatan (opsional) → konfirmasi → histori pembatalan tercatat.
+4. Mahasiswa login → workspace P2 kembali ke dropdown kosong; dapat pilih calon baru.
+
+Pembatalan hanya memengaruhi kursi yang dipilih — kursi lain tidak berubah.
 
 ### Langkah uji cepat
 
@@ -183,6 +201,7 @@ Filter daftar: `?view=unassigned`, `?view=submitted`, `?view=revision`, `?view=c
 2. **Delegasi** — `mahasiswa2` sudah didelegasikan ke `validator1` (seeder); coba **Ubah** validator pada submission lain.
 3. **Monitor progress** — buka `mahasiswa3` → progress validasi referensi 10/10 disetujui.
 4. **Filter dashboard** — klik kartu **Belum Didelegasikan** / **Konten Disetujui**.
+5. **Pembatalan calon pembimbing** — buka `mahasiswa5` → section Pengusulan Pembimbing → verifikasi P2 sudah dibatalkan seeder; coba **Batalkan Calon P1**.
 
 ---
 
@@ -209,12 +228,19 @@ Hanya melihat submission yang sudah didelegasikan manajer. `mahasiswa9` (belum a
 
 Saat **Minta Revisi** referensi: catatan wajib + pilih **Bagian yang perlu diperbaiki**. Tombol kembali mengikuti daftar asal (`return` query).
 
+Interaksi tombol per referensi:
+- Klik **Minta Revisi** langsung menyembunyikan tombol **Setujui**/**Minta Revisi** dan menampilkan form catatan; klik **Batal** pada form mengembalikan kedua tombol tadi.
+- Mencentang **Bagian yang perlu diperbaiki** otomatis menambahkan baris berformat `(Nama Bagian): ` ke textarea catatan (mis. `(Link OJS): catatannya`) supaya validator tinggal melengkapi setelah titik dua; centang dilepas → barisnya ikut terhapus.
+- Setelah referensi **Disetujui**, muncul tombol **Batalkan Persetujuan** untuk mengembalikan referensi ke status pending (mis. jika validator salah klik Setujui).
+- **Lihat histori revisi** ditampilkan **setelah** tombol aksi (Setujui/Minta Revisi atau Batalkan Persetujuan), bukan sebelumnya.
+
 ### Langkah uji cepat
 
 1. Kartu **Submission Ditugaskan** → buka `mahasiswa2`.
 2. Validasi referensi — **Setujui** atau **Minta Revisi** (catatan + bagian wajib).
 3. Kartu **Permintaan Revisi** — referensi #8 `mahasiswa2` dan referensi #5–7 `mahasiswa4` menunggu validasi ulang dari mahasiswa.
 4. Buka `mahasiswa4` — lihat catatan revisi spesifik per referensi (link rusak, indexer salah, kutipan tidak relevan).
+5. Coba **Setujui** salah satu referensi lalu klik **Batalkan Persetujuan** — status kembali *Pending* dan tombol Setujui/Minta Revisi muncul lagi.
 
 ---
 
@@ -243,11 +269,14 @@ DBS bertanggung jawab memantau submission, mengatur konfigurasi NUIR, dan memoni
 
 **Login:** `pembimbing1` atau `pembimbing2` / `simulasi` → **`/home`** → **Usulan NUIR** (`/nuir/dosen`)
 
+> `pembimbing1` juga punya akses `/nuir-manajer` dan `/nuir-validator` (lihat catatan di [Daftar Akun per Role](#daftar-akun-per-role)).
+
 ### Alur review NUI (wajib sebelum kursi diterima)
 
-1. Setujui atau **minta revisi** per elemen: **Novelty**, **Urgency**, **Impact** (catatan wajib jika minta revisi).
+1. Setujui atau **minta revisi** per elemen: **Judul**, **Novelty**, **Urgency**, **Impact** (catatan wajib jika minta revisi).
 2. Setelah **semua elemen disetujui oleh kedua pembimbing**, status judul dan NUI berubah menjadi *Disetujui* dan kursi pembimbing otomatis **accepted**.
 3. Finalisasi terjadi jika **P1 dan P2** keduanya accept.
+4. Setiap elemen (Judul/Novelty/Urgency/Impact) maupun referensi yang sudah **Disetujui** menampilkan tombol **Batalkan** untuk mengembalikan review tersebut ke *Pending* — berguna bila pembimbing salah klik Setujui. Membatalkan persetujuan elemen NUI mengembalikan kursi ke *pending* jika sebelumnya sudah accepted.
 
 ### Langkah uji per akun
 
@@ -285,6 +314,8 @@ Simulasi penolakan `mahasiswa7` memakai `penguji1` + `penguji2`. `penguji3` hany
 2. Setelah judul tersimpan muncul: **Usulan Calon Pembimbing**, **Komponen NUIR**, **Referensi**.
 3. Setiap kartu memakai **accordion** dengan counter kata (min = petunjuk, max = validasi).
 4. Jika sudah ada usulan pembimbing, komponen NUI menampilkan badge **per pembimbing** (`P1: …`, `P2: …`); referensi memakai badge status validator.
+5. Selama status usulan **menunggu respons** (belum diterima/ditolak pembimbing), kartu Usulan Calon Pembimbing menampilkan tombol **Batalkan Usulan** per kursi (P1/P2) — mahasiswa dapat membatalkan sendiri usulannya sebelum direspons dosen. Tombol hilang begitu pembimbing menerima usulan tersebut.
+6. Histori usulan membedakan siapa yang membatalkan: **Dibatalkan Mahasiswa** (mahasiswa memakai tombol Batalkan Usulan) vs **Dibatalkan Manajer** (manajer memakai tombol Batalkan Calon P1/P2 di panel `/nuir-manajer`).
 
 ### Langkah uji per akun
 
@@ -295,10 +326,10 @@ Simulasi penolakan `mahasiswa7` memakai `penguji1` + `penguji2`. `penguji3` hany
 | `mahasiswa2` | **Impact**: badge P1+P2 revisi, banner catatan ganda, **Simpan Revisi Impact**; referensi campuran |
 | `mahasiswa3` | Semua referensi lulus; ajukan P1 dan P2 dari workspace |
 | `mahasiswa4` | **Referensi #5–7**: badge "Diminta Revisi Validator", catatan spesifik per slot, edit & simpan ulang; **Novelty/Impact**: banner revisi pembimbing, simpan perbaikan |
-| `mahasiswa5` | Usulan pending; tunggu review NUI pembimbing |
-| `mahasiswa6` | P1 accepted, P2 sebagian review |
-| `mahasiswa7` | Histori penolakan + usulan aktif |
-| `mahasiswa8` | Status finalized |
+| `mahasiswa5` | P1 masih pending; P2 dibatalkan manajer → **histori P2** menampilkan Diusulkan + Dibatalkan; workspace P2 bisa pilih calon baru |
+| `mahasiswa6` | P1 accepted → **histori P1** menampilkan Diusulkan + Diterima; P2 pending |
+| `mahasiswa7` | **Histori P1 & P2**: Diusulkan (penguji) → Ditolak → Diusulkan kembali (pembimbing); lihat timeline lengkap |
+| `mahasiswa8` | Status finalized; **histori** keduanya menampilkan Diusulkan + Diterima |
 
 ---
 

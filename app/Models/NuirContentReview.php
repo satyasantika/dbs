@@ -11,6 +11,8 @@ class NuirContentReview extends Model
 
     public const ROLE_GUIDE2 = 'guide2';
 
+    public const FIELD_TITLE = 'title';
+
     public const FIELD_NOVELTY = 'novelty';
 
     public const FIELD_URGENCY = 'urgency';
@@ -18,6 +20,7 @@ class NuirContentReview extends Model
     public const FIELD_IMPACT = 'impact';
 
     public const FIELDS = [
+        self::FIELD_TITLE,
         self::FIELD_NOVELTY,
         self::FIELD_URGENCY,
         self::FIELD_IMPACT,

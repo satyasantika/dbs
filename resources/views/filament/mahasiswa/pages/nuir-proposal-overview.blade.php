@@ -52,10 +52,10 @@
                     <tbody>
                         @forelse ($this->proposals as $proposal)
                             <tr class="border-b">
-                                <td class="px-2 py-1">{{ $proposal->guide1->name }}</td>
+                                <td class="px-2 py-1">{{ $proposal->guide1?->name ?? '—' }}</td>
                                 <td class="px-2 py-1"><x-filament::badge color="gray">{{ $proposal->guide1_status }}</x-filament::badge></td>
                                 <td class="px-2 py-1">{{ $proposal->guide1_note }}</td>
-                                <td class="px-2 py-1">{{ $proposal->guide2->name }}</td>
+                                <td class="px-2 py-1">{{ $proposal->guide2?->name ?? '—' }}</td>
                                 <td class="px-2 py-1"><x-filament::badge color="gray">{{ $proposal->guide2_status }}</x-filament::badge></td>
                                 <td class="px-2 py-1">{{ $proposal->guide2_note }}</td>
                                 <td class="px-2 py-1">{{ $proposal->created_at?->format('d-m-Y') }}</td>
