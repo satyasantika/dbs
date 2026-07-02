@@ -30,25 +30,17 @@ class NuirSeederTest extends TestCase
         $this->assertTrue($setting->active);
         $this->assertSame(1, $setting->stage);
 
-        $this->assertGreaterThanOrEqual(9, NuirSubmission::count());
+        // Simulation mode: 8 students × 1 submission each (no DBS revision chain / v2)
+        $this->assertGreaterThanOrEqual(8, NuirSubmission::count());
         $this->assertGreaterThanOrEqual(70, NuirReference::count());
         $this->assertGreaterThanOrEqual(4, NuirProposal::count());
 
         $statuses = NuirSubmission::pluck('status')->unique()->values()->all();
-        $this->assertContains('draft', $statuses);
+        $this->assertContains('title_slot', $statuses);
         $this->assertContains('submitted', $statuses);
-        $this->assertContains('revision', $statuses);
         $this->assertContains('content_ok', $statuses);
         $this->assertContains('finalized', $statuses);
-
-        $revisionChild = NuirSubmission::whereNotNull('parent_submission_id')->first();
-        $this->assertNotNull($revisionChild);
-        $this->assertSame(2, $revisionChild->version);
-        $this->assertSame(
-            NuirSimulationAccountSeeder::SIMULATION_YEAR === $year ? 'submitted' : 'draft',
-            $revisionChild->status,
-        );
-        $this->assertSame('revision', $revisionChild->parentSubmission?->status);
+        // 'revision' status is no longer seeded in simulation mode (no DBS revision step)
 
         $finalized = NuirSubmission::where('status', 'finalized')->first();
         $this->assertNotNull($finalized);
@@ -87,7 +79,7 @@ class NuirSeederTest extends TestCase
         });
 
         NuirProposal::all()->each(function (NuirProposal $proposal) {
-            $this->assertContains($proposal->submission?->status, ['submitted', 'revision', 'content_ok', 'finalized']);
+            $this->assertContains($proposal->submission?->status, ['submitted', 'content_ok', 'finalized']);
             $this->assertTrue($proposal->guide1?->hasRole('dosen'));
             $this->assertTrue($proposal->guide2?->hasRole('dosen'));
             $this->assertNotSame($proposal->guide1_id, $proposal->guide2_id);
@@ -96,8 +88,27 @@ class NuirSeederTest extends TestCase
         $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
         $this->assertNotNull($mahasiswa1);
         $this->assertTrue(
-            NuirSubmission::where('user_id', $mahasiswa1->id)->where('status', 'draft')->exists()
+            NuirSubmission::where('user_id', $mahasiswa1->id)->where('status', 'title_slot')->exists()
         );
+
+        $mahasiswa9 = User::where('username', NuirSimulationAccountSeeder::EMPTY_NUIR_STUDENT_USERNAME)->first();
+        $this->assertNotNull($mahasiswa9);
+        $this->assertFalse(NuirSubmission::where('user_id', $mahasiswa9->id)->exists());
+        $this->assertTrue(
+            GuideExaminer::where('user_id', $mahasiswa9->id)
+                ->where('year_generation', $year)
+                ->exists(),
+            'Mahasiswa tanpa NUIR harus terdaftar di guide_examiners angkatan simulasi.',
+        );
+
+        $setting = NuirSetting::where('year_generation', $year)->first();
+        $this->assertSame(10, $setting->max_references);
+        $this->assertSame(12, $setting->min_words_novelty);
+        $this->assertSame(300, $setting->max_words_novelty);
+        $this->assertSame(300, $setting->max_words_urgency);
+        $this->assertSame(300, $setting->max_words_impact);
+        $this->assertSame(20, $setting->max_words_title);
+        $this->assertSame(3, $setting->min_words_title);
 
         $pembimbing1 = User::where('username', 'pembimbing1')->first();
         $this->assertTrue(
@@ -128,7 +139,8 @@ class NuirSeederTest extends TestCase
         );
         $this->assertGreaterThan(
             0,
-            NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_DBS_REVISION)->count(),
+            NuirRevisionEvent::where('event_type', NuirRevisionEvent::TYPE_NUI_REVISION)->count(),
+            'Harus ada histori revisi NUI dari pembimbing (P1/P2).',
         );
         $this->assertGreaterThan(
             0,
@@ -146,6 +158,56 @@ class NuirSeederTest extends TestCase
                 ->where('user_id', $pembimbing1?->id)
                 ->where('approved', true)
                 ->count(),
+        );
+
+        // mahasiswa4: submitted with NUI revision requested by guides (no DBS involvement)
+        $mahasiswa4 = User::where('username', 'mahasiswa4')->first();
+        $nuiRevisionSubmission = NuirSubmission::where('user_id', $mahasiswa4?->id)
+            ->where('status', 'submitted')
+            ->first();
+        $this->assertNotNull($nuiRevisionSubmission, 'mahasiswa4 harus punya submission submitted untuk revisi NUI pembimbing.');
+        $this->assertTrue(
+            NuirContentReview::where('nuir_submission_id', $nuiRevisionSubmission->id)
+                ->where('field', 'novelty')
+                ->where('approved', false)
+                ->exists(),
+            'mahasiswa4: novelty harus diminta revisi oleh P1.',
+        );
+        $this->assertTrue(
+            NuirContentReview::where('nuir_submission_id', $nuiRevisionSubmission->id)
+                ->where('field', 'impact')
+                ->where('approved', false)
+                ->exists(),
+            'mahasiswa4: impact harus diminta revisi oleh P2.',
+        );
+
+        $mahasiswa2 = User::where('username', 'mahasiswa2')->first();
+        $pembimbing2 = User::where('username', 'pembimbing2')->first();
+        $dualRevisionSubmission = NuirSubmission::where('user_id', $mahasiswa2?->id)
+            ->where('status', 'submitted')
+            ->first();
+        $this->assertNotNull($dualRevisionSubmission);
+        $this->assertSame(
+            2,
+            NuirContentReview::where('nuir_submission_id', $dualRevisionSubmission->id)
+                ->where('field', NuirContentReview::FIELD_IMPACT)
+                ->where('approved', false)
+                ->count(),
+            'Impact mahasiswa2 harus diminta revisi oleh P1 dan P2 sebelum mahasiswa menyimpan perbaikan.',
+        );
+        $this->assertTrue(
+            NuirContentReview::where('nuir_submission_id', $dualRevisionSubmission->id)
+                ->where('field', NuirContentReview::FIELD_IMPACT)
+                ->where('user_id', $pembimbing1?->id)
+                ->where('approved', false)
+                ->exists(),
+        );
+        $this->assertTrue(
+            NuirContentReview::where('nuir_submission_id', $dualRevisionSubmission->id)
+                ->where('field', NuirContentReview::FIELD_IMPACT)
+                ->where('user_id', $pembimbing2?->id)
+                ->where('approved', false)
+                ->exists(),
         );
     }
 }

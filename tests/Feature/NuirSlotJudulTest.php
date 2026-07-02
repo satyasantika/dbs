@@ -59,9 +59,9 @@ class NuirSlotJudulTest extends TestCase
         $this->actingAs($this->mahasiswa)
             ->put("/nuir/submission/{$slot->id}", [
                 'title' => 'Judul Slot',
-                'novelty' => str_repeat('a', 100),
-                'urgency' => str_repeat('b', 100),
-                'impact' => str_repeat('c', 100),
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
             ])
             ->assertRedirect(route('nuir.submission.index'));
 

@@ -47,7 +47,35 @@ class MahasiswaPanelSmokeTest extends TestCase
             ->assertOk()
             ->assertSee('Selamat datang')
             ->assertSee('Portal mahasiswa')
-            ->assertSee('Status NUIR');
+            ->assertSee('Pengajuan NUIR')
+            ->assertSee('Status Pengajuan NUIR')
+            ->assertSee('Judul')
+            ->assertSee('Novelty')
+            ->assertSee('Urgency')
+            ->assertSee('Impact')
+            ->assertSee('Belum diisi');
+    }
+
+    public function test_dashboard_menampilkan_status_komponen_nui_terisi(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        NuirSubmission::factory()->titleSlot()->withSavedTitle()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+            'novelty' => implode(' ', array_fill(0, 12, 'novelty')),
+            'novelty_saved_at' => now(),
+            'urgency' => null,
+            'impact' => null,
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->get(Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Status Pengajuan NUIR')
+            ->assertSee('Judul: tersimpan', false)
+            ->assertSee('Novelty: tersimpan', false)
+            ->assertSee('Belum diisi');
     }
 
     public function test_old_nuir_submission_route_redirects_to_filament(): void
@@ -65,28 +93,27 @@ class MahasiswaPanelSmokeTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Judul')
+            ->assertSee('Simpan Judul');
     }
 
-    public function test_nuir_submission_create_accessible(): void
+    public function test_nuir_submission_create_redirects_to_workspace(): void
     {
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
 
         $this->actingAs($this->mahasiswa)
             ->get(CreateNuirSubmission::getUrl(panel: 'mahasiswa'))
-            ->assertOk()
-            ->assertSee('Buat Slot Judul')
-            ->assertSee('Judul')
-            ->assertDontSee('Tambah Referensi');
+            ->assertRedirect(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'));
     }
 
-    public function test_nuir_submission_edit_menampilkan_form_card_dan_modal_referensi(): void
+    public function test_nuir_submission_workspace_menampilkan_referensi_tersimpan(): void
     {
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
-        $submission = NuirSubmission::factory()->withNUI()->create([
+        $submission = NuirSubmission::factory()->withNUI()->withSavedTitle()->create([
             'user_id' => $this->mahasiswa->id,
             'year_generation' => '2022',
-            'status' => 'draft',
+            'status' => 'submitted',
         ]);
         NuirReference::factory()->create([
             'nuir_submission_id' => $submission->id,
@@ -96,15 +123,14 @@ class MahasiswaPanelSmokeTest extends TestCase
         ]);
 
         $this->actingAs($this->mahasiswa)
-            ->get(EditNuirSubmission::getUrl(['record' => $submission], panel: 'mahasiswa'))
+            ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
             ->assertOk()
-            ->assertSee('Tambah Referensi')
+            ->assertSee('Referensi #1')
             ->assertSee('Kutipan contoh referensi')
-            ->assertSee('data-nui-autoresize')
-            ->assertSee('Ringkasan Status Referensi');
+            ->assertSee('Simpan Referensi #1');
     }
 
-    public function test_edit_form_meneruskan_status_referensi_dan_min_references_ke_alpine(): void
+    public function test_workspace_menampilkan_status_referensi_per_slot(): void
     {
         NuirSetting::factory()->create([
             'year_generation' => '2022',
@@ -112,10 +138,10 @@ class MahasiswaPanelSmokeTest extends TestCase
             'active' => true,
             'min_references_approved' => 2,
         ]);
-        $submission = NuirSubmission::factory()->withNUI()->create([
+        $submission = NuirSubmission::factory()->withNUI()->withSavedTitle()->create([
             'user_id' => $this->mahasiswa->id,
             'year_generation' => '2022',
-            'status' => 'draft',
+            'status' => 'submitted',
         ]);
         NuirReference::factory()->approved()->create([
             'nuir_submission_id' => $submission->id,
@@ -130,45 +156,39 @@ class MahasiswaPanelSmokeTest extends TestCase
             'quote' => 'Referensi menunggu review',
         ]);
 
-        $response = $this->actingAs($this->mahasiswa)
-            ->get(EditNuirSubmission::getUrl(['record' => $submission], panel: 'mahasiswa'));
-
-        $response->assertOk()
-            ->assertSee('Kuota referensi tercapai')
-            ->assertSee('Masih Direview')
-            ->assertSee('Disetujui');
-
-        $html = $response->getContent();
-        $this->assertStringContainsString('minReferences', $html);
-        $this->assertStringContainsString('refStatuses', $html);
-        $this->assertStringContainsString(':true', $html);
+        $this->actingAs($this->mahasiswa)
+            ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Disetujui Validator')
+            ->assertSee('Menunggu Respon Validator');
     }
 
     public function test_submitted_submission_menampilkan_form_kelola_referensi(): void
     {
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
-        $submission = NuirSubmission::factory()->submitted()->withNUI()->create([
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->withSavedTitle()->create([
             'user_id' => $this->mahasiswa->id,
             'year_generation' => '2022',
         ]);
-
-        $this->actingAs($this->mahasiswa)
-            ->get(EditNuirSubmission::getUrl(['record' => $submission], panel: 'mahasiswa'))
-            ->assertOk()
-            ->assertSee('Konten NUIR sudah diajukan')
-            ->assertSee('Simpan Referensi')
-            ->assertDontSee('Simpan Draft');
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'ref_order' => 1,
+            'indexer_name' => 'Scopus',
+            'quote' => 'Referensi menunggu review validator',
+        ]);
 
         $this->actingAs($this->mahasiswa)
             ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
             ->assertOk()
-            ->assertSee('Kelola Referensi');
+            ->assertSee('Referensi')
+            ->assertSee('Menunggu Respon Validator')
+            ->assertDontSee('Kirim ke DBS');
     }
 
     public function test_overview_mengelompokkan_referensi_menurut_status_review(): void
     {
         NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
-        $submission = NuirSubmission::factory()->withNUI()->create([
+        $submission = NuirSubmission::factory()->withNUI()->withSavedTitle()->create([
             'user_id' => $this->mahasiswa->id,
             'year_generation' => '2022',
             'status' => 'submitted',
@@ -193,14 +213,12 @@ class MahasiswaPanelSmokeTest extends TestCase
         $this->actingAs($this->mahasiswa)
             ->get(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'))
             ->assertOk()
-            ->assertSee('Status Referensi')
-            ->assertSee('Masih Direview')
-            ->assertSee('#2')
-            ->assertSee('WoS')
-            ->assertSee('Disetujui')
-            ->assertSee('Scopus')
-            ->assertSee('Ditolak')
-            ->assertSee('DOAJ')
+            ->assertSee('Referensi #1')
+            ->assertSee('Disetujui Validator')
+            ->assertSee('Referensi #2')
+            ->assertSee('Menunggu Respon Validator')
+            ->assertSee('Referensi #3')
+            ->assertSee('Diminta Revisi Validator')
             ->assertSee('Kurang relevan');
     }
 

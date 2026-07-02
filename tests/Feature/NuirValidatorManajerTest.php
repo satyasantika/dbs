@@ -175,8 +175,7 @@ class NuirValidatorManajerTest extends TestCase
 
         Livewire::actingAs($this->mahasiswa)
             ->test(NuirSubmissionOverview::class)
-            ->assertSee('Status Referensi')
-            ->assertSee('Ditolak')
+            ->assertSee('Diminta Revisi Validator')
             ->assertSee('DOI tidak valid');
     }
 

@@ -44,16 +44,7 @@ class ReviseNuirSubmission extends Page
 
     public function mount(NuirSubmission $record): void
     {
-        $data = app(NuirSubmissionService::class)->revisionFormData(auth()->user(), $record);
-        $this->setting = $data['setting'];
-        $this->submission = $data['submission'];
-        $this->stage = $data['stage'];
-        $this->rejectedRefs = $data['rejectedRefs'];
-        $this->revisionParent = $data['revisionParent'];
-        $this->referencesOnly = $data['referencesOnly'] ?? false;
-        $this->partialNuiOnly = $data['partialNuiOnly'] ?? false;
-        $this->rejectedNuiFields = $data['rejectedNuiFields'] ?? [];
-        $this->titleSlotOnly = $data['titleSlotOnly'] ?? false;
+        $this->redirect(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'));
     }
 
     protected static function mahasiswaAccessPermission(): string

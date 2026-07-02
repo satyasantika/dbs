@@ -55,12 +55,14 @@ class NuirRevisionTest extends TestCase
 
     public function test_revisi_membuat_versi_baru_dengan_parent_id(): void
     {
+        $revisedTitle = 'Judul yang Sudah Direvisi';
+
         $this->actingAs($this->mahasiswa)
             ->post("/nuir/submission/{$this->v1->id}/revise", [
-                'title' => 'Judul Direvisi',
-                'novelty' => str_repeat('n', 100),
-                'urgency' => str_repeat('u', 100),
-                'impact' => str_repeat('i', 100),
+                'title' => $revisedTitle,
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
                 'references' => [],
             ])
             ->assertRedirect(route('nuir.submission.index'));
@@ -69,7 +71,7 @@ class NuirRevisionTest extends TestCase
         $this->assertNotNull($v2);
         $this->assertEquals(2, $v2->version);
         $this->assertEquals('draft', $v2->status);
-        $this->assertEquals('Judul Direvisi', $v2->title);
+        $this->assertEquals($revisedTitle, $v2->title);
     }
 
     public function test_versi_lama_tidak_berubah_setelah_revisi_dibuat(): void
@@ -78,10 +80,10 @@ class NuirRevisionTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->post("/nuir/submission/{$this->v1->id}/revise", [
-                'title' => 'Judul Baru',
-                'novelty' => str_repeat('n', 50),
-                'urgency' => str_repeat('u', 50),
-                'impact' => str_repeat('i', 50),
+                'title' => 'Judul yang Baru',
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
                 'references' => [],
             ]);
 
@@ -124,7 +126,10 @@ class NuirRevisionTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->post("/nuir/submission/{$this->v1->id}/revise", [
-                'title' => 'Direvisi', 'novelty' => 'n', 'urgency' => 'u', 'impact' => 'i',
+                'title' => 'Judul yang Direvisi',
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
                 'references' => [
                     1 => [
                         'link_ojs' => 'https://ojs.baru.com', 'indexer_name' => 'Scopus',

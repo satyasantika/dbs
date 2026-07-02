@@ -32,7 +32,7 @@ class NuirSubmissionController extends Controller
             return $result;
         }
 
-        return redirect(CreateNuirSubmission::getUrl(panel: 'mahasiswa'));
+        return redirect(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'));
     }
 
     public function store(Request $request)
@@ -44,7 +44,7 @@ class NuirSubmissionController extends Controller
     {
         $this->submissionService->editFormData(auth()->user(), $nuirSubmission);
 
-        return redirect(EditNuirSubmission::getUrl(['record' => $nuirSubmission], panel: 'mahasiswa'));
+        return redirect(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'));
     }
 
     public function update(Request $request, NuirSubmission $nuirSubmission)
@@ -61,7 +61,7 @@ class NuirSubmissionController extends Controller
     {
         $this->submissionService->revisionFormData(auth()->user(), $nuirSubmission);
 
-        return redirect(ReviseNuirSubmission::getUrl(['record' => $nuirSubmission], panel: 'mahasiswa'));
+        return redirect(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'));
     }
 
     public function storeRevision(Request $request, NuirSubmission $nuirSubmission)

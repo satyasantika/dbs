@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Mahasiswa\Pages\NuirSubmissionOverview;
 use App\Models\GuideAllocation;
 use App\Models\GuideExaminer;
 use App\Models\NuirContentReview;
@@ -13,6 +14,7 @@ use App\Models\User;
 use App\Services\NuirProposalService;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\Concerns\SeedsNuirGuideQuota;
 use Tests\TestCase;
 
@@ -62,7 +64,7 @@ class NuirMahasiswaRoleTest extends TestCase
     public function test_alur_lengkap_slot_judul_submit_dan_usulan_pembimbing(): void
     {
         $this->actingAs($this->mahasiswa)
-            ->post('/nuir/submission', ['title' => 'Judul Awal', 'title_only' => '1'])
+            ->post('/nuir/submission', ['title' => 'Judul Awal Penelitian Terbaru', 'title_only' => '1'])
             ->assertRedirect(route('nuir.submission.index'));
 
         $submission = NuirSubmission::where('user_id', $this->mahasiswa->id)->first();
@@ -70,10 +72,10 @@ class NuirMahasiswaRoleTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->put("/nuir/submission/{$submission->id}", [
-                'title' => 'Judul Awal',
-                'novelty' => str_repeat('n', 100),
-                'urgency' => str_repeat('u', 100),
-                'impact' => str_repeat('i', 100),
+                'title' => 'Judul Awal Penelitian Terbaru',
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
             ])
             ->assertRedirect(route('nuir.submission.index'));
 
@@ -148,14 +150,16 @@ class NuirMahasiswaRoleTest extends TestCase
             'reviewed_at' => now(),
         ]);
 
+        $revisedNovelty = implode(' ', array_fill(0, 15, 'novelty'));
+
         $this->actingAs($this->mahasiswa)
             ->put("/nuir/submission/{$submission->id}", [
-                'novelty' => str_repeat('n', 120),
+                'novelty' => $revisedNovelty,
             ])
             ->assertRedirect(route('nuir.submission.index'));
 
         $submission->refresh();
-        $this->assertEquals(str_repeat('n', 120), $submission->novelty);
+        $this->assertEquals($revisedNovelty, $submission->novelty);
         $this->assertDatabaseMissing('nuir_content_reviews', [
             'nuir_submission_id' => $submission->id,
             'field' => NuirContentReview::FIELD_NOVELTY,
@@ -239,10 +243,10 @@ class NuirMahasiswaRoleTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->put("/nuir/submission/{$submission->id}", [
-                'title' => $submission->title,
-                'novelty' => str_repeat('n', 100),
-                'urgency' => str_repeat('u', 100),
-                'impact' => str_repeat('i', 100),
+                'title' => filled($submission->title) ? $submission->title : 'Judul Penelitian yang Valid',
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
                 'references' => $references,
             ])
             ->assertRedirect(route('nuir.submission.index'));
@@ -298,5 +302,220 @@ class NuirMahasiswaRoleTest extends TestCase
         $this->assertEquals('accepted', $latest->guide1_status);
         $this->assertEquals('pending', $latest->guide2_status);
         $this->assertEquals($this->dosenP2Only->id, $latest->guide2_id);
+    }
+
+    public function test_workspace_save_semua_field_nui_memberi_notifikasi_dan_timestamp(): void
+    {
+        $title = 'Judul penelitian simulasi uji';
+        $novelty = implode(' ', array_fill(0, 15, 'novelty'));
+        $urgency = implode(' ', array_fill(0, 15, 'urgency'));
+        $impact = implode(' ', array_fill(0, 15, 'impact'));
+
+        $component = Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class);
+
+        foreach ([
+            ['title', $title, 'Judul berhasil disimpan.', 'title_saved_at'],
+            ['novelty', $novelty, 'Novelty berhasil disimpan.', 'novelty_saved_at'],
+            ['urgency', $urgency, 'Urgency berhasil disimpan.', 'urgency_saved_at'],
+            ['impact', $impact, 'Impact berhasil disimpan.', 'impact_saved_at'],
+        ] as [$field, $value, $notificationTitle, $savedAtColumn]) {
+            $component
+                ->call('saveNuiField', $field, $value)
+                ->assertHasNoErrors()
+                ->assertNotified($notificationTitle)
+                ->assertSee('Diperbarui');
+
+            $submission = NuirSubmission::where('user_id', $this->mahasiswa->id)->first();
+            $this->assertNotNull($submission);
+            $this->assertSame($value, $submission->{$field});
+            $this->assertNotNull($submission->{$savedAtColumn});
+        }
+
+        $component
+            ->assertSet('nuiFieldsFilled', true)
+            ->assertSet('titleSaved', true)
+            ->assertSet('nuiComplete', true)
+            ->assertSee('Usulan Calon Pembimbing')
+            ->assertSee('Calon Pembimbing 1');
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSet('titleField', $title)
+            ->assertSet('noveltyField', $novelty)
+            ->assertSet('urgencyField', $urgency)
+            ->assertSet('impactField', $impact)
+            ->assertSee($title, false)
+            ->assertSee($novelty, false)
+            ->assertSee($urgency, false)
+            ->assertSee($impact, false);
+    }
+
+    public function test_workspace_save_nui_field_berhasil_tanpa_batas_minimum_kata(): void
+    {
+        NuirSubmission::factory()->titleSlot()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+        ]);
+
+        // Fewer than the old minimum (12 words) — should now succeed
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->call('saveNuiField', 'novelty', 'terlalu sedikit')
+            ->assertHasNoErrors()
+            ->assertNotified('Novelty berhasil disimpan.');
+
+        $this->assertDatabaseHas('nuir_submissions', [
+            'user_id' => $this->mahasiswa->id,
+            'novelty' => 'terlalu sedikit',
+        ]);
+    }
+
+    public function test_workspace_save_nui_field_gagal_jika_melebihi_batas_kata(): void
+    {
+        NuirSubmission::factory()->titleSlot()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+        ]);
+
+        $overLimit = implode(' ', array_fill(0, 301, 'kata'));
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->call('saveNuiField', 'novelty', $overLimit)
+            ->assertHasNoErrors()
+            ->assertNotified('Novelty gagal disimpan');
+
+        $this->assertDatabaseMissing('nuir_submissions', [
+            'user_id' => $this->mahasiswa->id,
+            'novelty' => $overLimit,
+        ]);
+    }
+
+    public function test_workspace_save_pertama_membuat_submission_otomatis(): void
+    {
+        $this->assertFalse(
+            NuirSubmission::where('user_id', $this->mahasiswa->id)->exists(),
+        );
+
+        $title = 'Judul penelitian simulasi uji';
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->call('saveNuiField', 'title', $title)
+            ->assertHasNoErrors()
+            ->assertSee('Diperbarui');
+
+        $submission = NuirSubmission::where('user_id', $this->mahasiswa->id)->first();
+
+        $this->assertNotNull($submission);
+        $this->assertSame('title_slot', $submission->status);
+        $this->assertSame($title, $submission->title);
+        $this->assertNotNull($submission->title_saved_at);
+    }
+
+    public function test_workspace_save_nui_field_menyimpan_nilai_dan_timestamp(): void
+    {
+        $submission = NuirSubmission::factory()->titleSlot()->withSavedTitle()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+        ]);
+
+        $novelty = implode(' ', array_fill(0, 15, 'novelty'));
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->call('saveNuiField', 'novelty', $novelty)
+            ->assertHasNoErrors()
+            ->assertSee('Diperbarui')
+            ->assertSee('Novelty: tersimpan');
+
+        $submission->refresh();
+
+        $this->assertSame($novelty, $submission->novelty);
+        $this->assertNotNull($submission->novelty_saved_at);
+    }
+
+    public function test_card_pembimbing_muncul_setelah_judul_disimpan(): void
+    {
+        NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+            'title_saved_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSet('titleSaved', true)
+            ->assertSet('nuiFieldsFilled', true)
+            ->assertSee('Usulan Calon Pembimbing')
+            ->assertSee('Komponen NUIR')
+            ->assertSee('Calon Pembimbing 1')
+            ->assertSee('Referensi');
+    }
+
+    public function test_card_pembimbing_tersembunyi_sebelum_judul_disimpan(): void
+    {
+        NuirSubmission::factory()->titleSlot()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+            'title_saved_at' => null,
+            'novelty' => '',
+            'urgency' => '',
+            'impact' => '',
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSet('titleSaved', false)
+            ->assertSet('nuiFieldsFilled', false)
+            ->assertSee('Judul')
+            ->assertDontSee('Usulan Calon Pembimbing')
+            ->assertDontSee('Komponen NUIR')
+            ->assertDontSee('Referensi #1');
+    }
+
+    public function test_card_lain_muncul_setelah_simpan_judul_pertama_kali(): void
+    {
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->assertSet('titleSaved', false)
+            ->assertDontSee('Usulan Calon Pembimbing')
+            ->call('saveNuiField', 'title', 'Judul penelitian simulasi uji')
+            ->assertHasNoErrors()
+            ->assertSet('titleSaved', true)
+            ->assertSee('Usulan Calon Pembimbing')
+            ->assertSee('Komponen NUIR')
+            ->assertSee('Referensi');
+    }
+
+    public function test_workspace_ajukan_pembimbing_dari_filament(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji',
+            'title_saved_at' => now(),
+            'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+            'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+            'impact' => implode(' ', array_fill(0, 15, 'impact')),
+        ]);
+
+        Livewire::actingAs($this->mahasiswa)
+            ->test(NuirSubmissionOverview::class)
+            ->set('guide1Selection', $this->dosenP1->id)
+            ->call('proposeGuide', 1)
+            ->assertNotified('Usulan Pembimbing 1 dikirim.');
+
+        $this->assertDatabaseHas('nuir_proposals', [
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->dosenP1->id,
+            'guide1_status' => 'pending',
+        ]);
     }
 }

@@ -25,6 +25,8 @@ class NuirProposalOverview extends Page
 
     protected static ?string $slug = 'nuir-proposal';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     protected static string $view = 'filament.mahasiswa.pages.nuir-proposal-overview';
 
     public Collection $proposals;

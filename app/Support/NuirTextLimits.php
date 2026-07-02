@@ -43,10 +43,6 @@ class NuirTextLimits
         $maxChars = $setting->{"max_chars_{$field}"};
         $words = self::wordCount($value);
 
-        if ($minWords !== null && $words < $minWords) {
-            return "Minimal {$minWords} kata untuk ".ucfirst($field).'.';
-        }
-
         if ($maxWords !== null && $words > $maxWords) {
             return "Maksimal {$maxWords} kata untuk ".ucfirst($field).'.';
         }
@@ -56,6 +52,33 @@ class NuirTextLimits
         }
 
         return null;
+    }
+
+    public static function validateTitleField(string $value, NuirSetting $setting): ?string
+    {
+        $trimmed = trim($value);
+
+        if ($trimmed === '') {
+            return 'Judul wajib diisi.';
+        }
+
+        $maxWords = $setting->max_words_title;
+        $words = self::wordCount($trimmed);
+
+        if ($maxWords !== null && $words > $maxWords) {
+            return "Maksimal {$maxWords} kata untuk Judul.";
+        }
+
+        return null;
+    }
+
+    public static function assertTitleField(string $value, NuirSetting $setting): void
+    {
+        $message = self::validateTitleField($value, $setting);
+
+        if ($message !== null) {
+            throw ValidationException::withMessages(['title' => $message]);
+        }
     }
 
     public static function assertNuiFields(array $data, NuirSetting $setting): void

@@ -188,7 +188,7 @@ class NuirSistemTest extends TestCase
 
         Livewire::actingAs($this->mahasiswa)
             ->test(NuirSubmissionOverview::class)
-            ->assertSee('Histori Revisi')
+            ->assertSee('Histori Penolakan Usulan')
             ->assertSee('Topik di luar keahlian');
 
         $this->actingAs($this->dosenP1)

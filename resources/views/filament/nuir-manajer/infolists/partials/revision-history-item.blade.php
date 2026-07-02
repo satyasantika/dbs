@@ -74,17 +74,7 @@
         ])
     >
         <div class="min-w-0">
-            <div class="flex flex-wrap items-center gap-2">
-                <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $item['heading'] }}</p>
-                @if (! empty($item['submission_version']))
-                    <span @class([
-                        'inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
-                        $toneClasses['badge'],
-                    ])>
-                        v{{ $item['submission_version'] }}
-                    </span>
-                @endif
-            </div>
+            <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $item['heading'] }}</p>
             <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
                 @if ($item['recorded_at'])
                     {{ $item['recorded_at']->format('d M Y H:i') }}
@@ -106,24 +96,48 @@
         x-collapse
         @class(['border-t px-3 py-2.5 text-sm', $toneClasses['bodyBorder']])
     >
+        @if (filled($item['content']))
+            @php
+                $words          = preg_split('/\s+/u', trim($item['content']), -1, PREG_SPLIT_NO_EMPTY);
+                $needsTruncate  = count($words) > 20;
+                $preview        = $needsTruncate
+                    ? implode(' ', array_slice($words, 0, 20)).'…'
+                    : $item['content'];
+            @endphp
+            <div
+                x-data="{ expanded: false }"
+                @class(['mb-2 rounded-md px-2.5 py-2 text-sm', $toneClasses['content']])
+            >
+                <p class="whitespace-pre-wrap" x-show="!expanded">{{ $preview }}</p>
+                @if ($needsTruncate)
+                    <p class="whitespace-pre-wrap" x-show="expanded" x-cloak>{{ $item['content'] }}</p>
+                    <button
+                        type="button"
+                        @click="expanded = !expanded"
+                        class="mt-1.5 text-xs font-medium underline opacity-60 hover:opacity-100"
+                        x-text="expanded ? 'Sembunyikan' : 'Selengkapnya'"
+                    ></button>
+                @endif
+            </div>
+        @endif
+
         @if (! empty($item['revision_field_labels']))
-            <p @class(['mb-2 rounded-md px-2.5 py-2', $toneClasses['note']])>
-                <span class="font-medium">Bagian diperbaiki:</span>
-                {{ implode(', ', $item['revision_field_labels']) }}
-            </p>
+            <div @class(['mb-2 rounded-md px-2.5 py-2 text-sm', $toneClasses['note']])>
+                <p class="mb-1 font-medium">Bagian diperbaiki:</p>
+                @foreach ($item['revision_field_labels'] as $label)
+                    <p>{{ $label }}</p>
+                @endforeach
+            </div>
         @endif
 
         @if (filled($item['note']))
-            <p @class(['mb-2 rounded-md px-2.5 py-2', $toneClasses['note']])>
-                <span class="font-medium">Catatan:</span> {{ $item['note'] }}
+            <p @class(['rounded-md px-2.5 py-2 text-sm', $toneClasses['note']])>
+                <span class="font-medium not-italic">Catatan:</span>
+                <span class="italic text-gray-600 dark:text-gray-300">{{ $item['note'] }}</span>
             </p>
         @endif
 
-        @if (filled($item['content']))
-            <div @class(['rounded-md px-2.5 py-2 whitespace-pre-wrap', $toneClasses['content']])>
-                {{ $item['content'] }}
-            </div>
-        @elseif (blank($item['note']))
+        @if (blank($item['content']) && blank($item['note']))
             <p class="text-xs italic text-gray-500 dark:text-gray-400">Tidak ada detail tambahan.</p>
         @endif
     </div>
