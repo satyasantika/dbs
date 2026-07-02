@@ -70,10 +70,10 @@ class NuirSubmissionTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->post('/nuir/submission', [
-                'title' => 'Judul Penelitian',
-                'novelty' => str_repeat('a', 100),
-                'urgency' => str_repeat('b', 100),
-                'impact' => str_repeat('c', 100),
+                'title' => 'Judul Penelitian yang Baru',
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
                 'references' => [
                     1 => [
                         'link_ojs' => 'https://ojs.example.com/1',
@@ -90,7 +90,7 @@ class NuirSubmissionTest extends TestCase
         $this->assertDatabaseHas('nuir_submissions', [
             'user_id' => $this->mahasiswa->id,
             'status' => 'draft',
-            'title' => 'Judul Penelitian',
+            'title' => 'Judul Penelitian yang Baru',
         ]);
         $this->assertDatabaseHas('nuir_references', [
             'ref_order' => 1,
@@ -110,10 +110,10 @@ class NuirSubmissionTest extends TestCase
 
         $this->actingAs($this->mahasiswa)
             ->put("/nuir/submission/{$sub->id}", [
-                'title' => 'Judul Diperbarui',
-                'novelty' => str_repeat('a', 100),
-                'urgency' => str_repeat('b', 100),
-                'impact' => str_repeat('c', 100),
+                'title' => 'Judul yang Sudah Diperbarui',
+                'novelty' => implode(' ', array_fill(0, 15, 'novelty')),
+                'urgency' => implode(' ', array_fill(0, 15, 'urgency')),
+                'impact' => implode(' ', array_fill(0, 15, 'impact')),
                 'references' => [
                     2 => [
                         'link_ojs' => 'https://ojs.example.com/2',
@@ -129,7 +129,7 @@ class NuirSubmissionTest extends TestCase
 
         $this->assertDatabaseHas('nuir_submissions', [
             'id' => $sub->id,
-            'title' => 'Judul Diperbarui',
+            'title' => 'Judul yang Sudah Diperbarui',
         ]);
         $this->assertDatabaseHas('nuir_references', [
             'nuir_submission_id' => $sub->id,
@@ -183,8 +183,8 @@ class NuirSubmissionTest extends TestCase
             ->followingRedirects()
             ->get("/nuir/submission/{$sub->id}/edit")
             ->assertOk()
-            ->assertSee('Konten NUIR sudah diajukan')
-            ->assertSee('Simpan Referensi');
+            ->assertSee('Referensi')
+            ->assertSee('Simpan Referensi #1');
     }
 
     public function test_mahasiswa_dapat_perbarui_referensi_pada_submission_submitted(): void

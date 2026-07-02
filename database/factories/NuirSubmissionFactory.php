@@ -26,6 +26,7 @@ class NuirSubmissionFactory extends Factory
             'urgency' => null,
             'impact' => null,
             'status' => 'draft',
+            'title_saved_at' => now(),
             'dbs_reviewer_id' => null,
             'dbs_note' => null,
             'dbs_reviewed_at' => null,
@@ -54,7 +55,13 @@ class NuirSubmissionFactory extends Factory
             'novelty' => null,
             'urgency' => null,
             'impact' => null,
+            'title_saved_at' => null,
         ]);
+    }
+
+    public function withSavedTitle(): static
+    {
+        return $this->state(fn () => ['title_saved_at' => now()]);
     }
 
     public function withNUI(): static

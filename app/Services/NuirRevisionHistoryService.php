@@ -133,11 +133,11 @@ class NuirRevisionHistoryService
                 }
 
                 $items->push($this->enrichHistoryItem([
-                    'heading' => 'Versi '.$ancestor->version.' · teks sebelumnya',
+                    'heading' => 'Isi sebelumnya',
                     'recorded_at' => $ancestor->dbs_reviewed_at ?? $ancestor->updated_at,
                     'actor_name' => $ancestor->user?->name,
                     'actor_role' => 'mahasiswa',
-                    'note' => $field === 'title' ? $ancestor->dbs_note : null,
+                    'note' => $ancestor->dbs_note,
                     'content' => $text,
                     'kind' => 'snapshot',
                     'submission_version' => $ancestor->version,
@@ -149,7 +149,11 @@ class NuirRevisionHistoryService
             ->whereIn('nuir_submission_id', $lineageIds);
 
         if ($field === 'title') {
-            $eventQuery->where('event_type', NuirRevisionEvent::TYPE_DBS_REVISION);
+            // Title approval depends on NUI — include all NUI revision events plus any DBS events
+            $eventQuery->where(function ($query): void {
+                $query->where('event_type', NuirRevisionEvent::TYPE_NUI_REVISION)
+                    ->orWhere('event_type', NuirRevisionEvent::TYPE_DBS_REVISION);
+            });
         } else {
             $eventQuery->where(function ($query) use ($field): void {
                 $query->where(function ($inner) use ($field): void {
@@ -159,16 +163,25 @@ class NuirRevisionHistoryService
             });
         }
 
-        $eventQuery->orderByDesc('recorded_at')->get()->each(function (NuirRevisionEvent $event) use ($items): void {
+        $nuiLabels = ['novelty' => 'Novelty', 'urgency' => 'Urgency', 'impact' => 'Impact'];
+
+        $eventQuery->with('submission')->orderByDesc('recorded_at')->get()->each(function (NuirRevisionEvent $event) use ($items, $field, $nuiLabels): void {
+            if ($event->event_type === NuirRevisionEvent::TYPE_DBS_REVISION) {
+                $heading = 'Permintaan revisi · DBS';
+            } elseif ($field === 'title') {
+                $subjectLabel = $nuiLabels[$event->subject] ?? ucfirst((string) $event->subject);
+                $heading = 'Revisi '.$subjectLabel.' · '.$event->actorRoleLabel();
+            } else {
+                $heading = 'Permintaan revisi · '.$event->actorRoleLabel();
+            }
+
             $items->push($this->enrichHistoryItem([
-                'heading' => $event->event_type === NuirRevisionEvent::TYPE_DBS_REVISION
-                    ? 'Permintaan revisi · DBS'
-                    : 'Permintaan revisi · '.$event->actorRoleLabel(),
+                'heading' => $heading,
                 'recorded_at' => $event->recorded_at,
                 'actor_name' => $event->actor?->name,
                 'actor_role' => $event->actor_role,
                 'note' => $event->note,
-                'content' => null,
+                'content' => $event->submission?->{$field} ?? null,
                 'kind' => 'revision_request',
                 'submission_version' => $event->submission_version,
             ]));
@@ -184,13 +197,50 @@ class NuirRevisionHistoryService
         return $this->contentFieldHistory($submission, $field)->isNotEmpty();
     }
 
+    /**
+     * Nomor versi per elemen konten: 1 = v1, 2 = v2, dst.
+     */
+    public function contentFieldVersionNumber(
+        NuirSubmission $submission,
+        string $field,
+        bool $inRevisionState = false,
+    ): int {
+        $history = $this->contentFieldHistory($submission, $field);
+        $requests = $history->where('kind', 'revision_request')->count();
+
+        if ($requests > 0) {
+            return $requests + 1;
+        }
+
+        if ($inRevisionState || $history->contains(fn (array $item) => ($item['kind'] ?? '') === 'snapshot')) {
+            return 2;
+        }
+
+        return 1;
+    }
+
+    /**
+     * Label versi per elemen konten: v1, v2, v3, …
+     */
+    public function contentFieldVersionLabel(
+        NuirSubmission $submission,
+        string $field,
+        bool $inRevisionState = false,
+    ): string {
+        return 'v'.$this->contentFieldVersionNumber($submission, $field, $inRevisionState);
+    }
+
+    /**
+     * @deprecated Prefer contentFieldVersionLabel() or contentFieldVersionNumber().
+     */
     public function contentFieldRevisionRound(NuirSubmission $submission, string $field): int
     {
-        $requests = $this->contentFieldHistory($submission, $field)
-            ->where('kind', 'revision_request')
-            ->count();
+        return $this->contentFieldVersionNumber($submission, $field);
+    }
 
-        return max(1, max((int) $submission->version, 1 + $requests));
+    public function contentFieldRevisionNumber(NuirSubmission $submission, string $field): int
+    {
+        return $this->contentFieldVersionNumber($submission, $field);
     }
 
     /**
@@ -198,13 +248,23 @@ class NuirRevisionHistoryService
      */
     public function referenceRevisionHistory(NuirSubmission $submission, int $refOrder): Collection
     {
-        return NuirRevisionEvent::query()
+        $lineageIds = $this->versionLineageIds($submission);
+
+        $events = NuirRevisionEvent::query()
             ->with('actor')
-            ->whereIn('nuir_submission_id', $this->versionLineageIds($submission))
+            ->whereIn('nuir_submission_id', $lineageIds)
             ->where('event_type', NuirRevisionEvent::TYPE_REFERENCE_REVISION)
             ->where('ref_order', $refOrder)
             ->orderByDesc('recorded_at')
+            ->get();
+
+        $refs = NuirReference::query()
+            ->whereIn('nuir_submission_id', $events->pluck('nuir_submission_id')->unique()->values())
+            ->where('ref_order', $refOrder)
             ->get()
+            ->keyBy('nuir_submission_id');
+
+        return $events
             ->map(fn (NuirRevisionEvent $event): array => $this->enrichHistoryItem([
                 'heading' => 'Permintaan revisi · '.$event->actorRoleLabel(),
                 'recorded_at' => $event->recorded_at,
@@ -213,11 +273,36 @@ class NuirRevisionHistoryService
                 'note' => $event->note,
                 'revision_fields' => NuirReferenceRevisionFields::normalize($event->revision_fields),
                 'revision_field_labels' => NuirReferenceRevisionFields::labels($event->revision_fields),
-                'content' => null,
+                'content' => $this->formatReferenceContent($refs->get($event->nuir_submission_id)),
                 'kind' => 'revision_request',
                 'submission_version' => $event->submission_version,
             ]))
             ->values();
+    }
+
+    private function formatReferenceContent(?NuirReference $ref): ?string
+    {
+        if (! $ref) {
+            return null;
+        }
+
+        $lines = [];
+        $labels = [
+            'link_ojs'     => 'Link OJS',
+            'indexer_name' => 'Nama Indexer',
+            'link_index'   => 'Link Index',
+            'link_drive'   => 'Link Drive',
+            'quote'        => 'Kutipan',
+            'relevance'    => 'Relevansi',
+        ];
+
+        foreach ($labels as $key => $label) {
+            if (filled($ref->{$key})) {
+                $lines[] = $label.': '.$ref->{$key};
+            }
+        }
+
+        return $lines ? implode("\n", $lines) : null;
     }
 
     public function referenceHasRevisionHistory(NuirSubmission $submission, int $refOrder): bool

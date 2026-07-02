@@ -3,6 +3,7 @@
 namespace App\Filament\Mahasiswa\Pages;
 
 use App\Filament\Concerns\AuthorizesMahasiswaPanelAccess;
+use App\Filament\Mahasiswa\Widgets\MahasiswaNuirComponentStatusWidget;
 use App\Filament\Mahasiswa\Widgets\MahasiswaNuirStatsWidget;
 use App\Filament\Mahasiswa\Widgets\ShortcutsWidget;
 use App\Filament\Mahasiswa\Widgets\WelcomeWidget;
@@ -23,6 +24,7 @@ class Dashboard extends BaseDashboard
         return [
             WelcomeWidget::class,
             MahasiswaNuirStatsWidget::class,
+            MahasiswaNuirComponentStatusWidget::class,
             ShortcutsWidget::class,
         ];
     }

@@ -144,13 +144,68 @@ class NuirSimulationAccessTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_mahasiswa9_belum_punya_submission_menampilkan_form_nui_kosong(): void
+    {
+        $mahasiswa9 = User::where('username', NuirSimulationAccountSeeder::EMPTY_NUIR_STUDENT_USERNAME)->first();
+
+        Livewire::actingAs($mahasiswa9)
+            ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
+            ->assertSee('Judul')
+            ->assertSee('Simpan Judul')
+            ->assertDontSee('Usulan NUIR Baru')
+            ->assertDontSee('Komponen NUIR')
+            ->assertDontSee('Usulan Calon Pembimbing')
+            ->assertDontSee('Referensi #1');
+    }
+
+    public function test_mahasiswa9_dapat_simpan_judul_dari_workspace(): void
+    {
+        $mahasiswa9 = User::where('username', NuirSimulationAccountSeeder::EMPTY_NUIR_STUDENT_USERNAME)->first();
+        $title = 'Judul penelitian simulasi uji';
+
+        Livewire::actingAs($mahasiswa9)
+            ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
+            ->set('titleField', $title)
+            ->call('saveNuiField', 'title', $title)
+            ->assertHasNoErrors()
+            ->assertNotified('Judul berhasil disimpan.')
+            ->assertSee('Diperbarui')
+            ->assertSee('Edit Judul')
+            ->assertSet('titleField', $title)
+            ->assertSet('nuiComplete', false);
+
+        Livewire::actingAs($mahasiswa9)
+            ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
+            ->assertSet('titleField', $title)
+            ->assertSee($title, false);
+
+        $submission = \App\Models\NuirSubmission::where('user_id', $mahasiswa9->id)->first();
+
+        $this->assertNotNull($submission);
+        $this->assertSame($title, $submission->title);
+        $this->assertNotNull($submission->title_saved_at);
+    }
+
+    public function test_mahasiswa1_workspace_menampilkan_judul_belum_lengkap_nui(): void
+    {
+        $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
+
+        Livewire::actingAs($mahasiswa1)
+            ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
+            ->assertSee('Judul')
+            ->assertSee('Komponen NUIR')
+            ->assertSee('Novelty')
+            ->assertSee('Urgency')
+            ->assertSee('Impact');
+    }
+
     public function test_mahasiswa7_melihat_histori_penolakan_simulasi(): void
     {
         $mahasiswa7 = User::where('username', 'mahasiswa7')->first();
 
         Livewire::actingAs($mahasiswa7)
             ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
-            ->assertSee('Histori Revisi')
+            ->assertSee('Histori Penolakan Usulan')
             ->assertSee('Kuota bimbingan penuh');
     }
 

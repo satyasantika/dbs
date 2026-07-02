@@ -15,6 +15,10 @@ class NuirSubmission extends Model
 
     protected $casts = [
         'dbs_reviewed_at' => 'datetime',
+        'title_saved_at' => 'datetime',
+        'novelty_saved_at' => 'datetime',
+        'urgency_saved_at' => 'datetime',
+        'impact_saved_at' => 'datetime',
     ];
 
     public const REF_VALIDATION_NOT_STARTED = 'not_started';
@@ -166,6 +170,10 @@ class NuirSubmission extends Model
 
     public function isNuiFieldEditable(string $field): bool
     {
+        if ($field === 'title') {
+            return $this->isTitleSlot() || $this->isEditable() || $this->isPartialNuiEditable();
+        }
+
         if ($this->isEditable()) {
             return true;
         }

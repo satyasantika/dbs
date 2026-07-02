@@ -51,6 +51,17 @@ trait NuirSettingFormSchema
                         ->default(10)
                         ->required(),
                 ])->columns(2),
+            Forms\Components\Section::make('Batas Kata Judul')
+                ->schema([
+                    Forms\Components\TextInput::make('min_words_title')
+                        ->label('Minimal kata')
+                        ->numeric()
+                        ->minValue(1),
+                    Forms\Components\TextInput::make('max_words_title')
+                        ->label('Maksimal kata')
+                        ->numeric()
+                        ->minValue(1),
+                ])->columns(2),
             Forms\Components\Section::make('Batas Kata Novelty')
                 ->schema([
                     Forms\Components\TextInput::make('min_words_novelty')

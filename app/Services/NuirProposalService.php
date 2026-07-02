@@ -14,7 +14,7 @@ use Illuminate\Validation\ValidationException;
 
 class NuirProposalService
 {
-    private const PROPOSABLE_STATUSES = ['submitted', 'revision', 'content_ok'];
+    private const PROPOSABLE_STATUSES = ['title_slot', 'draft', 'submitted', 'revision', 'content_ok'];
 
     public function __construct(
         private NuirService $nuirService,
@@ -165,6 +165,92 @@ class NuirProposalService
         ]);
 
         return to_route('nuir.proposal.index')->with('success', 'Usulan calon pembimbing berhasil diajukan.');
+    }
+
+    public function proposeSeat(NuirSubmission $submission, User $user, int $seat, int $guideId): NuirProposal
+    {
+        if (! in_array($seat, [1, 2], true)) {
+            abort(422);
+        }
+
+        if ($this->hasFinalProposal($user)) {
+            throw ValidationException::withMessages([
+                'guide' => 'Pembimbing sudah ditetapkan.',
+            ]);
+        }
+
+        $guide = User::find($guideId);
+
+        if (! $guide?->hasRole('dosen')) {
+            throw ValidationException::withMessages([
+                'guide' => 'Calon pembimbing harus dosen aktif.',
+            ]);
+        }
+
+        $lockedSeats = $submission->lockedSeats();
+        $locked = $lockedSeats['guide'.$seat] ?? null;
+
+        if ($locked && (int) $locked['id'] !== $guideId) {
+            throw ValidationException::withMessages([
+                'guide' => 'Kursi Pembimbing '.$seat.' sudah terisi dan tidak dapat diganti.',
+            ]);
+        }
+
+        $proposal = NuirProposal::query()
+            ->where('nuir_submission_id', $submission->id)
+            ->where('final', false)
+            ->latest('id')
+            ->first();
+
+        $guideColumn = $seat === 1 ? 'guide1_id' : 'guide2_id';
+        $statusColumn = $seat === 1 ? 'guide1_status' : 'guide2_status';
+        $noteColumn = $seat === 1 ? 'guide1_note' : 'guide2_note';
+        $respondedColumn = $seat === 1 ? 'guide1_responded_at' : 'guide2_responded_at';
+
+        if ($proposal && $proposal->{$guideColumn} === $guideId && $proposal->{$statusColumn} === 'pending') {
+            return $proposal;
+        }
+
+        $otherGuideColumn  = $seat === 1 ? 'guide2_id' : 'guide1_id';
+        $otherStatusColumn = $seat === 1 ? 'guide2_status' : 'guide1_status';
+
+        if ($proposal
+            && $proposal->{$otherGuideColumn} === $guideId
+            && $proposal->{$otherStatusColumn} !== 'rejected'
+        ) {
+            throw ValidationException::withMessages([
+                'guide' => 'Dosen yang sama tidak dapat dipilih untuk kedua kursi pembimbing.',
+            ]);
+        }
+
+        if (! $locked && ! $this->quotaService->hasQuota($guide, $seat, $submission->year_generation)) {
+            throw ValidationException::withMessages([
+                'guide' => 'Kuota Pembimbing '.$seat.' dosen ini sudah habis.',
+            ]);
+        }
+
+        if ($proposal === null) {
+            $proposal = NuirProposal::create([
+                'nuir_submission_id' => $submission->id,
+                'guide1_id' => $seat === 1 ? $guideId : null,
+                'guide2_id' => $seat === 2 ? $guideId : null,
+                'guide1_status' => $seat === 1 ? 'pending' : 'pending',
+                'guide2_status' => $seat === 2 ? 'pending' : 'pending',
+            ]);
+        } else {
+            $proposal->update([
+                $guideColumn => $guideId,
+                $statusColumn => 'pending',
+                $noteColumn => null,
+                $respondedColumn => null,
+            ]);
+        }
+
+        if (! $locked && $this->needsQuotaConsumption($submission, $guideId, $seat)) {
+            $this->quotaService->consume($guide, $seat, $submission->year_generation);
+        }
+
+        return $proposal->fresh(['guide1', 'guide2']);
     }
 
     public function lecturersForSeat(User $user, string $yearGeneration, int $guideOrder, array $lockedSeats): Collection

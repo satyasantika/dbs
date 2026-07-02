@@ -44,23 +44,7 @@ class CreateNuirSubmission extends Page
 
     public function mount(NuirSubmissionService $submissionService): void
     {
-        $result = $submissionService->createFormData(auth()->user());
-
-        if ($result instanceof \Illuminate\Http\RedirectResponse) {
-            $this->redirect($result->getTargetUrl());
-
-            return;
-        }
-
-        $this->setting = $result['setting'];
-        $this->submission = $result['submission'];
-        $this->stage = $result['stage'];
-        $this->rejectedRefs = $result['rejectedRefs'];
-        $this->revisionParent = $result['revisionParent'];
-        $this->referencesOnly = $result['referencesOnly'] ?? false;
-        $this->partialNuiOnly = $result['partialNuiOnly'] ?? false;
-        $this->rejectedNuiFields = $result['rejectedNuiFields'] ?? [];
-        $this->titleSlotOnly = $result['titleSlotOnly'] ?? false;
+        $this->redirect(NuirSubmissionOverview::getUrl(panel: 'mahasiswa'));
     }
 
     protected static function mahasiswaAccessPermission(): string

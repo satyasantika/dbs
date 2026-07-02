@@ -64,11 +64,15 @@
         : null;
 @endphp
 @if ($nuirSetting && in_array($nuirSetting->stage, [1, 2]))
+@php
+    $hasNuirSubmission = App\Models\NuirSubmission::where('user_id', auth()->id())->exists();
+@endphp
 <div class="card mt-3">
     <div class="card-header">Pengajuan NUIR</div>
     <div class="card-body">
-        <a href="{{ route('nuir.submission.index') }}" class="btn btn-sm btn-primary">NUIR Saya</a>
-        <a href="{{ route('nuir.proposal.index') }}" class="btn btn-sm btn-outline-primary">Usulan Calon Pembimbing</a>
+        <a href="{{ route('nuir.submission.index') }}" class="btn btn-sm btn-primary">
+            {{ $hasNuirSubmission ? 'Buka Pengajuan NUIR' : 'Pengajuan NUIR' }}
+        </a>
     </div>
 </div>
 @endif

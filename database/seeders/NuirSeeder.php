@@ -12,6 +12,7 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Services\NuirService;
+use App\Support\NuirTextLimits;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 
@@ -20,6 +21,14 @@ class NuirSeeder extends Seeder
     private const LEGACY_YEAR = '2021';
 
     private const MIN_REFS = 10;
+
+    private const MIN_NUI_WORDS = 12;
+
+    private const MIN_TITLE_WORDS = 3;
+
+    private const MAX_TITLE_WORDS = 20;
+
+    private const MAX_NUI_WORDS = 300;
 
     private string $year = self::LEGACY_YEAR;
 
@@ -105,6 +114,7 @@ class NuirSeeder extends Seeder
         $this->seedFinalizedFlow($finalizedStudent);
 
         if ($this->simulationMode) {
+            $this->seedStudentWithoutNuirSubmission();
             $this->seedValidatorAssignments();
             $this->seedSimulationEnrichment();
         }
@@ -128,6 +138,30 @@ class NuirSeeder extends Seeder
             ->values();
     }
 
+    /**
+     * Mahasiswa simulasi tanpa submission NUIR — untuk uji alur pengisian NUI dari form kosong.
+     */
+    private function seedStudentWithoutNuirSubmission(): void
+    {
+        $student = User::where('username', NuirSimulationAccountSeeder::EMPTY_NUIR_STUDENT_USERNAME)->first();
+
+        if (! $student) {
+            $this->command?->warn('NuirSeeder: akun '.NuirSimulationAccountSeeder::EMPTY_NUIR_STUDENT_USERNAME.' tidak ditemukan, dilewati.');
+
+            return;
+        }
+
+        NuirSubmission::where('user_id', $student->id)->delete();
+
+        $this->ensureGuideExaminer($student);
+
+        $this->command?->info(sprintf(
+            'NuirSeeder: %s siap tanpa pengajuan NUIR (password: %s).',
+            $student->username,
+            NuirSimulationAccountSeeder::PASSWORD,
+        ));
+    }
+
     private function loadSimulationGuides(): void
     {
         $this->pembimbing1 = User::where('username', 'pembimbing1')->first();
@@ -149,31 +183,40 @@ class NuirSeeder extends Seeder
 
     private function seedSettings(): void
     {
+        $wordLimits = [
+            'max_references' => self::MIN_REFS,
+            'min_words_title' => self::MIN_TITLE_WORDS,
+            'max_words_title' => self::MAX_TITLE_WORDS,
+            'min_words_novelty' => self::MIN_NUI_WORDS,
+            'max_words_novelty' => self::MAX_NUI_WORDS,
+            'min_words_urgency' => self::MIN_NUI_WORDS,
+            'max_words_urgency' => self::MAX_NUI_WORDS,
+            'min_words_impact' => self::MIN_NUI_WORDS,
+            'max_words_impact' => self::MAX_NUI_WORDS,
+            'max_chars_novelty' => null,
+            'max_chars_urgency' => null,
+            'max_chars_impact' => null,
+        ];
+
         NuirSetting::updateOrCreate(
             ['year_generation' => $this->year],
-            [
+            array_merge([
                 'stage' => 1,
                 'active' => true,
                 'deadline' => now()->addMonths(2)->toDateString(),
                 'min_references_approved' => self::MIN_REFS,
-                'max_chars_novelty' => 5000,
-                'max_chars_urgency' => 5000,
-                'max_chars_impact' => 5000,
-            ],
+            ], $wordLimits),
         );
 
         if (! $this->simulationMode) {
             NuirSetting::updateOrCreate(
                 ['year_generation' => self::LEGACY_YEAR],
-                [
+                array_merge([
                     'stage' => 1,
                     'active' => true,
                     'deadline' => now()->addMonths(2)->toDateString(),
                     'min_references_approved' => self::MIN_REFS,
-                    'max_chars_novelty' => 5000,
-                    'max_chars_urgency' => 5000,
-                    'max_chars_impact' => 5000,
-                ],
+                ], $wordLimits),
             );
         }
 
@@ -222,17 +265,16 @@ class NuirSeeder extends Seeder
 
     private function seedDraftSubmission(User $student): void
     {
-        $submission = NuirSubmission::create([
+        NuirSubmission::create([
             'user_id' => $student->id,
             'year_generation' => $this->year,
-            'title' => 'Draft NUIR — '.$student->name,
-            'novelty' => 'Novelty draft simulasi untuk pengujian alur mahasiswa.',
-            'urgency' => 'Urgency draft simulasi untuk pengujian alur mahasiswa.',
-            'impact' => 'Impact draft simulasi untuk pengujian alur mahasiswa.',
-            'status' => 'draft',
+            'title' => $this->titleText('Judul awal workspace — '.$student->name),
+            'novelty' => null,
+            'urgency' => null,
+            'impact' => null,
+            'status' => 'title_slot',
+            'title_saved_at' => now(),
         ]);
-
-        $this->seedReferences($submission, total: 8, approved: 0, rejected: 0);
     }
 
     private function seedSubmittedSubmission(User $student): void
@@ -240,11 +282,15 @@ class NuirSeeder extends Seeder
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
             'year_generation' => $this->year,
-            'title' => 'Submitted NUIR — '.$student->name,
-            'novelty' => 'Novelty submitted simulasi menunggu review DBS.',
-            'urgency' => 'Urgency submitted simulasi menunggu review DBS.',
-            'impact' => 'Impact submitted simulasi menunggu review DBS.',
+            'title' => $this->titleText('Submitted NUIR — '.$student->name),
+            'novelty' => $this->nuiText('Novelty submitted menunggu review validator dan pembimbing'),
+            'urgency' => $this->nuiText('Urgency submitted menunggu review validator dan pembimbing'),
+            'impact' => $this->nuiText('Impact submitted menunggu review validator dan pembimbing'),
             'status' => 'submitted',
+            'title_saved_at' => now(),
+            'novelty_saved_at' => now(),
+            'urgency_saved_at' => now(),
+            'impact_saved_at' => now(),
         ]);
 
         $this->seedReferences($submission, total: self::MIN_REFS, approved: 5, rejected: 2);
@@ -263,11 +309,15 @@ class NuirSeeder extends Seeder
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
             'year_generation' => $this->year,
-            'title' => 'Siap Review Konten — '.$student->name,
-            'novelty' => 'Novelty siap disetujui DBS setelah referensi lengkap.',
-            'urgency' => 'Urgency siap disetujui DBS setelah referensi lengkap.',
-            'impact' => 'Impact siap disetujui DBS setelah referensi lengkap.',
+            'title' => $this->titleText('Menunggu Review Pembimbing — '.$student->name),
+            'novelty' => $this->nuiText('Novelty menunggu review pembimbing setelah seluruh referensi lolos validasi'),
+            'urgency' => $this->nuiText('Urgency menunggu review pembimbing setelah seluruh referensi lolos validasi'),
+            'impact' => $this->nuiText('Impact menunggu review pembimbing setelah seluruh referensi lolos validasi'),
             'status' => 'submitted',
+            'title_saved_at' => now(),
+            'novelty_saved_at' => now(),
+            'urgency_saved_at' => now(),
+            'impact_saved_at' => now(),
         ]);
 
         $this->seedReferences($submission, total: self::MIN_REFS, approved: self::MIN_REFS, rejected: 0);
@@ -275,42 +325,84 @@ class NuirSeeder extends Seeder
 
     private function seedRevisionChain(User $student): void
     {
+        // In simulation mode: demonstrate guide NUI revision (inline edit, no DBS, no v2 chain)
+        if ($this->simulationMode) {
+            $submission = NuirSubmission::create([
+                'user_id' => $student->id,
+                'year_generation' => $this->year,
+                'title' => $this->titleText('Revisi NUI oleh Pembimbing — '.$student->name),
+                'novelty' => $this->nuiText('Novelty yang diminta revisi Pembimbing 1 karena kurang spesifik'),
+                'urgency' => $this->nuiText('Urgency sudah disetujui kedua pembimbing dan layak dilanjutkan'),
+                'impact' => $this->nuiText('Impact yang diminta revisi Pembimbing 2 karena indikator belum terukur'),
+                'status' => 'submitted',
+                'title_saved_at' => now()->subDays(10),
+                'novelty_saved_at' => now()->subDays(10),
+                'urgency_saved_at' => now()->subDays(10),
+                'impact_saved_at' => now()->subDays(10),
+            ]);
+
+            $this->seedReferences($submission, total: self::MIN_REFS, approved: 4, rejected: 3);
+
+            // Update rejected references with specific validator notes and revision fields
+            $rejectionDetails = [
+                5 => ['ref_note' => 'Link OJS tidak dapat diakses, halaman 404.', 'ref_revision_fields' => ['link_ojs']],
+                6 => ['ref_note' => 'Jurnal ini terindeks Scopus, bukan SINTA — perbaiki nama indexer dan link index.', 'ref_revision_fields' => ['indexer_name', 'link_index']],
+                7 => ['ref_note' => 'Kutipan tidak relevan dengan variabel penelitian. Perbaiki kutipan dan uraian relevansi.', 'ref_revision_fields' => ['quote', 'relevance']],
+            ];
+
+            $submission->references()->where('ref_approved', false)->get()
+                ->each(function (NuirReference $ref) use ($rejectionDetails): void {
+                    if (isset($rejectionDetails[$ref->ref_order])) {
+                        $ref->update($rejectionDetails[$ref->ref_order]);
+                    }
+                });
+
+            if ($this->pembimbing1 && $this->pembimbing2) {
+                NuirProposal::create([
+                    'nuir_submission_id' => $submission->id,
+                    'guide1_id' => $this->pembimbing1->id,
+                    'guide2_id' => $this->pembimbing2->id,
+                ]);
+            }
+
+            return;
+        }
+
+        // Legacy (non-simulation) mode: DBS-triggered revision chain with v1 → v2
         $versionOne = NuirSubmission::create([
             'user_id' => $student->id,
             'year_generation' => $this->year,
-            'title' => 'Revisi v1 — '.$student->name,
-            'novelty' => 'Novelty versi 1 yang diminta revisi DBS.',
-            'urgency' => 'Urgency versi 1 yang diminta revisi DBS.',
-            'impact' => 'Impact versi 1 yang diminta revisi DBS.',
+            'title' => $this->titleText('Revisi v1 — '.$student->name),
+            'novelty' => $this->nuiText('Novelty versi 1 yang diminta revisi manajer'),
+            'urgency' => $this->nuiText('Urgency versi 1 yang diminta revisi manajer'),
+            'impact' => $this->nuiText('Impact versi 1 yang diminta revisi manajer'),
             'status' => 'revision',
             'dbs_note' => 'Perbaiki referensi SINTA dan perjelas urgensi penelitian.',
             'dbs_reviewer_id' => $this->dbs->id,
             'dbs_reviewed_at' => now()->subDays(3),
+            'title_saved_at' => now()->subDays(10),
+            'novelty_saved_at' => now()->subDays(10),
+            'urgency_saved_at' => now()->subDays(10),
+            'impact_saved_at' => now()->subDays(10),
         ]);
 
         $this->seedReferences($versionOne, total: self::MIN_REFS, approved: 4, rejected: 3);
 
-        if ($this->simulationMode && $this->pembimbing1 && $this->pembimbing2) {
-            NuirProposal::create([
-                'nuir_submission_id' => $versionOne->id,
-                'guide1_id' => $this->pembimbing1->id,
-                'guide2_id' => $this->pembimbing2->id,
-            ]);
-        }
-
-        $versionTwo = NuirSubmission::create([
+        NuirSubmission::create([
             'user_id' => $student->id,
             'year_generation' => $this->year,
             'parent_submission_id' => $versionOne->id,
             'version' => 2,
-            'title' => 'Monitoring Kualitas Udara IoT-ML — Revisi v2 '.$student->name,
-            'novelty' => 'Novelty versi 2 hasil perbaikan mahasiswa setelah masukan DBS dan pembimbing.'.str_repeat(' Kebaruan diperkuat.', 25),
-            'urgency' => 'Urgency versi 2 hasil perbaikan mahasiswa dengan penekanan kondisi kesehatan masyarakat.'.str_repeat(' Urgensi dipertegas.', 25),
-            'impact' => 'Impact versi 2 hasil perbaikan mahasiswa mencakup manfaat kebijakan publik.'.str_repeat(' Dampak diperjelas.', 25),
-            'status' => $this->simulationMode ? 'submitted' : 'draft',
+            'title' => $this->titleText('Monitoring Kualitas Udara IoT-ML — Revisi v2 '.$student->name),
+            'novelty' => $this->nuiText('Novelty versi 2 hasil perbaikan mahasiswa setelah masukan manajer'),
+            'urgency' => $this->nuiText('Urgency versi 2 hasil perbaikan mahasiswa dengan penekanan kondisi kesehatan masyarakat'),
+            'impact' => $this->nuiText('Impact versi 2 hasil perbaikan mahasiswa mencakup manfaat kebijakan publik'),
+            'status' => 'draft',
+            'title_saved_at' => now()->subDays(2),
+            'novelty_saved_at' => now()->subDays(2),
+            'urgency_saved_at' => now()->subDays(2),
+            'impact_saved_at' => now()->subDays(2),
         ]);
-
-        $this->seedReferences($versionTwo, total: self::MIN_REFS, approved: 0, rejected: 0);
     }
 
     private function seedContentOkWithPendingProposal(User $student): void
@@ -392,13 +484,15 @@ class NuirSeeder extends Seeder
         $submission = NuirSubmission::create([
             'user_id' => $student->id,
             'year_generation' => $this->year,
-            'title' => "{$label} — {$student->name}",
-            'novelty' => "Novelty {$label} simulasi alur usulan calon pembimbing.",
-            'urgency' => "Urgency {$label} simulasi alur usulan calon pembimbing.",
-            'impact' => "Impact {$label} simulasi alur usulan calon pembimbing.",
+            'title' => $this->titleText("{$label} — {$student->name}"),
+            'novelty' => $this->nuiText("Novelty {$label} simulasi alur usulan calon pembimbing per kursi"),
+            'urgency' => $this->nuiText("Urgency {$label} simulasi alur usulan calon pembimbing per kursi"),
+            'impact' => $this->nuiText("Impact {$label} simulasi alur usulan calon pembimbing per kursi"),
             'status' => 'content_ok',
-            'dbs_reviewer_id' => $this->dbs->id,
-            'dbs_reviewed_at' => now()->subWeek(),
+            'title_saved_at' => now()->subWeek(),
+            'novelty_saved_at' => now()->subWeek(),
+            'urgency_saved_at' => now()->subWeek(),
+            'impact_saved_at' => now()->subWeek(),
         ]);
 
         $this->seedReferences($submission, total: self::MIN_REFS, approved: self::MIN_REFS, rejected: 0);
@@ -537,14 +631,14 @@ class NuirSeeder extends Seeder
             ->whereHas('submission', fn ($query) => $query->where('year_generation', $this->year))
             ->get()
             ->each(function (NuirProposal $proposal) use ($year): void {
-                if (in_array($proposal->guide1_status, ['pending', 'accepted'], true)) {
+                if ($proposal->guide1_id && in_array($proposal->guide1_status, ['pending', 'accepted'], true)) {
                     GuideAllocation::query()
                         ->where('user_id', $proposal->guide1_id)
                         ->where('year', $year)
                         ->increment('guide1_filled');
                 }
 
-                if (in_array($proposal->guide2_status, ['pending', 'accepted'], true)) {
+                if ($proposal->guide2_id && in_array($proposal->guide2_status, ['pending', 'accepted'], true)) {
                     GuideAllocation::query()
                         ->where('user_id', $proposal->guide2_id)
                         ->where('year', $year)
@@ -559,60 +653,95 @@ class NuirSeeder extends Seeder
             return;
         }
 
-        $partialSubmission = $this->latestSubmissionFor('mahasiswa6', 'content_ok');
-        if ($partialSubmission) {
-            foreach (NuirContentReview::FIELDS as $field) {
-                NuirContentReview::updateOrCreate(
-                    [
-                        'nuir_submission_id' => $partialSubmission->id,
-                        'user_id' => $this->pembimbing1->id,
-                        'field' => $field,
-                    ],
-                    [
-                        'role' => NuirContentReview::ROLE_GUIDE1,
-                        'approved' => true,
-                        'note' => null,
-                        'reviewed_at' => now()->subDay(),
-                    ],
-                );
-            }
-
-            NuirContentReview::updateOrCreate(
-                [
-                    'nuir_submission_id' => $partialSubmission->id,
-                    'user_id' => $this->pembimbing2->id,
-                    'field' => NuirContentReview::FIELD_NOVELTY,
-                ],
-                [
-                    'role' => NuirContentReview::ROLE_GUIDE2,
-                    'approved' => true,
-                    'note' => null,
-                    'reviewed_at' => now()->subHours(12),
-                ],
-            );
-        }
-
-        $finalizedSubmission = $this->latestSubmissionFor('mahasiswa8', 'finalized');
-        if ($finalizedSubmission) {
-            foreach ([
-                [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1],
-                [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2],
-            ] as [$guide, $role]) {
-                foreach (NuirContentReview::FIELDS as $field) {
+        // mahasiswa2 (submitted + proposal): novelty+urgency approved by both, impact rejected by both
+        $submittedWithProposal = $this->latestSubmissionFor('mahasiswa2', 'submitted');
+        if ($submittedWithProposal) {
+            foreach (['novelty', 'urgency'] as $field) {
+                foreach ([
+                    [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1],
+                    [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2],
+                ] as [$guide, $role]) {
                     NuirContentReview::updateOrCreate(
-                        [
-                            'nuir_submission_id' => $finalizedSubmission->id,
-                            'user_id' => $guide->id,
-                            'field' => $field,
-                        ],
-                        [
-                            'role' => $role,
-                            'approved' => true,
-                            'note' => null,
-                            'reviewed_at' => now()->subDays(3),
-                        ],
+                        ['nuir_submission_id' => $submittedWithProposal->id, 'user_id' => $guide->id, 'field' => $field],
+                        ['role' => $role, 'approved' => true, 'note' => null, 'reviewed_at' => now()->subDays(2)],
                     );
                 }
+            }
+
+            foreach ([
+                [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1, 'Uraikan manfaat praktis bagi pemangku kebijakan daerah.'],
+                [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2, 'Tambahkan indikator dampak jangka panjang yang dapat diukur.'],
+            ] as [$guide, $role, $note]) {
+                NuirContentReview::updateOrCreate(
+                    ['nuir_submission_id' => $submittedWithProposal->id, 'user_id' => $guide->id, 'field' => NuirContentReview::FIELD_IMPACT],
+                    ['role' => $role, 'approved' => false, 'note' => $note, 'reviewed_at' => now()->subDay()],
+                );
+            }
+        }
+
+        // mahasiswa4 (submitted, NUI revision by guides): P1 rejects novelty, P2 rejects impact
+        $nuiRevisionSubmission = $this->latestSubmissionFor('mahasiswa4', 'submitted');
+        if ($nuiRevisionSubmission) {
+            foreach ([
+                [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1, 'novelty', false, 'Kebaruan penelitian perlu lebih spesifik — bandingkan dengan literatur terkini.'],
+                [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1, 'urgency', true, null],
+                [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1, 'impact', true, null],
+                [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2, 'novelty', true, null],
+                [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2, 'urgency', true, null],
+                [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2, 'impact', false, 'Indikator dampak belum terukur — sertakan metrik kuantitatif yang spesifik.'],
+            ] as [$guide, $role, $field, $approved, $note]) {
+                NuirContentReview::updateOrCreate(
+                    ['nuir_submission_id' => $nuiRevisionSubmission->id, 'user_id' => $guide->id, 'field' => $field],
+                    ['role' => $role, 'approved' => $approved, 'note' => $note, 'reviewed_at' => now()->subDay()],
+                );
+            }
+        }
+
+        // mahasiswa5, mahasiswa7 (content_ok via guide approval): both guides approve all NUI fields
+        foreach (['mahasiswa5', 'mahasiswa7'] as $username) {
+            $submission = $this->latestSubmissionFor($username, 'content_ok');
+            if ($submission) {
+                $this->seedFullGuideApprovals($submission, daysAgo: 7);
+            }
+        }
+
+        // mahasiswa6 (content_ok, partial proposal acceptance): both guides approve all NUI fields
+        $partialSubmission = $this->latestSubmissionFor('mahasiswa6', 'content_ok');
+        if ($partialSubmission) {
+            // guide1: all fields approved
+            foreach (NuirContentReview::FIELDS as $field) {
+                NuirContentReview::updateOrCreate(
+                    ['nuir_submission_id' => $partialSubmission->id, 'user_id' => $this->pembimbing1->id, 'field' => $field],
+                    ['role' => NuirContentReview::ROLE_GUIDE1, 'approved' => true, 'note' => null, 'reviewed_at' => now()->subDay()],
+                );
+            }
+            // guide2: all fields approved (content_ok requires both)
+            foreach (NuirContentReview::FIELDS as $field) {
+                NuirContentReview::updateOrCreate(
+                    ['nuir_submission_id' => $partialSubmission->id, 'user_id' => $this->pembimbing2->id, 'field' => $field],
+                    ['role' => NuirContentReview::ROLE_GUIDE2, 'approved' => true, 'note' => null, 'reviewed_at' => now()->subHours(12)],
+                );
+            }
+        }
+
+        // mahasiswa8 (finalized): both guides approve all NUI fields
+        $finalizedSubmission = $this->latestSubmissionFor('mahasiswa8', 'finalized');
+        if ($finalizedSubmission) {
+            $this->seedFullGuideApprovals($finalizedSubmission, daysAgo: 3);
+        }
+    }
+
+    private function seedFullGuideApprovals(NuirSubmission $submission, int $daysAgo = 7): void
+    {
+        foreach ([
+            [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1],
+            [$this->pembimbing2, NuirContentReview::ROLE_GUIDE2],
+        ] as [$guide, $role]) {
+            foreach (NuirContentReview::FIELDS as $field) {
+                NuirContentReview::updateOrCreate(
+                    ['nuir_submission_id' => $submission->id, 'user_id' => $guide->id, 'field' => $field],
+                    ['role' => $role, 'approved' => true, 'note' => null, 'reviewed_at' => now()->subDays($daysAgo)],
+                );
             }
         }
     }
@@ -642,27 +771,50 @@ class NuirSeeder extends Seeder
                 });
         }
 
-        $revisionParent = NuirSubmission::query()
-            ->where('year_generation', $this->year)
-            ->where('status', 'revision')
-            ->whereHas('user', fn ($query) => $query->where('username', 'mahasiswa4'))
-            ->first();
+        // mahasiswa4 (submitted, revisi NUI + referensi): log guide NUI revision events + reference rejection events
+        $nuiRevisionSubmission = $this->latestSubmissionFor('mahasiswa4', 'submitted');
+        if ($nuiRevisionSubmission && $this->pembimbing1 && $this->pembimbing2) {
+            foreach ([
+                ['field' => 'novelty', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Kebaruan penelitian perlu lebih spesifik — bandingkan dengan literatur terkini.'],
+                ['field' => 'impact', 'actor' => $this->pembimbing2, 'role' => NuirRevisionEvent::ROLE_GUIDE2, 'note' => 'Indikator dampak belum terukur — sertakan metrik kuantitatif yang spesifik.'],
+            ] as $revision) {
+                NuirRevisionEvent::updateOrCreate(
+                    [
+                        'nuir_submission_id' => $nuiRevisionSubmission->id,
+                        'event_type' => NuirRevisionEvent::TYPE_NUI_REVISION,
+                        'subject' => $revision['field'],
+                        'actor_id' => $revision['actor']->id,
+                    ],
+                    [
+                        'submission_version' => $nuiRevisionSubmission->version ?? 1,
+                        'actor_role' => $revision['role'],
+                        'note' => $revision['note'],
+                        'recorded_at' => now()->subDay(),
+                    ],
+                );
+            }
+        }
 
-        if ($revisionParent && $this->dbs) {
-            NuirRevisionEvent::updateOrCreate(
-                [
-                    'nuir_submission_id' => $revisionParent->id,
-                    'event_type' => NuirRevisionEvent::TYPE_DBS_REVISION,
-                    'subject' => 'submission',
-                    'actor_id' => $this->dbs->id,
-                ],
-                [
-                    'submission_version' => $revisionParent->version ?? 1,
-                    'actor_role' => NuirRevisionEvent::ROLE_DBS,
-                    'note' => $revisionParent->dbs_note ?? 'Perbaiki referensi SINTA dan perjelas urgensi penelitian.',
-                    'recorded_at' => $revisionParent->dbs_reviewed_at ?? now()->subDays(3),
-                ],
-            );
+        if ($nuiRevisionSubmission && $this->validator) {
+            $nuiRevisionSubmission->references()
+                ->where('ref_approved', false)
+                ->each(function (NuirReference $reference) use ($nuiRevisionSubmission): void {
+                    NuirRevisionEvent::updateOrCreate(
+                        [
+                            'nuir_submission_id' => $nuiRevisionSubmission->id,
+                            'event_type' => NuirRevisionEvent::TYPE_REFERENCE_REVISION,
+                            'subject' => (string) $reference->ref_order,
+                            'ref_order' => $reference->ref_order,
+                            'actor_id' => $this->validator->id,
+                        ],
+                        [
+                            'submission_version' => $nuiRevisionSubmission->version ?? 1,
+                            'actor_role' => NuirRevisionEvent::ROLE_VALIDATOR,
+                            'note' => $reference->ref_note ?? 'Referensi perlu diperbaiki.',
+                            'recorded_at' => now()->subDays(2),
+                        ],
+                    );
+                });
         }
 
         $retriedSubmission = $this->latestSubmissionFor('mahasiswa7', 'content_ok');
@@ -702,7 +854,7 @@ class NuirSeeder extends Seeder
 
     private function seedManajerRevisionDemo(): void
     {
-        if (! $this->validator || ! $this->pembimbing1 || ! $this->pembimbing2 || ! $this->dbs) {
+        if (! $this->validator || ! $this->pembimbing1 || ! $this->pembimbing2) {
             return;
         }
 
@@ -710,19 +862,15 @@ class NuirSeeder extends Seeder
 
         if ($submission) {
             $submission->update([
-                'title' => 'Integrasi IoT dan Machine Learning untuk Monitoring Kualitas Udara Perkotaan (Revisi Terakhir)',
-                'novelty' => 'Penelitian ini menawarkan kebaruan integrasi sensor IoT dengan deep learning untuk prediksi PM2.5 real-time di Indonesia.'
-                    .str_repeat(' Kebaruan diperkuat setelah revisi pembimbing.', 35),
-                'urgency' => 'Kualitas udara perkotaan memburuk dan masyarakat rentan membutuhkan peringatan dini.'
-                    .str_repeat(' Urgensi dipertegas pasca revisi.', 30),
-                'impact' => 'Dampak meliputi pengurangan paparan polusi dan rekomendasi kebijakan tata ruang hijau.'
-                    .str_repeat(' Dampak sosial diperjelas.', 30),
+                'title' => $this->titleText('Integrasi IoT dan Machine Learning untuk Monitoring Kualitas Udara Perkotaan (Revisi Terakhir)'),
+                'novelty' => $this->nuiText('Penelitian ini menawarkan kebaruan integrasi sensor IoT dengan deep learning untuk prediksi PM2.5 real-time di Indonesia'),
+                'urgency' => $this->nuiText('Kualitas udara perkotaan memburuk dan masyarakat rentan membutuhkan peringatan dini'),
+                'impact' => $this->nuiText('Dampak meliputi pengurangan paparan polusi dan rekomendasi kebijakan tata ruang hijau'),
             ]);
 
             foreach ([
-                ['field' => 'novelty', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Perjelas gap penelitian sebelumnya dan state-of-the-art.'],
-                ['field' => 'urgency', 'actor' => $this->pembimbing2, 'role' => NuirRevisionEvent::ROLE_GUIDE2, 'note' => 'Tambahkan data epidemiologi lokal untuk memperkuat urgensi.'],
                 ['field' => 'impact', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Uraikan manfaat praktis bagi pemangku kebijakan daerah.'],
+                ['field' => 'impact', 'actor' => $this->pembimbing2, 'role' => NuirRevisionEvent::ROLE_GUIDE2, 'note' => 'Tambahkan indikator dampak jangka panjang yang dapat diukur.'],
             ] as $revision) {
                 NuirRevisionEvent::updateOrCreate(
                     [
@@ -739,21 +887,6 @@ class NuirSeeder extends Seeder
                     ],
                 );
             }
-
-            NuirRevisionEvent::updateOrCreate(
-                [
-                    'nuir_submission_id' => $submission->id,
-                    'event_type' => NuirRevisionEvent::TYPE_DBS_REVISION,
-                    'subject' => 'submission',
-                    'actor_id' => $this->dbs->id,
-                ],
-                [
-                    'submission_version' => $submission->version ?? 1,
-                    'actor_role' => NuirRevisionEvent::ROLE_DBS,
-                    'note' => 'Sesuaikan judul agar lebih spesifik dan konsisten dengan isi Novelty.',
-                    'recorded_at' => now()->subDays(5),
-                ],
-            );
 
             $submission->references()->whereIn('ref_order', [6, 7, 8])->each(function (NuirReference $reference): void {
                 if ($reference->ref_order === 8) {
@@ -845,5 +978,26 @@ class NuirSeeder extends Seeder
             ->where('status', $status)
             ->latest('id')
             ->first();
+    }
+
+    private function titleText(string $base): string
+    {
+        return $this->padWords($base, self::MIN_TITLE_WORDS);
+    }
+
+    private function nuiText(string $base): string
+    {
+        return $this->padWords($base, self::MIN_NUI_WORDS);
+    }
+
+    private function padWords(string $base, int $minWords): string
+    {
+        $text = trim($base);
+
+        while (NuirTextLimits::wordCount($text) < $minWords) {
+            $text .= ' Konten simulasi.';
+        }
+
+        return $text;
     }
 }

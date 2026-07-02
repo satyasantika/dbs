@@ -109,7 +109,8 @@ trait BuildsManajerNuirSubmissionInfolist
             'content' => filled($content) ? $content : '—',
             'wordMeta' => self::wordCountDescription($record, $field),
             'isEmpty' => blank($content),
-            'revisionRound' => $historyService->contentFieldRevisionRound($record, $field),
+            'revisionRound' => $historyService->contentFieldRevisionNumber($record, $field),
+            'versionLabel' => $historyService->contentFieldVersionLabel($record, $field),
             'showRevisionBadge' => $historyService->contentFieldHasRevisionHistory($record, $field),
             'revisionHistory' => $historyService->contentFieldHistory($record, $field)->all(),
         ];

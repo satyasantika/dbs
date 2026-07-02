@@ -56,39 +56,5 @@
                 </x-filament::section>
             @endif
         @endcan
-
-        @php
-            $guideExaminer = App\Models\GuideExaminer::where('user_id', auth()->id())->first();
-            $nuirSetting = $guideExaminer
-                ? App\Models\NuirSetting::where('year_generation', $guideExaminer->year_generation)
-                    ->where('active', true)->first()
-                : null;
-        @endphp
-
-        @if ($nuirSetting && in_array($nuirSetting->stage, [1, 2]))
-            <x-filament::section heading="Pengajuan NUIR">
-                <div class="flex flex-wrap gap-2">
-                    @can('access nuir/submission')
-                        <x-filament::button
-                            tag="a"
-                            href="{{ \App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::getUrl(panel: 'mahasiswa') }}"
-                            size="sm"
-                        >
-                            NUIR Saya
-                        </x-filament::button>
-                    @endcan
-                    @can('read nuir proposal')
-                        <x-filament::button
-                            tag="a"
-                            href="{{ \App\Filament\Mahasiswa\Pages\NuirProposalOverview::getUrl(panel: 'mahasiswa') }}"
-                            size="sm"
-                            color="gray"
-                        >
-                            Usulan Calon Pembimbing
-                        </x-filament::button>
-                    @endcan
-                </div>
-            </x-filament::section>
-        @endif
     </div>
 </x-filament-widgets::widget>

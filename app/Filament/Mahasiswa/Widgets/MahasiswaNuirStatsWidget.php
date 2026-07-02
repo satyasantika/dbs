@@ -2,10 +2,9 @@
 
 namespace App\Filament\Mahasiswa\Widgets;
 
-use App\Filament\Mahasiswa\Pages\NuirProposalOverview;
 use App\Filament\Mahasiswa\Pages\NuirSubmissionOverview;
-use App\Models\NuirProposal;
 use App\Services\NuirService;
+use App\Support\NuirValidatorReferenceStatus;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
 
@@ -27,16 +26,12 @@ class MahasiswaNuirStatsWidget extends BaseWidget
     protected function getStats(): array
     {
         $user = auth()->user();
-        $service = app(NuirService::class);
-        $submission = $service->activeSubmission($user);
-        $finalProposal = NuirProposal::whereHas('submission', fn ($q) => $q->where('user_id', $user->id))
-            ->where('final', true)
-            ->exists();
+        $submission = app(NuirService::class)->activeSubmission($user);
 
         if (! $submission) {
             return [
-                Stat::make('Status NUIR', 'Belum ada')
-                    ->description('Buat pengajuan NUIR baru')
+                Stat::make('Pengajuan NUIR', 'Belum ada')
+                    ->description('Mulai usulan NUIR baru')
                     ->descriptionIcon('heroicon-m-plus-circle')
                     ->color('gray')
                     ->icon('heroicon-o-document-plus')
@@ -44,77 +39,34 @@ class MahasiswaNuirStatsWidget extends BaseWidget
             ];
         }
 
-        $approved = $submission->references()->where('ref_approved', true)->count();
-        $rejected = $submission->references()->where('ref_approved', false)->count();
-        $pending = $submission->references()->whereNull('ref_approved')->count();
-        $pendingProposals = NuirProposal::where('nuir_submission_id', $submission->id)
-            ->where(function ($query) {
-                $query->where('guide1_status', 'pending')
-                    ->orWhere('guide2_status', 'pending');
-            })
-            ->count();
+        $submission->load('references');
+        $counts = NuirValidatorReferenceStatus::referenceCounts($submission);
 
-        $statusLabel = match ($submission->status) {
-            'draft' => 'Draft',
-            'submitted' => 'Submitted',
-            'revision' => 'Revisi',
-            'content_ok' => 'Konten OK',
-            'finalized' => 'Final',
-            default => $submission->status,
-        };
-
-        $statusColor = match ($submission->status) {
-            'draft' => 'gray',
-            'submitted' => 'warning',
-            'revision' => 'danger',
-            'content_ok' => 'success',
-            'finalized' => 'success',
-            default => 'primary',
-        };
-
-        $stats = [
-            Stat::make('Status NUIR', $statusLabel)
+        return [
+            Stat::make('Pengajuan NUIR', 'Aktif')
                 ->description('Versi '.$submission->version)
                 ->descriptionIcon('heroicon-m-document-text')
-                ->color($statusColor)
+                ->color('primary')
                 ->icon('heroicon-o-document-text')
                 ->url(NuirSubmissionOverview::getUrl(panel: 'mahasiswa')),
-            Stat::make('Referensi Disetujui', $approved)
-                ->description('Feedback validator')
+            Stat::make('Referensi Disetujui', $counts['approved'])
+                ->description('Interaksi validator (R)')
                 ->descriptionIcon('heroicon-m-check')
                 ->color('success')
                 ->icon('heroicon-o-check-circle')
                 ->url(NuirSubmissionOverview::getUrl(panel: 'mahasiswa')),
-            Stat::make('Referensi Ditolak', $rejected)
+            Stat::make('Referensi Revisi', $counts['needs_revision'])
                 ->description('Perlu perbaikan')
                 ->descriptionIcon('heroicon-m-x-mark')
-                ->color($rejected > 0 ? 'danger' : 'gray')
+                ->color($counts['needs_revision'] > 0 ? 'danger' : 'gray')
                 ->icon('heroicon-o-x-circle')
                 ->url(NuirSubmissionOverview::getUrl(panel: 'mahasiswa')),
-            Stat::make('Referensi Pending', $pending)
-                ->description('Menunggu review validator')
+            Stat::make('Referensi Pending', $counts['pending'] + $counts['awaiting_revalidation'])
+                ->description('Menunggu validator')
                 ->descriptionIcon('heroicon-m-clock')
-                ->color($pending > 0 ? 'warning' : 'gray')
+                ->color(($counts['pending'] + $counts['awaiting_revalidation']) > 0 ? 'warning' : 'gray')
                 ->icon('heroicon-o-clock')
                 ->url(NuirSubmissionOverview::getUrl(panel: 'mahasiswa')),
         ];
-
-        if ($finalProposal) {
-            $stats[] = Stat::make('Pembimbing', 'Ditetapkan')
-                ->description('Usulan calon pembimbing final')
-                ->descriptionIcon('heroicon-m-user-group')
-                ->color('success')
-                ->icon('heroicon-o-user-group')
-                ->url(NuirProposalOverview::getUrl(panel: 'mahasiswa'));
-        } else {
-            $stats[] = Stat::make('Usulan Pembimbing', $pendingProposals)
-                ->description('Usulan calon pembimbing pending')
-                ->descriptionIcon('heroicon-m-user-group')
-                ->color($pendingProposals > 0 ? 'warning' : 'gray')
-                ->icon('heroicon-o-user-group')
-                ->url(NuirProposalOverview::getUrl(panel: 'mahasiswa'));
-        }
-
-        return $stats;
     }
 }
