@@ -16,6 +16,6 @@ return [
      */
     'take_redirect_to' => 'home',
 
-    'leave_redirect_to' => '/admin',
+    'leave_redirect_to' => '/admin/users',
 
 ];

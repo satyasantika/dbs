@@ -56,6 +56,7 @@ class NuirSettingResource extends Resource
                 Tables\Actions\Action::make('toggleActive')
                     ->label(fn (NuirSetting $record) => $record->active ? 'Nonaktifkan' : 'Aktifkan')
                     ->icon(fn (NuirSetting $record) => $record->active ? 'heroicon-o-x-circle' : 'heroicon-o-check-circle')
+                    ->color(fn (NuirSetting $record): string => $record->active ? 'danger' : 'success')
                     ->action(function (NuirSetting $record): void {
                         $record->update(['active' => ! $record->active]);
                         Notification::make()->success()->title('Status aktif diperbarui.')->send();

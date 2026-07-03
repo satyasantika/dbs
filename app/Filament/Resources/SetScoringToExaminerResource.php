@@ -136,7 +136,7 @@ class SetScoringToExaminerResource extends Resource
                 Tables\Actions\Action::make('edit')
                     ->label('Edit')
                     ->icon('heroicon-o-pencil-square')
-                    ->color('primary')
+                    ->color('warning')
                     ->iconButton()
                     ->url(fn (ExamRegistration $record): string => ExamRegistrationResource::getUrl('edit', ['record' => $record])),
             ])

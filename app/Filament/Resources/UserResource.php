@@ -59,10 +59,20 @@ class UserResource extends Resource
                         Forms\Components\TextInput::make('password')
                             ->label('Password')
                             ->password()
+                            ->revealable()
                             ->dehydrateStateUsing(fn ($state) => Hash::make($state))
                             ->dehydrated(fn ($state) => filled($state))
                             ->required(fn (string $context) => $context === 'create')
-                            ->maxLength(255),
+                            ->maxLength(255)
+                            ->hintAction(
+                                Forms\Components\Actions\Action::make('resetPassword')
+                                    ->label('Reset ke Username')
+                                    ->icon('heroicon-o-arrow-path')
+                                    ->color('gray')
+                                    ->requiresConfirmation()
+                                    ->modalDescription('Password akan diganti menjadi sama dengan username pengguna ini.')
+                                    ->action(fn (Forms\Get $get, Forms\Set $set) => $set('password', $get('username'))),
+                            ),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Role dan izin akses')
@@ -72,6 +82,15 @@ class UserResource extends Resource
                             ->multiple()
                             ->relationship('roles', 'name')
                             ->preload(),
+                        Forms\Components\Select::make('active_status')
+                            ->label('Status Aktif')
+                            ->helperText('Mengatur permission "active" pengguna ini secara langsung.')
+                            ->options(['aktif' => 'Aktif', 'nonaktif' => 'Tidak Aktif'])
+                            ->default('aktif')
+                            ->required()
+                            ->afterStateHydrated(function (Forms\Components\Select $component, ?User $record): void {
+                                $component->state($record?->hasPermissionTo('active') ? 'aktif' : 'nonaktif');
+                            }),
                         Forms\Components\CheckboxList::make('permissions')
                             ->label('Permission langsung (di luar role)')
                             ->helperText('Opsional. Ditambahkan hanya untuk pengguna ini; gabungan dengan permission dari role menentukan hak akses efektif.')
@@ -178,10 +197,37 @@ class UserResource extends Resource
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\BulkAction::make('delete')
+                        ->label('Hapus')
+                        ->icon('heroicon-o-trash')
+                        ->color('danger')
+                        ->requiresConfirmation()
+                        ->modalDescription('Pengguna yang masih dipakai data lain (ujian, bimbingan, NUIR, dll) akan dilewati.')
+                        ->action(function (\Illuminate\Database\Eloquent\Collection $records): void {
+                            $deleted = 0;
+                            $skipped = 0;
+
+                            foreach ($records as $record) {
+                                if ($record->hasRole('admin') || static::isUserInUse($record)) {
+                                    $skipped++;
+
+                                    continue;
+                                }
+
+                                $record->delete();
+                                $deleted++;
+                            }
+
+                            \Filament\Notifications\Notification::make()
+                                ->success()
+                                ->title("{$deleted} pengguna dihapus".($skipped > 0 ? ", {$skipped} dilewati (masih dipakai)" : '.'))
+                                ->send();
+                        })
+                        ->deselectRecordsAfterCompletion(),
                 ]),
             ])
-            ->defaultSort('name');
+            ->defaultSort('name')
+            ->persistFiltersInSession();
     }
 
     public static function getRelations(): array
@@ -201,29 +247,44 @@ class UserResource extends Resource
             'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
+            'import' => Pages\ImportUsers::route('/import'),
+        ];
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public static function userReferenceMap(): array
+    {
+        $examinerColumns = ['user_id', 'examiner1_id', 'examiner2_id', 'examiner3_id', 'guide1_id', 'guide2_id', 'chief_id'];
+
+        return [
+            'exam_registrations' => $examinerColumns,
+            'exam_scores' => ['user_id'],
+            'guide_examiners' => $examinerColumns,
+            'guide_allocations' => ['user_id'],
+            'selection_stages' => ['user_id', 'guide1_id', 'guide2_id'],
+            'selection_guides' => ['user_id'],
+            'selection_element_comments' => ['user_id'],
+            'nuir_submissions' => ['user_id', 'dbs_reviewer_id'],
+            'nuir_proposals' => ['guide1_id', 'guide2_id'],
+            'nuir_assignments' => ['validator_id', 'assigned_by'],
+            'nuir_content_reviews' => ['user_id'],
+            'nuir_reference_reviews' => ['user_id'],
+            'nuir_revision_events' => ['actor_id', 'target_user_id'],
         ];
     }
 
     public static function isUserInUse(User $user): bool
     {
         $id = $user->id;
-        $userColumns = ['user_id', 'examiner1_id', 'examiner2_id', 'examiner3_id', 'guide1_id', 'guide2_id', 'chief_id'];
 
-        foreach (['exam_registrations', 'guide_examiners'] as $table) {
-            foreach ($userColumns as $col) {
+        foreach (static::userReferenceMap() as $table => $columns) {
+            foreach ($columns as $col) {
                 if (DB::table($table)->where($col, $id)->exists()) {
                     return true;
                 }
             }
-        }
-
-        if (DB::table('selection_stages')->where('user_id', $id)
-            ->orWhere('guide1_id', $id)->orWhere('guide2_id', $id)->exists()) {
-            return true;
-        }
-
-        if (DB::table('selection_guides')->where('user_id', $id)->exists()) {
-            return true;
         }
 
         return false;
