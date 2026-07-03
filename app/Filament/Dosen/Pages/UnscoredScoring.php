@@ -21,6 +21,8 @@ class UnscoredScoring extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
 
+    protected static ?string $navigationGroup = 'Menu Dosen';
+
     protected static ?string $title = 'Ujian Belum Selesai Dinilai';
 
     protected static ?string $slug = 'examination/scoring';

@@ -8,7 +8,7 @@ class DosenNuirManajerWidget extends ManajerNuirStatsWidget
 {
     protected ?string $heading = 'Manajemen NUIR';
 
-    protected static ?int $sort = 3;
+    protected static ?int $sort = 4;
 
     public static function canView(): bool
     {

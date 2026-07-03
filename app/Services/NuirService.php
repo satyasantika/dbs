@@ -45,6 +45,11 @@ class NuirService
             ->exists();
     }
 
+    public function hasSubmission(User $user): bool
+    {
+        return NuirSubmission::where('user_id', $user->id)->exists();
+    }
+
     public function finalizeProposal(NuirProposal $proposal): void
     {
         $proposal->update(['final' => true]);

@@ -15,6 +15,7 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -369,5 +370,38 @@ class NuirValidatorPanelSmokeTest extends TestCase
             ->assertSee('Menunggu validasi ulang')
             ->assertDontSee('Mhs Ref Pending')
             ->assertDontSee('Mhs Validasi Selesai');
+    }
+
+    public function test_panel_validator_menggunakan_sidebar_dan_nama_portal_validator_nuir(): void
+    {
+        $panel = Filament::getPanel('nuir-validator');
+
+        $this->assertFalse($panel->hasTopNavigation());
+        $this->assertTrue($panel->isSidebarCollapsibleOnDesktop());
+        $this->assertStringContainsString('Portal Validator NUIR', (string) $panel->getBrandName());
+
+        $this->actingAs($this->validator)
+            ->get(ValidatorDashboard::getUrl(panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('Portal Validator NUIR');
+    }
+
+    public function test_validator_dengan_satu_role_tidak_melihat_select_role(): void
+    {
+        $this->actingAs($this->validator)
+            ->get(ValidatorDashboard::getUrl(panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertDontSee('id="role-switcher"', false);
+    }
+
+    public function test_validator_dengan_role_ganda_melihat_select_role(): void
+    {
+        $this->validator->assignRole('dosen');
+
+        $this->actingAs($this->validator)
+            ->get(ValidatorDashboard::getUrl(panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('id="role-switcher"', false)
+            ->assertSeeInOrder(['Portal Dosen', 'Portal Validator NUIR']);
     }
 }

@@ -6,6 +6,7 @@ use App\Filament\Dbs\Resources\NuirSettingResource;
 use App\Filament\Mahasiswa\Pages\CreateNuirSubmission;
 use App\Filament\Mahasiswa\Pages\Dashboard;
 use App\Filament\Mahasiswa\Pages\EditNuirSubmission;
+use App\Filament\Mahasiswa\Pages\MahasiswaEditProfile;
 use App\Filament\Mahasiswa\Pages\NuirProposalOverview;
 use App\Filament\Mahasiswa\Pages\NuirSubmissionOverview;
 use App\Models\GuideExaminer;
@@ -14,7 +15,10 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class MahasiswaPanelSmokeTest extends TestCase
@@ -48,12 +52,7 @@ class MahasiswaPanelSmokeTest extends TestCase
             ->assertSee('Selamat datang')
             ->assertSee('Portal mahasiswa')
             ->assertSee('Pengajuan NUIR')
-            ->assertSee('Status Pengajuan NUIR')
-            ->assertSee('Judul')
-            ->assertSee('Novelty')
-            ->assertSee('Urgency')
-            ->assertSee('Impact')
-            ->assertSee('Belum diisi');
+            ->assertDontSee('Status Pengajuan NUIR');
     }
 
     public function test_dashboard_menampilkan_status_komponen_nui_terisi(): void
@@ -73,9 +72,25 @@ class MahasiswaPanelSmokeTest extends TestCase
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
             ->assertOk()
             ->assertSee('Status Pengajuan NUIR')
-            ->assertSee('Judul: tersimpan', false)
-            ->assertSee('Novelty: tersimpan', false)
+            ->assertSee('Judul (v1): tersimpan', false)
+            ->assertSee('Novelty (v1): tersimpan', false)
             ->assertSee('Belum diisi');
+    }
+
+    public function test_card_status_pengajuan_nuir_muncul_begitu_slot_judul_dibuat(): void
+    {
+        NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1, 'active' => true]);
+        NuirSubmission::factory()->titleSlot()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+            'title' => 'Judul Slot',
+            'title_saved_at' => now(),
+        ]);
+
+        $this->actingAs($this->mahasiswa)
+            ->get(Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Status Pengajuan NUIR');
     }
 
     public function test_old_nuir_submission_route_redirects_to_filament(): void
@@ -254,5 +269,69 @@ class MahasiswaPanelSmokeTest extends TestCase
         $this->actingAs($dbs)
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
             ->assertForbidden();
+    }
+
+    public function test_panel_mahasiswa_menggunakan_sidebar_dan_menyediakan_profil(): void
+    {
+        $panel = Filament::getPanel('mahasiswa');
+
+        $this->assertFalse($panel->hasTopNavigation());
+        $this->assertTrue($panel->isSidebarCollapsibleOnDesktop());
+        $this->assertTrue($panel->hasProfile());
+        $this->assertSame(MahasiswaEditProfile::class, $panel->getProfilePage());
+        $this->assertStringContainsString('Portal Mahasiswa', (string) $panel->getBrandName());
+    }
+
+    public function test_mahasiswa_dengan_satu_role_tidak_melihat_select_role(): void
+    {
+        $this->actingAs($this->mahasiswa)
+            ->get(Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertDontSee('id="role-switcher"', false);
+    }
+
+    public function test_mahasiswa_dengan_role_ganda_melihat_select_role(): void
+    {
+        $this->mahasiswa->assignRole('dbs');
+
+        $this->actingAs($this->mahasiswa)
+            ->get(Dashboard::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('id="role-switcher"', false)
+            ->assertSeeInOrder(['Portal Mahasiswa', 'Portal DBS']);
+    }
+
+    public function test_mahasiswa_dapat_akses_halaman_ganti_password(): void
+    {
+        $this->actingAs($this->mahasiswa)
+            ->get(MahasiswaEditProfile::getUrl(panel: 'mahasiswa'))
+            ->assertOk()
+            ->assertSee('Ganti Password');
+    }
+
+    public function test_mahasiswa_dapat_mengganti_password(): void
+    {
+        Livewire::actingAs($this->mahasiswa)
+            ->test(MahasiswaEditProfile::class)
+            ->fillForm([
+                'password' => 'password-baru-123',
+                'passwordConfirmation' => 'password-baru-123',
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertTrue(Hash::check('password-baru-123', $this->mahasiswa->fresh()->password));
+    }
+
+    public function test_ganti_password_wajib_konfirmasi_yang_sama(): void
+    {
+        Livewire::actingAs($this->mahasiswa)
+            ->test(MahasiswaEditProfile::class)
+            ->fillForm([
+                'password' => 'password-baru-123',
+                'passwordConfirmation' => 'password-berbeda',
+            ])
+            ->call('save')
+            ->assertHasFormErrors(['password']);
     }
 }

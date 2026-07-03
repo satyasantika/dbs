@@ -6,10 +6,12 @@ use App\Filament\Mahasiswa\Pages\CreateNuirProposal;
 use App\Filament\Mahasiswa\Pages\CreateNuirSubmission;
 use App\Filament\Mahasiswa\Pages\Dashboard;
 use App\Filament\Mahasiswa\Pages\EditNuirSubmission;
+use App\Filament\Mahasiswa\Pages\MahasiswaEditProfile;
 use App\Filament\Mahasiswa\Pages\NuirProposalOverview;
 use App\Filament\Mahasiswa\Pages\NuirSubmissionOverview;
 use App\Filament\Mahasiswa\Pages\ReviseNuirSubmission;
 use App\Http\Middleware\FilamentAuthenticate as Authenticate;
+use App\Support\FilamentBrand;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -18,6 +20,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -33,12 +36,14 @@ class MahasiswaPanelProvider extends PanelProvider
             ->id('mahasiswa')
             ->path('mahasiswa')
             ->login(false)
-            ->brandName('Portal Mahasiswa')
+            ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Mahasiswa'))
+            ->homeUrl(fn () => route('home'))
             ->colors([
                 'primary' => Color::Emerald,
             ])
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()
+            ->profile(MahasiswaEditProfile::class, isSimple: false)
             ->maxContentWidth(MaxWidth::SevenExtraLarge)
             ->discoverPages(in: app_path('Filament/Mahasiswa/Pages'), for: 'App\\Filament\\Mahasiswa\\Pages')
             ->discoverWidgets(in: app_path('Filament/Mahasiswa/Widgets'), for: 'App\\Filament\\Mahasiswa\\Widgets')
@@ -52,8 +57,12 @@ class MahasiswaPanelProvider extends PanelProvider
                 CreateNuirProposal::class,
             ])
             ->navigationGroups([
-                NavigationGroup::make('NUIR')->icon('heroicon-o-document-text'),
+                NavigationGroup::make('NUIR'),
             ])
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.shared.role-switcher')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

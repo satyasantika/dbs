@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\NuirValidator\Pages\Dashboard;
 use App\Http\Middleware\FilamentAuthenticate as Authenticate;
+use App\Support\FilamentBrand;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -12,6 +13,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -27,7 +29,8 @@ class NuirValidatorPanelProvider extends PanelProvider
             ->id('nuir-validator')
             ->path('nuir-validator')
             ->login(false)
-            ->brandName('Validator NUIR')
+            ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Validator NUIR'))
+            ->homeUrl(fn () => route('home'))
             ->colors([
                 'primary' => Color::Teal,
             ])
@@ -41,8 +44,15 @@ class NuirValidatorPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->navigationGroups([
-                NavigationGroup::make('Validasi NUIR')->icon('heroicon-o-check-badge'),
+                // Tanpa icon di level grup — menghindari icon anggota grup
+                // (NuirSubmissionResource/NuirReferenceResource) disembunyikan
+                // oleh mode dropdown grup di Filament.
+                NavigationGroup::make('Validasi NUIR'),
             ])
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.shared.role-switcher')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

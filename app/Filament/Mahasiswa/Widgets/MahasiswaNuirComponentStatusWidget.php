@@ -21,11 +21,14 @@ class MahasiswaNuirComponentStatusWidget extends Widget
 
     public static function canView(): bool
     {
-        $setting = app(NuirService::class)->getActiveSetting(auth()->user());
+        $user = auth()->user();
+        $setting = app(NuirService::class)->getActiveSetting($user);
 
-        return $setting
-            && $setting->active
-            && in_array($setting->stage, [1, 2], true);
+        if (! $setting || ! $setting->active || ! in_array($setting->stage, [1, 2], true)) {
+            return false;
+        }
+
+        return app(NuirService::class)->hasSubmission($user);
     }
 
     public function workspaceUrl(): string

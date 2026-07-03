@@ -20,6 +20,8 @@ class GuideSupervision extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-user-group';
 
+    protected static ?string $navigationGroup = 'Menu Dosen';
+
     protected static ?string $title = 'Bimbingan Belum Lulus';
 
     protected static ?string $slug = 'information/guides';

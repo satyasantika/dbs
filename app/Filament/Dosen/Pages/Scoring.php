@@ -20,6 +20,8 @@ class Scoring extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-queue-list';
 
+    protected static ?string $navigationGroup = 'Menu Dosen';
+
     protected static ?string $title = 'Arsip Penilaian';
 
     protected static ?string $slug = 'examination/scoring/all';
