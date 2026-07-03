@@ -224,7 +224,7 @@ class PermissionSeeder extends Seeder
         Permission::create(['name' => 'join exam']);
         Permission::create(['name' => 'force edit score'])->assignRole('admin');
 
-        Permission::firstOrCreate(['name' => 'active'])->syncRoles(['dbs', 'dosen', 'mahasiswa', 'kajur', 'manajer nuir', 'validator nuir']);
+        Permission::firstOrCreate(['name' => 'active'])->syncRoles(['admin', 'dbs', 'dosen', 'mahasiswa', 'kajur', 'manajer nuir', 'validator nuir']);
 
         Permission::create(['name' => 'manage nuir settings'])->assignRole(['dbs', 'manajer nuir']);
         Permission::create(['name' => 'manage nuir guide quota'])->assignRole('manajer nuir');

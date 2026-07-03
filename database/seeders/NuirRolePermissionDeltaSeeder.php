@@ -28,7 +28,7 @@ class NuirRolePermissionDeltaSeeder extends Seeder
         Role::firstOrCreate(['name' => 'validator nuir']);
 
         Permission::firstOrCreate(['name' => 'active'])
-            ->syncRoles(['dbs', 'dosen', 'mahasiswa', 'kajur', 'manajer nuir', 'validator nuir']);
+            ->syncRoles(['admin', 'dbs', 'dosen', 'mahasiswa', 'kajur', 'manajer nuir', 'validator nuir']);
 
         Permission::firstOrCreate(['name' => 'manage nuir settings'])->syncRoles(['dbs', 'manajer nuir']);
         Permission::firstOrCreate(['name' => 'manage nuir guide quota'])->syncRoles(['manajer nuir']);
