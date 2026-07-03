@@ -15,7 +15,6 @@ use App\Support\FilamentBrand;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
@@ -56,13 +55,7 @@ class DosenPanelProvider extends PanelProvider
                 GraduationEvidence::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Dosen/Widgets'), for: 'App\\Filament\\Dosen\\Widgets')
-            ->navigationItems([
-                NavigationItem::make('Menu usulan NUIR')
-                    ->icon('heroicon-o-document-text')
-                    ->url(fn (): string => route('nuir.dosen.index'))
-                    ->visible(fn (): bool => auth()->user()?->can('respond nuir proposal') ?? false)
-                    ->sort(2),
-            ])
+            ->discoverResources(in: app_path('Filament/Dosen/Resources'), for: 'App\\Filament\\Dosen\\Resources')
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_AFTER,
                 fn (): string => view('filament.shared.role-switcher')->render(),

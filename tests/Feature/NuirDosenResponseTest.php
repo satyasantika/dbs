@@ -54,8 +54,7 @@ class NuirDosenResponseTest extends TestCase
     {
         $this->actingAs($this->dosen1)
             ->get('/nuir/dosen')
-            ->assertOk()
-            ->assertSee($this->mahasiswa->name);
+            ->assertRedirect(\App\Filament\Dosen\Resources\NuirSubmissionResource::getUrl('index', panel: 'dosen'));
     }
 
     public function test_dosen_tidak_dapat_lihat_proposal_yang_tidak_ditujukan(): void

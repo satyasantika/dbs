@@ -122,6 +122,63 @@ class NuirAssignmentService
         app(NuirReviewService::class)->cancelReferenceApproval($reference);
     }
 
+    /**
+     * Guide requests revision on a reference. Unlike reviewReferenceAsGuide()
+     * (a private per-guide opinion), this writes to the reference's real
+     * ref_approved/ref_note fields and logs a shared NuirRevisionEvent —
+     * the same fields/history validators use — so it shows up correctly
+     * attributed ("Pembimbing 1/2") in the shared revision timeline.
+     *
+     * @param  list<string>  $revisionFields
+     */
+    public function requestReferenceRevisionAsGuide(
+        NuirReference $reference,
+        NuirProposal $proposal,
+        User $guide,
+        string $note,
+        array $revisionFields,
+    ): void {
+        if (! $guide->can('respond nuir proposal')) {
+            abort(403);
+        }
+
+        if ($proposal->guide1_id !== $guide->id && $proposal->guide2_id !== $guide->id) {
+            abort(403);
+        }
+
+        if ($reference->nuir_submission_id !== $proposal->nuir_submission_id) {
+            abort(403);
+        }
+
+        if (blank($note)) {
+            throw ValidationException::withMessages([
+                'ref_note' => 'Catatan wajib diisi saat meminta revisi referensi.',
+            ]);
+        }
+
+        NuirReferenceRevisionFields::assertSelectedForRevision($revisionFields);
+
+        $role = $guide->id === $proposal->guide1_id
+            ? NuirRevisionEvent::ROLE_GUIDE1
+            : NuirRevisionEvent::ROLE_GUIDE2;
+
+        $this->revisionHistory->logReferenceRevision(
+            $reference,
+            $guide,
+            $role,
+            $note,
+            NuirReferenceRevisionFields::normalize($revisionFields),
+        );
+
+        app(NuirReviewService::class)->reviewReference(
+            $reference,
+            false,
+            $note,
+            recordHistory: false,
+            revisionFields: $revisionFields,
+        );
+    }
+
     public function reviewReferenceAsGuide(
         NuirReference $reference,
         NuirProposal $proposal,
@@ -279,6 +336,41 @@ class NuirAssignmentService
         }
 
         $this->guideSeatSync->syncGuideSeat($proposal, $guide);
+    }
+
+    public function rejectProposalAsGuide(NuirProposal $proposal, User $guide, string $note): void
+    {
+        if (! $guide->can('respond nuir proposal')) {
+            abort(403);
+        }
+
+        if ($proposal->guide1_id !== $guide->id && $proposal->guide2_id !== $guide->id) {
+            abort(403);
+        }
+
+        if ($proposal->final) {
+            abort(403);
+        }
+
+        $currentStatus = $guide->id === $proposal->guide1_id ? $proposal->guide1_status : $proposal->guide2_status;
+
+        if (! in_array($currentStatus, ['pending', 'accepted'], true)) {
+            abort(403);
+        }
+
+        $guideOrder = $guide->id === $proposal->guide1_id ? 1 : 2;
+        $statusColumn = $guideOrder === 1 ? 'guide1_status' : 'guide2_status';
+        $noteColumn = $guideOrder === 1 ? 'guide1_note' : 'guide2_note';
+        $respondedColumn = $guideOrder === 1 ? 'guide1_responded_at' : 'guide2_responded_at';
+
+        $proposal->update([
+            $statusColumn => 'rejected',
+            $noteColumn => $note,
+            $respondedColumn => now(),
+        ]);
+
+        $this->revisionHistory->logProposalRejection($proposal->fresh(), $guide, $guideOrder, $note);
+        app(NuirProposalService::class)->releaseSeatQuota($proposal->fresh(), $guideOrder);
     }
 
     public function guideHasApprovedAllNuiFields(NuirProposal $proposal, User $guide): bool

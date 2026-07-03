@@ -267,16 +267,23 @@ DBS bertanggung jawab memantau submission, mengatur konfigurasi NUIR, dan memoni
 
 ## Role: Pembimbing (Dosen calon P1/P2)
 
-**Login:** `pembimbing1` atau `pembimbing2` / `simulasi` → **`/home`** → **Usulan NUIR** (`/nuir/dosen`)
+**Login:** `pembimbing1` atau `pembimbing2` / `simulasi` → **`/home`** → **Menu usulan NUIR** (Filament, `/home/nuir-submissions`)
 
 > `pembimbing1` juga punya akses `/nuir-manajer` dan `/nuir-validator` (lihat catatan di [Daftar Akun per Role](#daftar-akun-per-role)).
+>
+> Halaman lama `/nuir/dosen` sudah dipensiunkan — mengakses URL tersebut akan langsung diarahkan (redirect) ke daftar Filament di atas.
 
 ### Alur review NUI (wajib sebelum kursi diterima)
 
 1. Setujui atau **minta revisi** per elemen: **Judul**, **Novelty**, **Urgency**, **Impact** (catatan wajib jika minta revisi).
-2. Setelah **semua elemen disetujui oleh kedua pembimbing**, status judul dan NUI berubah menjadi *Disetujui* dan kursi pembimbing otomatis **accepted**.
+2. Setelah **semua elemen disetujui oleh kedua pembimbing**, status judul dan NUI berubah menjadi *Disetujui* dan kursi pembimbing otomatis **accepted**. Tidak ada tombol terima manual — status mengikuti otomatis.
 3. Finalisasi terjadi jika **P1 dan P2** keduanya accept.
-4. Setiap elemen (Judul/Novelty/Urgency/Impact) maupun referensi yang sudah **Disetujui** menampilkan tombol **Batalkan** untuk mengembalikan review tersebut ke *Pending* — berguna bila pembimbing salah klik Setujui. Membatalkan persetujuan elemen NUI mengembalikan kursi ke *pending* jika sebelumnya sudah accepted.
+4. Setiap elemen (Judul/Novelty/Urgency/Impact) yang sudah **Disetujui** menampilkan tombol **Batalkan** untuk mengembalikan review tersebut ke *Pending* — berguna bila pembimbing salah klik Setuju. Membatalkan persetujuan elemen NUI mengembalikan kursi ke *pending* jika sebelumnya sudah accepted.
+5. Kursi dapat ditolak kapan pun (selagi belum final) lewat tombol **Tolak Usulan** (catatan wajib) — kuota posisi pembimbing dilepaskan kembali dan mahasiswa dapat mengusulkan calon lain.
+
+### Referensi — revisi saja, tanpa persetujuan
+
+Pembimbing **tidak** memvalidasi/menyetujui referensi (itu tugas Validator NUIR). Pembimbing hanya dapat **Minta Revisi** per referensi (checklist bagian + catatan otomatis terisi format `(Label): catatan`, sama seperti alur Validator). Permintaan revisi dari pembimbing tercatat pada histori dengan label **Pembimbing 1** / **Pembimbing 2** (bukan "Validator"), sehingga mahasiswa dapat membedakan siapa yang meminta perbaikan.
 
 ### Langkah uji per akun
 
