@@ -53,7 +53,7 @@ class NuirSubmissionResource extends Resource
                 Tables\Columns\TextColumn::make('references_validated_count')
                     ->label('Referensi Divalidasi')
                     ->formatStateUsing(fn ($state, NuirSubmission $record): string => ($state ?? 0).'/'.($record->references_total_count ?? 0)),
-                Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('year_generation')
@@ -70,7 +70,8 @@ class NuirSubmissionResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
             ])
-            ->defaultSort('updated_at', 'desc');
+            ->defaultSort('updated_at', 'desc')
+            ->poll('15s');
     }
 
     /**
@@ -98,19 +99,12 @@ class NuirSubmissionResource extends Resource
         }
 
         $status = $seat === 1 ? $proposal->guide1_status : $proposal->guide2_status;
+        $presented = \App\Support\NuirSeatStatusPresenter::present($status);
 
         return [
             'label' => 'P'.$seat,
-            'statusLabel' => match ($status) {
-                'accepted' => 'Diterima',
-                'rejected' => 'Ditolak',
-                default => 'Menunggu',
-            },
-            'color' => match ($status) {
-                'accepted' => 'success',
-                'rejected' => 'danger',
-                default => 'warning',
-            },
+            'statusLabel' => $presented['label'],
+            'color' => $presented['color'],
         ];
     }
 

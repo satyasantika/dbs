@@ -1,16 +1,6 @@
 @php
-    $statusColor = static fn (string $status): string => match ($status) {
-        'accepted' => 'success',
-        'rejected' => 'danger',
-        'pending'  => 'warning',
-        default    => 'gray',
-    };
-    $statusLabel = static fn (?string $status): string => match ($status) {
-        'accepted' => 'Diterima',
-        'rejected' => 'Ditolak',
-        'pending'  => 'Menunggu respons',
-        default    => ucfirst((string) $status),
-    };
+    $statusColor = static fn (?string $status): string => \App\Support\NuirSeatStatusPresenter::present($status)['color'];
+    $statusLabel = static fn (?string $status): string => \App\Support\NuirSeatStatusPresenter::present($status)['label'];
 @endphp
 
 @forelse ($proposals as $proposal)
@@ -32,7 +22,7 @@
                 Usulan #{{ $proposals->count() - $loop->index }}
             </span>
             <span class="text-xs text-gray-500 dark:text-gray-400">
-                {{ $proposal->created_at?->translatedFormat('d M Y') }}
+                <x-nuir.human-date :date="$proposal->created_at" />
             </span>
             @if ($isFinal)
                 <x-filament::badge color="success">Ditetapkan</x-filament::badge>
@@ -64,7 +54,7 @@
                                 {{ $statusLabel($guideStatus) }}
                             </x-filament::badge>
                             @if ($respondedAt)
-                                <span class="text-xs text-gray-400">{{ $respondedAt->translatedFormat('d M Y') }}</span>
+                                <span class="text-xs text-gray-400"><x-nuir.human-date :date="$respondedAt" /></span>
                             @endif
                         </div>
                         @if ($guideNote)
@@ -79,7 +69,7 @@
                     @if ($cancel)
                         <div class="mt-2 rounded bg-warning-50 px-2 py-1.5 text-xs dark:bg-warning-950/40">
                             <span class="font-medium text-warning-800 dark:text-warning-300">
-                                Dibatalkan {{ $cancel->recorded_at?->translatedFormat('d M Y') }}
+                                Dibatalkan <x-nuir.human-date :date="$cancel->recorded_at" />
                             </span>
                             @if ($cancel->actor?->name)
                                 <span class="text-warning-600 dark:text-warning-400"> oleh {{ $cancel->actor->name }}</span>

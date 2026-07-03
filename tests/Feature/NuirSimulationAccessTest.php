@@ -92,6 +92,7 @@ class NuirSimulationAccessTest extends TestCase
             ->assertOk();
 
         $this->actingAs($pembimbing1)
+            ->followingRedirects()
             ->get('/nuir/dosen')
             ->assertOk();
     }
@@ -219,6 +220,7 @@ class NuirSimulationAccessTest extends TestCase
         $this->assertNotNull($proposal);
 
         $this->actingAs(User::where('username', 'pembimbing1')->first())
+            ->followingRedirects()
             ->get("/nuir/dosen/{$proposal->id}")
             ->assertOk()
             ->assertSee('Histori Penolakan Usulan')

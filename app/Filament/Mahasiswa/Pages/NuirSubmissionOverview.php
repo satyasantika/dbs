@@ -75,6 +75,15 @@ class NuirSubmissionOverview extends Page
         $this->refreshWorkspace($workspace);
     }
 
+    public function pollWorkspace(NuirMahasiswaWorkspaceService $workspace): void
+    {
+        if ($this->titleEditing || $this->editingField !== null) {
+            return;
+        }
+
+        $this->refreshWorkspace($workspace);
+    }
+
     public function createSubmission(NuirMahasiswaWorkspaceService $workspace): void
     {
         try {

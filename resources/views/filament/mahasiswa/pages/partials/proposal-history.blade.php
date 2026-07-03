@@ -8,16 +8,16 @@
         x-on:click="open = ! open"
         class="flex w-full items-center gap-1.5 text-left text-xs font-medium text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
     >
-        <x-heroicon-m-clock class="h-3.5 w-3.5 shrink-0" />
+        <x-filament::icon
+            icon="heroicon-m-chevron-down"
+            class="h-3.5 w-3.5 shrink-0 transition-transform duration-200"
+            x-bind:class="open ? 'rotate-180' : ''"
+        />
         @if (count($history) > 0)
             <span x-text="open ? 'Sembunyikan histori ({{ count($history) }})' : 'Lihat histori ({{ count($history) }})'"></span>
         @else
             <span>Lihat histori</span>
         @endif
-        <x-heroicon-m-chevron-down
-            class="h-3 w-3 shrink-0 transition-transform duration-200"
-            x-bind:class="open ? 'rotate-180' : ''"
-        />
     </button>
 
     <div x-show="open" x-collapse class="mt-3">
@@ -66,7 +66,7 @@
                     @endif
 
                     <p class="mt-0.5 text-[10px] text-gray-400 dark:text-gray-500">
-                        {{ $item['at']?->translatedFormat('d M Y, H:i') ?? '—' }}
+                        <x-nuir.human-date :date="$item['at']" />
                     </p>
                 </div>
             </div>

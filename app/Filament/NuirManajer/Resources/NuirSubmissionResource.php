@@ -104,7 +104,7 @@ class NuirSubmissionResource extends Resource
                     ))
                     ->formatStateUsing(fn (string $state): string => NuirSubmission::referenceValidationStatusLabel($state))
                     ->color(fn (string $state): string => NuirSubmission::referenceValidationStatusColor($state)),
-                Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->dateTime()->sortable(),
+                Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('year_generation')
@@ -207,7 +207,8 @@ class NuirSubmissionResource extends Resource
                     ->deselectRecordsAfterCompletion()
                     ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false),
             ])
-            ->defaultSort('updated_at', 'desc');
+            ->defaultSort('updated_at', 'desc')
+            ->poll('15s');
     }
 
     public static function getRelations(): array

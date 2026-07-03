@@ -86,7 +86,8 @@ class NuirReferenceResource extends Resource
                         panel: 'nuir-validator',
                     )),
             ])
-            ->defaultSort('updated_at', 'desc');
+            ->defaultSort('updated_at', 'desc')
+            ->poll('15s');
     }
 
     public static function getPages(): array

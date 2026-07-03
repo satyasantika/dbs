@@ -77,7 +77,7 @@
             <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $item['heading'] }}</p>
             <p class="mt-0.5 text-xs text-gray-600 dark:text-gray-400">
                 @if ($item['recorded_at'])
-                    {{ $item['recorded_at']->format('d M Y H:i') }}
+                    <x-nuir.human-date :date="$item['recorded_at']" />
                 @endif
                 @if ($item['actor_name'])
                     · {{ $item['actor_name'] }}

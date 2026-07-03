@@ -7,6 +7,8 @@
 
 <x-filament-panels::page>
 
+<div wire:poll.15s.visible="pollWorkspace"></div>
+
 <style>
     .nuir-auto { resize: none; overflow-y: hidden; }
 </style>
@@ -142,7 +144,7 @@
                 @endif
                 @if ($tLatestRevNote['recorded_at'])
                     <span class="opacity-60">·</span>
-                    <span class="font-normal opacity-70">{{ $tLatestRevNote['recorded_at']->format('d M Y H:i') }}</span>
+                    <span class="font-normal opacity-70"><x-nuir.human-date :date="$tLatestRevNote['recorded_at']" /></span>
                 @endif
             </p>
             <p class="text-sm italic text-gray-600 dark:text-gray-300">{{ $tLatestRevNote['note'] }}</p>
@@ -279,16 +281,11 @@
                         Sisa kuota P{{ $seat }}: {{ $selectedGuide['remaining_quota'] }} ·
                         tidak dapat diubah kecuali pembimbing menolak usulan.
                     </p>
-                    <x-filament::badge :color="match ($seatState['status']) {
-                        'accepted' => 'success',
-                        'rejected' => 'danger',
-                        default    => 'warning',
-                    }">
-                        {{ match ($seatState['status']) {
-                            'accepted' => 'Diterima',
-                            'rejected' => 'Ditolak',
-                            default    => 'Menunggu respons',
-                        } }}
+                    @php
+                        $seatPresent = \App\Support\NuirSeatStatusPresenter::present($seatState['status']);
+                    @endphp
+                    <x-filament::badge :color="$seatPresent['color']">
+                        {{ $seatPresent['label'] }}
                     </x-filament::badge>
                     @if ($seatState['note'])
                         <p class="mt-2 text-xs text-danger-700 dark:text-danger-400">

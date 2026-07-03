@@ -41,6 +41,7 @@
     $canReview = $canReview ?? false;
     $myApproved = $myApproved ?? null;
     $myNote = $myNote ?? null;
+    $allContentApproved = $allContentApproved ?? false;
 
     $myStatusLabel = match ($myApproved) {
         true => 'Anda: Menyetujui',
@@ -119,7 +120,7 @@
         </div>
     @endif
 
-    @if ($canReview)
+    @if ($canReview && ! ($myApproved === true && $allContentApproved))
         <div
             x-data="{ revisionOpen: false, note: @js($myNote ?? '') }"
             class="mt-3 space-y-3 border-t border-white/60 pt-3 dark:border-white/10"

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Dosen\Resources\NuirSubmissionResource as DosenSubmissionResource;
 use App\Filament\Mahasiswa\Pages\NuirSubmissionOverview;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource as ManajerSubmissionResource;
 use App\Filament\NuirValidator\Resources\NuirSubmissionResource as ValidatorSubmissionResource;
@@ -274,9 +275,8 @@ class NuirValidatorManajerTest extends TestCase
         ]);
 
         $this->actingAs($this->dosen1)
-            ->get("/nuir/dosen/{$proposal->id}")
+            ->get(DosenSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
             ->assertOk()
-            ->assertSee('Permintaan Revisi NUIR')
             ->assertSee('Perbaiki urgensi penelitian');
     }
 

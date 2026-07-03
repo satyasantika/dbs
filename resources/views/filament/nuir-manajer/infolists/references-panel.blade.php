@@ -12,7 +12,7 @@
             $showRevisionBadge = $showRevisionBadges[$reference->ref_order] ?? false;
             $statusLabel = match ($reference->ref_approved) {
                 true => 'Disetujui',
-                false => 'Ditolak',
+                false => 'Diminta Revisi',
                 default => 'Pending',
             };
             $statusColor = match ($reference->ref_approved) {

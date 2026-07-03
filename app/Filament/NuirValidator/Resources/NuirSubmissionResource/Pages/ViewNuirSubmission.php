@@ -22,6 +22,8 @@ class ViewNuirSubmission extends ViewRecord
 
     protected static string $resource = NuirSubmissionResource::class;
 
+    protected static string $view = 'filament.nuir-validator.pages.view-nuir-submission';
+
     #[Url(as: 'reference')]
     public ?int $openReferenceId = null;
 
@@ -149,6 +151,12 @@ class ViewNuirSubmission extends ViewRecord
     {
         $this->record->refresh();
         $this->record->load('references');
+    }
+
+    public function pollRefresh(): void
+    {
+        $this->record->refresh();
+        $this->record->load(['user', 'references', 'assignment']);
     }
 
     protected function resolveOpenReferenceId(NuirSubmission $record): ?int
