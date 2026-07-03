@@ -33,7 +33,11 @@ class NuirSimulationAccessTest extends TestCase
 
     public function test_akun_simulasi_memakai_password_simulasi(): void
     {
-        foreach (['dbs', 'manajer1', 'validator1', 'pembimbing1', 'pembimbing2', 'penguji1', 'mahasiswa1', 'mahasiswa8'] as $username) {
+        foreach ([
+            'dbs', 'manajer1', 'validator1', 'pembimbing1', 'pembimbing2', 'penguji1',
+            NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[1],
+            NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[8],
+        ] as $username) {
             $user = User::where('username', $username)->first();
             $this->assertNotNull($user, "Akun {$username} harus ada.");
             $this->assertTrue(
@@ -66,8 +70,8 @@ class NuirSimulationAccessTest extends TestCase
 
     public function test_mahasiswa_simulasi_dapat_akses_nuir_submission_dan_proposal(): void
     {
-        $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
-        $mahasiswa5 = User::where('username', 'mahasiswa5')->first();
+        $mahasiswa1 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[1])->first();
+        $mahasiswa5 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[5])->first();
 
         $this->actingAs($mahasiswa1)
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
@@ -138,7 +142,7 @@ class NuirSimulationAccessTest extends TestCase
 
     public function test_mahasiswa_simulasi_tidak_dapat_akses_panel_dbs(): void
     {
-        $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
+        $mahasiswa1 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[1])->first();
 
         $this->actingAs($mahasiswa1)
             ->get(NuirSettingResource::getUrl('index', panel: 'dbs'))
@@ -189,7 +193,7 @@ class NuirSimulationAccessTest extends TestCase
 
     public function test_mahasiswa1_workspace_menampilkan_judul_belum_lengkap_nui(): void
     {
-        $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
+        $mahasiswa1 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[1])->first();
 
         Livewire::actingAs($mahasiswa1)
             ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
@@ -202,7 +206,7 @@ class NuirSimulationAccessTest extends TestCase
 
     public function test_mahasiswa7_melihat_histori_penolakan_simulasi(): void
     {
-        $mahasiswa7 = User::where('username', 'mahasiswa7')->first();
+        $mahasiswa7 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[7])->first();
 
         Livewire::actingAs($mahasiswa7)
             ->test(\App\Filament\Mahasiswa\Pages\NuirSubmissionOverview::class)
@@ -213,7 +217,7 @@ class NuirSimulationAccessTest extends TestCase
     public function test_pembimbing1_melihat_histori_penolakan_mahasiswa7(): void
     {
         $proposal = \App\Models\NuirProposal::query()
-            ->whereHas('submission.user', fn ($q) => $q->where('username', 'mahasiswa7'))
+            ->whereHas('submission.user', fn ($q) => $q->where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[7]))
             ->where('guide1_status', 'pending')
             ->first();
 

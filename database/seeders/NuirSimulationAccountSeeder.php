@@ -12,8 +12,27 @@ class NuirSimulationAccountSeeder extends Seeder
 
     public const PASSWORD = 'simulasi';
 
+    /**
+     * Username mahasiswa simulasi berpola NIM (2 digit awal = angkatan, dibaca oleh
+     * StudentYearGeneration) — "99" → SIMULATION_YEAR "2099". Label mahasiswaN pada
+     * docs/nuir-simulasi.md merujuk ke urutan angka (1-9) pada array ini.
+     *
+     * @var array<int, string>
+     */
+    public const MAHASISWA_USERNAMES = [
+        1 => '992151001',
+        2 => '992151002',
+        3 => '992151003',
+        4 => '992151004',
+        5 => '992151005',
+        6 => '992151006',
+        7 => '992151007',
+        8 => '992151008',
+        9 => '992151009',
+    ];
+
     /** Mahasiswa simulasi tanpa pengajuan NUIR (workspace kosong). */
-    public const EMPTY_NUIR_STUDENT_USERNAME = 'mahasiswa9';
+    public const EMPTY_NUIR_STUDENT_USERNAME = self::MAHASISWA_USERNAMES[9];
 
     /**
      * Dosen simulasi dengan kode inisial (untuk import kuota / dropdown pembimbing).
@@ -84,9 +103,9 @@ class NuirSimulationAccountSeeder extends Seeder
 
         foreach (range(1, 8) as $number) {
             $this->seedAccount(
-                "mahasiswa{$number}",
+                self::MAHASISWA_USERNAMES[$number],
                 'Mahasiswa Simulasi '.$number,
-                "mahasiswa{$number}@simulasi.test",
+                'mahasiswa'.$number.'@simulasi.test',
                 'mahasiswa',
             );
         }

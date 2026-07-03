@@ -99,7 +99,7 @@ class NuirSeederTest extends TestCase
             }
         });
 
-        $mahasiswa1 = User::where('username', 'mahasiswa1')->first();
+        $mahasiswa1 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[1])->first();
         $this->assertNotNull($mahasiswa1);
         $this->assertTrue(
             NuirSubmission::where('user_id', $mahasiswa1->id)->where('status', 'title_slot')->exists()
@@ -180,14 +180,14 @@ class NuirSeederTest extends TestCase
         );
 
         // mahasiswa5: P2 dibatalkan manajer, guide2_id harus null
-        $mahasiswa5 = User::where('username', 'mahasiswa5')->first();
+        $mahasiswa5 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[5])->first();
         $cancelledProposal = NuirProposal::whereHas('submission', fn ($q) => $q->where('user_id', $mahasiswa5?->id))
             ->whereNull('guide2_id')
             ->where('guide2_status', 'pending')
             ->first();
         $this->assertNotNull($cancelledProposal, 'mahasiswa5 harus punya proposal dengan P2 dibatalkan (guide2_id null).');
 
-        $mahasiswa6 = User::where('username', 'mahasiswa6')->first();
+        $mahasiswa6 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[6])->first();
         $partialSubmission = NuirSubmission::where('user_id', $mahasiswa6?->id)
             ->where('status', 'content_ok')
             ->first();
@@ -201,7 +201,7 @@ class NuirSeederTest extends TestCase
         );
 
         // mahasiswa4: submitted with NUI revision requested by guides (no DBS involvement)
-        $mahasiswa4 = User::where('username', 'mahasiswa4')->first();
+        $mahasiswa4 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[4])->first();
         $nuiRevisionSubmission = NuirSubmission::where('user_id', $mahasiswa4?->id)
             ->where('status', 'submitted')
             ->first();
@@ -221,7 +221,7 @@ class NuirSeederTest extends TestCase
             'mahasiswa4: impact harus diminta revisi oleh P2.',
         );
 
-        $mahasiswa2 = User::where('username', 'mahasiswa2')->first();
+        $mahasiswa2 = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[2])->first();
         $pembimbing2 = User::where('username', 'pembimbing2')->first();
         $dualRevisionSubmission = NuirSubmission::where('user_id', $mahasiswa2?->id)
             ->where('status', 'submitted')

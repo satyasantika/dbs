@@ -4,6 +4,7 @@ namespace App\Filament\Mahasiswa\Concerns;
 
 use App\Models\GuideExaminer;
 use App\Models\NuirSetting;
+use App\Support\StudentYearGeneration;
 
 trait HidesNuirNavigationWhenInactive
 {
@@ -15,12 +16,13 @@ trait HidesNuirNavigationWhenInactive
 
         $user = auth()->user();
         $guideExaminer = GuideExaminer::where('user_id', $user->id)->first();
+        $yearGeneration = $guideExaminer?->year_generation ?? StudentYearGeneration::resolve($user->username);
 
-        if (! $guideExaminer) {
+        if (! $yearGeneration) {
             return false;
         }
 
-        $setting = NuirSetting::where('year_generation', $guideExaminer->year_generation)
+        $setting = NuirSetting::where('year_generation', $yearGeneration)
             ->where('active', true)
             ->first();
 
