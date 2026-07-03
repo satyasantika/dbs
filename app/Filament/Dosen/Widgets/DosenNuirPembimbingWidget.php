@@ -43,13 +43,13 @@ class DosenNuirPembimbingWidget extends BaseWidget
                 ->descriptionIcon('heroicon-m-inbox-arrow-down')
                 ->color($pendingResponse > 0 ? 'warning' : 'gray')
                 ->icon('heroicon-o-inbox')
-                ->url(route('nuir.dosen.index')),
+                ->url(\App\Filament\Dosen\Resources\NuirSubmissionResource::getUrl('index', panel: 'dosen')),
             Stat::make('Perlu Review Judul/NUI', $needsReview)
                 ->description('Setujui atau minta revisi Judul, Novelty, Urgency, Impact')
                 ->descriptionIcon('heroicon-m-pencil-square')
                 ->color($needsReview > 0 ? 'warning' : 'success')
                 ->icon('heroicon-o-document-magnifying-glass')
-                ->url(route('nuir.dosen.index')),
+                ->url(\App\Filament\Dosen\Resources\NuirSubmissionResource::getUrl('index', panel: 'dosen')),
         ];
     }
 

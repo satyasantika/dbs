@@ -3,11 +3,10 @@
 namespace App\Filament\NuirManajer\Concerns;
 
 use App\Models\NuirRevisionEvent;
-use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Services\NuirRevisionHistoryService;
+use App\Support\NuirContentFieldPresenter;
 use App\Support\NuirExternalUrl;
-use App\Support\NuirTextLimits;
 use Filament\Infolists;
 use Filament\Infolists\Components\Actions\Action;
 use Filament\Infolists\Components\TextEntry;
@@ -75,41 +74,7 @@ trait BuildsManajerNuirSubmissionInfolist
      */
     public static function contentFieldViewData(NuirSubmission $record, string $field): array
     {
-        $config = match ($field) {
-            'title' => [
-                'field' => 'title',
-                'label' => 'Judul',
-                'badge' => null,
-                'icon' => 'heroicon-o-bookmark',
-                'accent' => 'primary',
-                'hint' => 'Judul topik penelitian yang diajukan mahasiswa.',
-            ],
-            'novelty' => [
-                'field' => 'novelty',
-                'label' => 'Novelty',
-                'badge' => 'N',
-                'icon' => 'heroicon-o-light-bulb',
-                'accent' => 'info',
-                'hint' => 'Kebaruan penelitian dibanding studi sebelumnya.',
-            ],
-            'urgency' => [
-                'field' => 'urgency',
-                'label' => 'Urgency',
-                'badge' => 'U',
-                'icon' => 'heroicon-o-clock',
-                'accent' => 'warning',
-                'hint' => 'Urgensi dan keterdesakan permasalahan yang diteliti.',
-            ],
-            'impact' => [
-                'field' => 'impact',
-                'label' => 'Impact',
-                'badge' => 'I',
-                'icon' => 'heroicon-o-arrow-trending-up',
-                'accent' => 'success',
-                'hint' => 'Dampak dan manfaat yang diharapkan dari penelitian.',
-            ],
-            default => throw new \InvalidArgumentException("Field tidak dikenal: {$field}"),
-        };
+        $config = NuirContentFieldPresenter::config($field);
 
         $content = $record->{$field} ?? '';
         $historyService = app(NuirRevisionHistoryService::class);
@@ -192,27 +157,6 @@ trait BuildsManajerNuirSubmissionInfolist
 
     public static function wordCountDescription(NuirSubmission $record, string $field): string
     {
-        $text = $record->{$field} ?? '';
-        $words = NuirTextLimits::wordCount($text);
-
-        if ($field === 'title') {
-            return "{$words} kata dikirim";
-        }
-
-        $setting = NuirSetting::where('year_generation', $record->year_generation)->first();
-        $min = $setting?->{"min_words_{$field}"};
-        $max = $setting?->{"max_words_{$field}"};
-
-        $meta = "{$words} kata dikirim";
-
-        if ($min !== null && $max !== null) {
-            $meta .= " · batas {$min}–{$max} kata";
-        } elseif ($max !== null) {
-            $meta .= " · maks. {$max} kata";
-        } elseif ($min !== null) {
-            $meta .= " · min. {$min} kata";
-        }
-
-        return $meta;
+        return NuirContentFieldPresenter::wordCountDescription($record, $field);
     }
 }

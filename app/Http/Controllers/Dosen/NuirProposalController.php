@@ -8,8 +8,6 @@ use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirSubmission;
 use App\Services\NuirAssignmentService;
-use App\Services\NuirProposalService;
-use App\Services\NuirRevisionHistoryService;
 use App\Services\NuirService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,41 +17,23 @@ class NuirProposalController extends Controller
     public function __construct(
         private NuirService $nuirService,
         private NuirAssignmentService $assignmentService,
-        private NuirProposalService $proposalService,
-        private NuirRevisionHistoryService $revisionHistory,
     ) {
     }
 
     public function index()
     {
-        $userId = auth()->id();
-        $proposals = NuirProposal::with(['submission.user', 'guide1', 'guide2'])
-            ->where(function ($query) use ($userId) {
-                $query->where('guide1_id', $userId)->orWhere('guide2_id', $userId);
-            })
-            ->latest()
-            ->get();
-
-        $pending = $proposals->filter(fn (NuirProposal $p) => $this->pendingForUser($p));
-        $responded = $proposals->reject(fn (NuirProposal $p) => $this->pendingForUser($p));
-
-        return view('dosen.nuir.proposal-index', compact('pending', 'responded'));
+        return redirect(\App\Filament\Dosen\Resources\NuirSubmissionResource::getUrl('index', panel: 'dosen'));
     }
 
     public function show(NuirProposal $nuirProposal)
     {
         $this->authorizeProposal($nuirProposal);
-        $nuirProposal->load(['submission.user', 'submission.references.reviews', 'submission.contentReviews', 'guide1', 'guide2']);
-        $user = auth()->user();
 
-        return view('dosen.nuir.proposal-show', [
-            'proposal' => $nuirProposal,
-            'canRespond' => $this->canReview($nuirProposal),
-            'canAcceptProposal' => $this->assignmentService->guideCanAcceptProposal($nuirProposal, $user),
-            'canReviewReferences' => $this->canReview($nuirProposal),
-            'revisionHistory' => app(NuirRevisionHistoryService::class)->historyForLineage($nuirProposal->submission),
-            'rejectionHistory' => app(NuirRevisionHistoryService::class)->rejectionHistoryForSubmission($nuirProposal->submission),
-        ]);
+        return redirect(\App\Filament\Dosen\Resources\NuirSubmissionResource::getUrl(
+            'view',
+            ['record' => $nuirProposal->nuir_submission_id],
+            panel: 'dosen',
+        ));
     }
 
     public function accept(NuirProposal $nuirProposal)
@@ -84,23 +64,7 @@ class NuirProposalController extends Controller
 
         $data = $request->validate(['note' => ['required', 'string']]);
 
-        if (auth()->id() === $nuirProposal->guide1_id) {
-            $nuirProposal->update([
-                'guide1_status' => 'rejected',
-                'guide1_note' => $data['note'],
-                'guide1_responded_at' => now(),
-            ]);
-            $this->revisionHistory->logProposalRejection($nuirProposal->fresh(), auth()->user(), 1, $data['note']);
-            $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 1);
-        } else {
-            $nuirProposal->update([
-                'guide2_status' => 'rejected',
-                'guide2_note' => $data['note'],
-                'guide2_responded_at' => now(),
-            ]);
-            $this->revisionHistory->logProposalRejection($nuirProposal->fresh(), auth()->user(), 2, $data['note']);
-            $this->proposalService->releaseSeatQuota($nuirProposal->fresh(), 2);
-        }
+        $this->assignmentService->rejectProposalAsGuide($nuirProposal, auth()->user(), $data['note']);
 
         return to_route('nuir.dosen.index')->with('success', 'Usulan NUI ditolak. Kursi Anda dikosongkan.');
     }
