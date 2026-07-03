@@ -4,10 +4,12 @@ namespace App\Filament\NuirManajer\Resources;
 
 use App\Filament\Concerns\AuthorizesNuirRolePanelAccess;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
+use App\Models\NuirProposal;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Services\NuirAssignmentService;
+use App\Services\NuirService;
 use Filament\Forms;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -91,19 +93,11 @@ class NuirSubmissionResource extends Resource
                     ->label('Validator')
                     ->placeholder('Belum ditugaskan')
                     ->visible(fn (): bool => ! (auth()->user()?->can('delegate nuir validator') ?? false)),
-                Tables\Columns\TextColumn::make('references_validated_count')
-                    ->label('Referensi Divalidasi')
-                    ->formatStateUsing(fn ($state, NuirSubmission $record): string => ($state ?? 0).'/'.($record->references_total_count ?? 0))
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('reference_validation_status')
-                    ->label('Progress Validasi')
+                Tables\Columns\TextColumn::make('guide_status')
+                    ->label('Pembimbing')
                     ->badge()
-                    ->state(fn (NuirSubmission $record): string => static::referenceValidationStatusFromCounts(
-                        (int) ($record->references_validated_count ?? 0),
-                        (int) ($record->references_total_count ?? 0),
-                    ))
-                    ->formatStateUsing(fn (string $state): string => NuirSubmission::referenceValidationStatusLabel($state))
-                    ->color(fn (string $state): string => NuirSubmission::referenceValidationStatusColor($state)),
+                    ->state(fn (NuirSubmission $record): string => static::guideStatusLabel($record))
+                    ->color(fn (NuirSubmission $record): string => static::guideStatusColor($record)),
                 Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
             ])
             ->filters([
@@ -206,6 +200,40 @@ class NuirSubmissionResource extends Resource
                     })
                     ->deselectRecordsAfterCompletion()
                     ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false),
+                Tables\Actions\BulkAction::make('finalizeGuideBulk')
+                    ->label('Tetapkan Pembimbing')
+                    ->icon('heroicon-o-check-badge')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tetapkan Pembimbing untuk submission terpilih?')
+                    ->modalDescription('Hanya submission dengan status content_ok dan kedua kursi pembimbing sudah accepted yang akan diproses.')
+                    ->action(function (Collection $records): void {
+                        $finalized = 0;
+
+                        foreach ($records as $record) {
+                            if ($record->status !== 'content_ok') {
+                                continue;
+                            }
+
+                            $proposal = $record->proposals()->where('final', false)->latest('id')->first();
+
+                            if (! $proposal || ! $proposal->isBothAccepted()) {
+                                continue;
+                            }
+
+                            app(NuirService::class)->finalizeProposal($proposal);
+                            $finalized++;
+                        }
+
+                        Notification::make()
+                            ->success()
+                            ->title($finalized > 0
+                                ? "Pembimbing berhasil ditetapkan untuk {$finalized} submission."
+                                : 'Tidak ada submission yang memenuhi syarat.')
+                            ->send();
+                    })
+                    ->deselectRecordsAfterCompletion()
+                    ->visible(fn (): bool => auth()->user()?->can('finalize nuir guide') ?? false),
             ])
             ->defaultSort('updated_at', 'desc')
             ->poll('15s');
@@ -227,11 +255,72 @@ class NuirSubmissionResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return static::activeSubmissionsQuery()
-            ->with(['user', 'references', 'assignment.validator'])
-            ->withCount([
-                'references as references_total_count',
-                'references as references_validated_count' => fn (Builder $query) => $query->whereNotNull('ref_approved'),
+            ->with([
+                'user',
+                'references',
+                'assignment.validator',
+                'proposals' => fn ($query) => $query->with(['guide1', 'guide2'])->orderByDesc('id'),
             ]);
+    }
+
+    public static function latestProposal(NuirSubmission $submission): ?NuirProposal
+    {
+        return $submission->relationLoaded('proposals')
+            ? $submission->proposals->sortByDesc('id')->first()
+            : $submission->proposals()->latest('id')->first();
+    }
+
+    public static function guideStatusLabel(NuirSubmission $submission): string
+    {
+        $proposal = static::latestProposal($submission);
+
+        if (! $proposal) {
+            return '—';
+        }
+
+        if ($proposal->isBothAccepted()) {
+            return 'pembimbing_ok';
+        }
+
+        $parts = [];
+
+        if ($proposal->guide1_id) {
+            $parts[] = static::guideSeatShortLabel($proposal->guide1_status).' P1';
+        }
+
+        if ($proposal->guide2_id) {
+            $parts[] = static::guideSeatShortLabel($proposal->guide2_status).' P2';
+        }
+
+        return $parts === [] ? '—' : implode(' · ', $parts);
+    }
+
+    public static function guideStatusColor(NuirSubmission $submission): string
+    {
+        $proposal = static::latestProposal($submission);
+
+        if (! $proposal) {
+            return 'gray';
+        }
+
+        if ($proposal->isBothAccepted()) {
+            return 'success';
+        }
+
+        if ($proposal->guide1_status === 'rejected' || $proposal->guide2_status === 'rejected') {
+            return 'danger';
+        }
+
+        return 'warning';
+    }
+
+    private static function guideSeatShortLabel(?string $status): string
+    {
+        return match ($status) {
+            'accepted' => 'ACC',
+            'rejected' => 'Ditolak',
+            default => 'Menunggu',
+        };
     }
 
     public static function activeSubmissionsQuery(): Builder
@@ -272,19 +361,6 @@ class NuirSubmissionResource extends Resource
         }
 
         return $url;
-    }
-
-    public static function referenceValidationStatusFromCounts(int $validated, int $total): string
-    {
-        if ($total === 0 || $validated === 0) {
-            return NuirSubmission::REF_VALIDATION_NOT_STARTED;
-        }
-
-        if ($validated >= $total) {
-            return NuirSubmission::REF_VALIDATION_COMPLETE;
-        }
-
-        return NuirSubmission::REF_VALIDATION_IN_PROGRESS;
     }
 
     public static function approvedReferenceCount(NuirSubmission $submission): int

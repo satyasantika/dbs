@@ -353,6 +353,131 @@ class NuirManajerRoleTest extends TestCase
         $this->assertFalse($this->dosen->can('delete nuir submission'));
     }
 
+    public function test_hapus_submission_tersembunyi_jika_dosen_sudah_setujui_konten(): void
+    {
+        \App\Models\NuirContentReview::create([
+            'nuir_submission_id' => $this->submission->id,
+            'user_id' => $this->dosen->id,
+            'role' => 'guide1',
+            'field' => 'title',
+            'approved' => true,
+            'reviewed_at' => now(),
+        ]);
+
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->assertActionHidden('deleteSubmission');
+    }
+
+    public function test_hapus_submission_tersembunyi_jika_validator_sudah_respon_referensi(): void
+    {
+        NuirReference::factory()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+            'ref_approved' => false,
+            'ref_note' => 'Perbaiki link',
+        ]);
+
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->assertActionHidden('deleteSubmission');
+    }
+
+    public function test_manajer_dapat_tetapkan_pembimbing_setelah_content_ok_dan_kedua_kursi_accepted(): void
+    {
+        $submission = NuirSubmission::factory()->contentOk()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+        $dosen2 = User::factory()->create()->assignRole('dosen');
+        $proposal = \App\Models\NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->dosen->id,
+            'guide2_id' => $dosen2->id,
+            'guide1_status' => 'accepted',
+            'guide2_status' => 'accepted',
+        ]);
+
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $submission->getRouteKey(),
+            ])
+            ->assertActionVisible('finalizeGuide')
+            ->callAction('finalizeGuide')
+            ->assertHasNoActionErrors();
+
+        $this->assertTrue($proposal->fresh()->final);
+        $this->assertEquals('finalized', $submission->fresh()->status);
+        $this->assertDatabaseHas('selection_stages', [
+            'user_id' => $this->mahasiswa->id,
+            'guide1_id' => $this->dosen->id,
+            'guide2_id' => $dosen2->id,
+            'final' => false,
+        ]);
+        $this->assertDatabaseMissing('guide_examiners', [
+            'user_id' => $this->mahasiswa->id,
+            'guide1_id' => $this->dosen->id,
+        ]);
+    }
+
+    public function test_tombol_tetapkan_pembimbing_tersembunyi_sebelum_kedua_kursi_accepted(): void
+    {
+        $submission = NuirSubmission::factory()->contentOk()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+        \App\Models\NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->dosen->id,
+            'guide1_status' => 'accepted',
+            'guide2_status' => 'pending',
+        ]);
+
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $submission->getRouteKey(),
+            ])
+            ->assertActionHidden('finalizeGuide');
+    }
+
+    public function test_manajer_dapat_tunjuk_pembimbing_langsung_pada_stage_3(): void
+    {
+        NuirSetting::where('year_generation', '2022')->update(['stage' => 3]);
+        $dosen2 = User::factory()->create()->assignRole('dosen');
+
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->assertActionVisible('assignGuideDirect')
+            ->callAction('assignGuideDirect', data: [
+                'guide1_id' => $this->dosen->id,
+                'guide2_id' => $dosen2->id,
+            ])
+            ->assertHasNoActionErrors();
+
+        $this->assertDatabaseHas('nuir_proposals', [
+            'nuir_submission_id' => $this->submission->id,
+            'guide1_id' => $this->dosen->id,
+            'guide2_id' => $dosen2->id,
+            'guide1_status' => 'accepted',
+            'guide2_status' => 'accepted',
+        ]);
+    }
+
+    public function test_tombol_tunjuk_pembimbing_tersembunyi_di_luar_stage_3(): void
+    {
+        Livewire::actingAs($this->manajer)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->assertActionHidden('assignGuideDirect');
+    }
+
     public function test_manajer_dapat_delegasikan_validator_via_select_inline_di_daftar(): void
     {
         Livewire::actingAs($this->manajer)
@@ -504,54 +629,50 @@ class NuirManajerRoleTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_daftar_submission_menampilkan_tombol_dashboard_dan_progress_validasi(): void
+    public function test_daftar_submission_menampilkan_tombol_dashboard(): void
     {
-        NuirReference::factory()->count(3)->sequence(
-            ['ref_order' => 1],
-            ['ref_order' => 2],
-            ['ref_order' => 3],
-        )->create([
-            'nuir_submission_id' => $this->submission->id,
-            'ref_approved' => null,
-        ]);
-
-        $inProgress = NuirSubmission::factory()->submitted()->withNUI()->create([
-            'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
-            'year_generation' => '2022',
-        ]);
-        NuirReference::factory()->create([
-            'nuir_submission_id' => $inProgress->id,
-            'ref_order' => 1,
-            'ref_approved' => true,
-        ]);
-        NuirReference::factory()->create([
-            'nuir_submission_id' => $inProgress->id,
-            'ref_order' => 2,
-            'ref_approved' => null,
-        ]);
-
-        $complete = NuirSubmission::factory()->submitted()->withNUI()->create([
-            'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
-            'year_generation' => '2022',
-        ]);
-        NuirReference::factory()->count(2)->sequence(
-            ['ref_order' => 1, 'ref_approved' => true],
-            ['ref_order' => 2, 'ref_approved' => false],
-        )->create(['nuir_submission_id' => $complete->id]);
-
         $this->actingAs($this->manajer)
             ->get(NuirSubmissionResource::getUrl('index', panel: 'nuir-manajer'))
             ->assertOk()
             ->assertSee('Dashboard')
-            ->assertSee(route('home'), false)
-            ->assertSee('Referensi Divalidasi')
-            ->assertSee('Progress Validasi')
-            ->assertSee('0/3')
-            ->assertSee('1/2')
-            ->assertSee('2/2')
-            ->assertSee('Belum berprogress')
-            ->assertSee('Berprogress')
-            ->assertSee('Selesai');
+            ->assertSee(route('home'), false);
+    }
+
+    public function test_kolom_pembimbing_menampilkan_status_kursi_atau_pembimbing_ok(): void
+    {
+        $dosen2 = User::factory()->create()->assignRole('dosen');
+
+        $mixed = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
+            'year_generation' => '2022',
+        ]);
+        \App\Models\NuirProposal::factory()->create([
+            'nuir_submission_id' => $mixed->id,
+            'guide1_id' => $this->dosen->id,
+            'guide2_id' => $dosen2->id,
+            'guide1_status' => 'pending',
+            'guide2_status' => 'accepted',
+        ]);
+
+        $bothAccepted = NuirSubmission::factory()->contentOk()->create([
+            'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
+            'year_generation' => '2022',
+        ]);
+        \App\Models\NuirProposal::factory()->create([
+            'nuir_submission_id' => $bothAccepted->id,
+            'guide1_id' => $this->dosen->id,
+            'guide2_id' => $dosen2->id,
+            'guide1_status' => 'accepted',
+            'guide2_status' => 'accepted',
+        ]);
+
+        $this->actingAs($this->manajer)
+            ->get(NuirSubmissionResource::getUrl('index', panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertSee('Pembimbing')
+            ->assertSee('Menunggu P1')
+            ->assertSee('ACC P2')
+            ->assertSee('pembimbing_ok');
     }
 
     public function test_daftar_submission_terfilter_sesuai_kartu_dashboard(): void

@@ -150,7 +150,12 @@ class NuirGuardTest extends TestCase
 
         $this->assertTrue($proposal->fresh()->final);
         $this->assertEquals('finalized', $sub->fresh()->status);
-        $this->assertEquals($this->dosen1->id, $ge->fresh()->guide1_id);
+        $this->assertNull($ge->fresh()->guide1_id);
+        $this->assertDatabaseHas('selection_stages', [
+            'user_id' => $this->mahasiswa->id,
+            'guide1_id' => $this->dosen1->id,
+            'guide2_id' => $this->dosen2->id,
+        ]);
     }
 
     public function test_dbs_tidak_dapat_force_finalize_jika_masih_pending(): void

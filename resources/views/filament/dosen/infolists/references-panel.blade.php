@@ -15,6 +15,7 @@
             $revisionRound = $revisionRounds[$reference->ref_order] ?? 1;
             $showRevisionBadge = $showRevisionBadges[$reference->ref_order] ?? false;
             $isVerifiable = NuirReferenceExistence::isVerifiable($reference);
+            $isApproved = $reference->ref_approved === true;
             $statusLabel = match ($reference->ref_approved) {
                 true => 'Disetujui',
                 false => 'Diminta Revisi',
@@ -127,7 +128,7 @@
                         </div>
                     @endif
 
-                    @if ($canReview)
+                    @if ($canReview && ! $isApproved)
                         <div
                             x-data="{
                                 revisionOpen: false,

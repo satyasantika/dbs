@@ -21,6 +21,34 @@ class NuirModelTest extends TestCase
         $this->assertCount(1, NuirSetting::active()->get());
     }
 
+    public function test_nuir_setting_active_scope_menghormati_rentang_tanggal_stage(): void
+    {
+        // Tanpa rentang tanggal (null) — tetap aktif selama toggle active=true.
+        NuirSetting::factory()->create([
+            'active' => true, 'year_generation' => '2020',
+            'stage_starts_at' => null, 'deadline' => null,
+        ]);
+        // Belum masuk rentang (mulai besok).
+        NuirSetting::factory()->create([
+            'active' => true, 'year_generation' => '2021',
+            'stage_starts_at' => now()->addDay(), 'deadline' => now()->addMonth(),
+        ]);
+        // Sudah lewat rentang (berakhir kemarin).
+        NuirSetting::factory()->create([
+            'active' => true, 'year_generation' => '2023',
+            'stage_starts_at' => now()->subMonth(), 'deadline' => now()->subDay(),
+        ]);
+        // Sedang dalam rentang.
+        NuirSetting::factory()->create([
+            'active' => true, 'year_generation' => '2024',
+            'stage_starts_at' => now()->subDay(), 'deadline' => now()->addDay(),
+        ]);
+
+        $activeYears = NuirSetting::active()->pluck('year_generation')->sort()->values()->all();
+
+        $this->assertSame(['2020', '2024'], $activeYears);
+    }
+
     public function test_nuir_submission_is_editable_only_in_draft_and_revision(): void
     {
         $titleSlot = NuirSubmission::factory()->titleSlot()->create();

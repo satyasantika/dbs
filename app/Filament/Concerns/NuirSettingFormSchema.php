@@ -29,8 +29,12 @@ trait NuirSettingFormSchema
                 ->native(false);
             $schema[] = Forms\Components\Toggle::make('active')
                 ->label('Angkatan aktif');
+            $schema[] = Forms\Components\DatePicker::make('stage_starts_at')
+                ->label('Mulai Tahap')
+                ->helperText('Kosongkan jika tidak ingin membatasi tanggal mulai.');
             $schema[] = Forms\Components\DatePicker::make('deadline')
-                ->label('Deadline');
+                ->label('Berakhir Tahap')
+                ->helperText('Kosongkan jika tidak ingin membatasi tanggal berakhir.');
         }
 
         return array_merge($schema, [

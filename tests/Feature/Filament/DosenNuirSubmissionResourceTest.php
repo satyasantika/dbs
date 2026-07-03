@@ -194,6 +194,28 @@ class DosenNuirSubmissionResourceTest extends TestCase
             ->assertDontSee('Batalkan Persetujuan');
     }
 
+    public function test_tombol_minta_revisi_referensi_hilang_setelah_disetujui_validator(): void
+    {
+        $page = Livewire::actingAs($this->guide1)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ]);
+
+        foreach (['title', 'novelty', 'urgency', 'impact'] as $field) {
+            $page->call('approveContentField', $field);
+        }
+
+        NuirReference::factory()->verifiable()->approved()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertDontSee('Minta Revisi');
+    }
+
     public function test_dosen_dapat_menolak_usulan_dan_kuota_dilepaskan(): void
     {
         Livewire::actingAs($this->guide1)
