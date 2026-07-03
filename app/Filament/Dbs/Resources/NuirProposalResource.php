@@ -77,7 +77,7 @@ class NuirProposalResource extends Resource
                 Tables\Actions\Action::make('forceFinalize')
                     ->label('Force Finalize')
                     ->icon('heroicon-o-check-badge')
-                    ->color('warning')
+                    ->color('success')
                     ->visible(fn (NuirProposal $record) => $record->guide1_status === 'accepted'
                         && $record->guide2_status === 'accepted'
                         && ! $record->final)

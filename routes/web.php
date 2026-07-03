@@ -141,6 +141,8 @@ Route::middleware('auth')->group(function () {
         Route::redirect('information/guides', '/home/information/guides')->name('information.guide');
         Route::redirect('information/pass', '/home/information/pass')->name('information.pass');
     });
+    Route::post('/setting/users/paste-import', [App\Http\Controllers\Setting\UserImportController::class, 'pasteImport'])->name('users.paste-import');
+    Route::post('/setting/users/paste-import-check-duplicates', [App\Http\Controllers\Setting\UserImportController::class, 'pasteImportCheckDuplicates'])->name('users.paste-import-check-duplicates');
     Route::get('datatable/{id}', function(App\DataTables\ExamRegistrationsDataTable $dataTable, $id){
         return $dataTable->with('id', $id)
         ->render('layouts.setting');

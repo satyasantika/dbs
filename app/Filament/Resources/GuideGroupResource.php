@@ -76,6 +76,10 @@ class GuideGroupResource extends Resource
             ->actions([
                 Tables\Actions\Action::make('toggleActive')
                     ->label(fn (GuideGroup $record) => $record->active ? 'Nonaktifkan' : 'Aktifkan')
+                    ->icon(fn (GuideGroup $record): string => $record->active
+                        ? 'heroicon-o-x-circle'
+                        : 'heroicon-o-check-circle')
+                    ->color(fn (GuideGroup $record): string => $record->active ? 'danger' : 'success')
                     ->action(fn (GuideGroup $record) => $record->update(['active' => ! $record->active])),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),

@@ -13,6 +13,11 @@ class ListUsers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('import')
+                ->label('Import Banyak')
+                ->icon('heroicon-o-arrow-up-tray')
+                ->color('gray')
+                ->url(UserResource::getUrl('import')),
             Actions\CreateAction::make(),
         ];
     }
