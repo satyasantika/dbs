@@ -138,6 +138,13 @@ class NuirValidatorRoleTest extends TestCase
             'nuir_submission_id' => $this->submission->id,
             'ref_order' => 1,
         ]);
+        // A second, not-yet-approved reference keeps "all references approved" false,
+        // so the cancel button still shows for the approved one (lock only kicks in
+        // once every reference on the submission is approved).
+        NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 2,
+        ]);
 
         $this->actingAs($this->validator)
             ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
@@ -167,6 +174,26 @@ class NuirValidatorRoleTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertNull($ref->fresh()->ref_approved);
+    }
+
+    public function test_tombol_batalkan_persetujuan_hilang_setelah_semua_referensi_disetujui(): void
+    {
+        $ref1 = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+        $ref2 = NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 2,
+        ]);
+
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref1, $this->validator, true);
+        app(NuirAssignmentService::class)->reviewReferenceAsValidator($ref2, $this->validator, true);
+
+        $this->actingAs($this->validator)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertDontSee('Batalkan Persetujuan');
     }
 
     public function test_validator_dapat_minta_revisi_per_referensi_dengan_catatan(): void

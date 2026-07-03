@@ -17,7 +17,7 @@
             $isVerifiable = NuirReferenceExistence::isVerifiable($reference);
             $statusLabel = match ($reference->ref_approved) {
                 true => 'Disetujui',
-                false => 'Diminta revisi',
+                false => 'Diminta Revisi',
                 default => 'Pending',
             };
             $statusColor = match ($reference->ref_approved) {

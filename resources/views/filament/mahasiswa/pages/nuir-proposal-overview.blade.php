@@ -1,4 +1,6 @@
 <x-filament-panels::page>
+    <div wire:poll.15s.visible="pollProposals"></div>
+
     <div class="space-y-4">
         @if (session('success'))
             <x-filament::section>
@@ -58,7 +60,7 @@
                                 <td class="px-2 py-1">{{ $proposal->guide2?->name ?? '—' }}</td>
                                 <td class="px-2 py-1"><x-filament::badge color="gray">{{ $proposal->guide2_status }}</x-filament::badge></td>
                                 <td class="px-2 py-1">{{ $proposal->guide2_note }}</td>
-                                <td class="px-2 py-1">{{ $proposal->created_at?->format('d-m-Y') }}</td>
+                                <td class="px-2 py-1"><x-nuir.human-date :date="$proposal->created_at" /></td>
                             </tr>
                         @empty
                             <tr><td colspan="7" class="px-2 py-3 text-gray-500">Belum ada usulan calon pembimbing.</td></tr>

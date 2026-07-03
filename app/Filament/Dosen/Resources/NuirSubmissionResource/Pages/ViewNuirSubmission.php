@@ -9,6 +9,7 @@ use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirSubmission;
 use App\Services\NuirAssignmentService;
+use App\Services\NuirRevisionHistoryService;
 use App\Support\NuirGuideSeatSync;
 use Filament\Actions;
 use Filament\Forms;
@@ -23,6 +24,14 @@ class ViewNuirSubmission extends ViewRecord
     use BuildsDosenNuirSubmissionInfolist;
 
     protected static string $resource = NuirSubmissionResource::class;
+
+    protected static string $view = 'filament.dosen.pages.view-nuir-submission';
+
+    public function pollRefresh(): void
+    {
+        $this->record->refresh();
+        $this->record->load(['user', 'references', 'proposals' => fn ($query) => $query->with(['guide1', 'guide2'])->orderByDesc('id')]);
+    }
 
     protected function getHeaderActions(): array
     {
@@ -48,6 +57,10 @@ class ViewNuirSubmission extends ViewRecord
                     Infolists\Components\TextEntry::make('year_generation')->label('Angkatan'),
                     Infolists\Components\TextEntry::make('version')->label('Versi'),
                     Infolists\Components\TextEntry::make('status')->label('Status')->badge(),
+                    Infolists\Components\TextEntry::make('dbs_note')
+                        ->label('Catatan Revisi')
+                        ->placeholder('—')
+                        ->columnSpanFull(),
                 ])
                 ->columns(4),
             Infolists\Components\Section::make('Kursi Saya')
@@ -85,6 +98,18 @@ class ViewNuirSubmission extends ViewRecord
                         }),
                 ])
                 ->visible(fn (NuirSubmission $record): bool => $this->currentProposal($record) !== null),
+            Infolists\Components\Section::make('Histori Penolakan Usulan')
+                ->schema([
+                    Infolists\Components\ViewEntry::make('rejection_history')
+                        ->label('')
+                        ->view('filament.mahasiswa.pages.partials.rejection-accordion')
+                        ->viewData(fn (NuirSubmission $record): array => [
+                            'history' => app(NuirRevisionHistoryService::class)->rejectionHistoryForSubmission($record),
+                            'expanded' => true,
+                        ]),
+                ])
+                ->visible(fn (NuirSubmission $record): bool => app(NuirRevisionHistoryService::class)
+                    ->rejectionHistoryForSubmission($record)->isNotEmpty()),
         ]);
     }
 
@@ -287,11 +312,7 @@ class ViewNuirSubmission extends ViewRecord
             return 'Tidak termasuk usulan';
         }
 
-        return match ($this->dosenSeatStatus($proposal, auth()->user())) {
-            'accepted' => 'Diterima',
-            'rejected' => 'Ditolak',
-            default => 'Menunggu',
-        };
+        return \App\Support\NuirSeatStatusPresenter::present($this->dosenSeatStatus($proposal, auth()->user()))['label'];
     }
 
     private function mySeatStatusColor(NuirSubmission $record): string
@@ -302,11 +323,7 @@ class ViewNuirSubmission extends ViewRecord
             return 'gray';
         }
 
-        return match ($this->dosenSeatStatus($proposal, auth()->user())) {
-            'accepted' => 'success',
-            'rejected' => 'danger',
-            default => 'warning',
-        };
+        return \App\Support\NuirSeatStatusPresenter::present($this->dosenSeatStatus($proposal, auth()->user()))['color'];
     }
 
     private function mySeatNote(NuirSubmission $record): ?string

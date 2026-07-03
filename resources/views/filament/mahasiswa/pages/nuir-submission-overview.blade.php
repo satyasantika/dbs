@@ -83,7 +83,7 @@
 
                             @if ($rejectedRefs->isNotEmpty())
                                 <div class="rounded-lg border border-danger-200 bg-danger-50 p-3">
-                                    <p class="mb-2 font-medium text-danger-800">Ditolak</p>
+                                    <p class="mb-2 font-medium text-danger-800">Diminta Revisi</p>
                                     <ul class="space-y-2 text-danger-900">
                                         @foreach ($rejectedRefs as $ref)
                                             <li>
@@ -177,7 +177,7 @@
                                         <div class="flex flex-wrap items-center gap-2">
                                             <x-filament::badge color="gray">v{{ $event->submission_version }}</x-filament::badge>
                                             <span class="font-medium">{{ $event->subjectLabel() }}</span>
-                                            <span class="text-xs text-gray-500">{{ $event->recorded_at?->format('d-m-Y H:i') }}</span>
+                                            <span class="text-xs text-gray-500"><x-nuir.human-date :date="$event->recorded_at" /></span>
                                         </div>
                                         <p class="mt-1 text-gray-700">{{ $event->note }}</p>
                                         @if ($event->actor)

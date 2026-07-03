@@ -287,6 +287,23 @@ class DosenNuirSubmissionResourceTest extends TestCase
         $page->assertActionHidden('rejectProposal');
     }
 
+    public function test_tombol_batalkan_persetujuan_konten_hilang_setelah_semua_elemen_disetujui(): void
+    {
+        $page = Livewire::actingAs($this->guide1)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ]);
+
+        foreach (['title', 'novelty', 'urgency', 'impact'] as $field) {
+            $page->call('approveContentField', $field);
+        }
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertDontSee('Batalkan');
+    }
+
     public function test_dosen_lain_tidak_dapat_membuka_submission_yang_bukan_usulannya(): void
     {
         $dosenLain = User::factory()->create()->assignRole('dosen');

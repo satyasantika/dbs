@@ -192,6 +192,7 @@ class NuirSistemTest extends TestCase
             ->assertSee('Topik di luar keahlian');
 
         $this->actingAs($this->dosenP1)
+            ->followingRedirects()
             ->get("/nuir/dosen/{$proposal->id}")
             ->assertOk()
             ->assertSee('Histori Penolakan Usulan')

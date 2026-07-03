@@ -8,6 +8,7 @@ use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Services\NuirRevisionHistoryService;
 use App\Support\NuirContentFieldPresenter;
+use App\Support\NuirGuideSeatSync;
 use App\Support\NuirReferenceRevisionFields;
 
 trait BuildsDosenNuirSubmissionInfolist
@@ -39,6 +40,7 @@ trait BuildsDosenNuirSubmissionInfolist
             'myApproved' => $myReview?->approved,
             'myNote' => $myReview?->note,
             'canReview' => ! $proposal->final && $this->dosenSeatStatus($proposal, $guide) !== 'rejected',
+            'allContentApproved' => app(NuirGuideSeatSync::class)->guideHasApprovedAllNuiFields($proposal, $guide),
         ];
     }
 

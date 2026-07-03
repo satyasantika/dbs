@@ -37,6 +37,16 @@ class NuirProposalOverview extends Page
 
     public function mount(NuirProposalService $proposalService): void
     {
+        $this->loadProposalData($proposalService);
+    }
+
+    public function pollProposals(NuirProposalService $proposalService): void
+    {
+        $this->loadProposalData($proposalService);
+    }
+
+    protected function loadProposalData(NuirProposalService $proposalService): void
+    {
         $data = $proposalService->getIndexData(auth()->user());
         $this->proposals = $data['proposals'];
         $this->finalProposal = $data['finalProposal'];

@@ -15,7 +15,7 @@
             @foreach ($history as $event)
                 <div class="rounded-lg border border-danger-200 bg-danger-50/50 p-3 text-sm dark:border-danger-800 dark:bg-danger-950/30">
                     <p class="font-medium text-danger-900 dark:text-danger-100">
-                        {{ $event->actorRoleLabel() }} · {{ $event->recorded_at?->format('d M Y H:i') }}
+                        {{ $event->actorRoleLabel() }} · <x-nuir.human-date :date="$event->recorded_at" />
                     </p>
                     <p class="mt-1 text-danger-800 dark:text-danger-200">{{ $event->note }}</p>
                     @if ($event->actor)

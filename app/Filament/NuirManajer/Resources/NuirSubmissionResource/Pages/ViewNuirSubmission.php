@@ -24,6 +24,14 @@ class ViewNuirSubmission extends ViewRecord
 
     protected static string $resource = NuirSubmissionResource::class;
 
+    protected static string $view = 'filament.nuir-manajer.pages.view-nuir-submission';
+
+    public function pollRefresh(): void
+    {
+        $this->record->refresh();
+        $this->record->load(['user', 'references', 'assignment.validator']);
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -161,6 +169,7 @@ class ViewNuirSubmission extends ViewRecord
             ->icon(fn (NuirSubmission $record): string => $record->assignment?->validator_id
                 ? 'heroicon-o-arrow-path'
                 : 'heroicon-o-user-plus')
+            ->color('primary')
             ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false)
             ->form([
                 Forms\Components\Select::make('validator_id')

@@ -151,17 +151,17 @@
                                             <p class="text-sm text-gray-500" x-show="references[order].indexer_name" x-text="references[order].indexer_name"></p>
                                         </div>
                                         <div class="flex shrink-0 gap-2">
-                                            <x-filament::button type="button" size="xs" color="gray" @click="openEditModal(order)">
+                                            <x-filament::button type="button" size="xs" color="gray" icon="heroicon-o-pencil-square" @click="openEditModal(order)">
                                                 Edit
                                             </x-filament::button>
-                                            <x-filament::button type="button" size="xs" color="danger" @click="removeReference(order)">
+                                            <x-filament::button type="button" size="xs" color="danger" icon="heroicon-o-trash" @click="removeReference(order)">
                                                 Hapus
                                             </x-filament::button>
                                         </div>
                                     </div>
 
                                     <template x-if="reviewStatus(order) === 'rejected' && referenceNote(order)">
-                                        <p class="mb-2 text-xs text-danger-600" x-text="'Ditolak validator: ' + referenceNote(order)"></p>
+                                        <p class="mb-2 text-xs text-danger-600" x-text="'Diminta Revisi validator: ' + referenceNote(order)"></p>
                                     </template>
                                     <template x-if="reviewStatus(order) === 'pending'">
                                         <p class="mb-2 text-xs text-warning-600">Menunggu review validator</p>
@@ -226,7 +226,7 @@
 
                             <template x-if="groupedOrders('rejected').length > 0">
                                 <div class="rounded-lg border border-danger-200 bg-danger-50 p-3">
-                                    <p class="mb-2 text-sm font-semibold text-danger-800">Ditolak</p>
+                                    <p class="mb-2 text-sm font-semibold text-danger-800">Diminta Revisi</p>
                                     <ul class="space-y-2 text-sm text-danger-900">
                                         <template x-for="order in groupedOrders('rejected')" :key="'rejected-summary-' + order">
                                             <li>
