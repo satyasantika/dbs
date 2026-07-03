@@ -10,6 +10,7 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\SelectionStage;
 use App\Models\User;
+use App\Support\StudentYearGeneration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -18,12 +19,13 @@ class NuirService
     public function getActiveSetting(User $user): ?NuirSetting
     {
         $guideExaminer = GuideExaminer::where('user_id', $user->id)->first();
+        $yearGeneration = $guideExaminer?->year_generation ?? StudentYearGeneration::resolve($user->username);
 
-        if (! $guideExaminer) {
+        if (! $yearGeneration) {
             return null;
         }
 
-        return NuirSetting::where('year_generation', $guideExaminer->year_generation)
+        return NuirSetting::where('year_generation', $yearGeneration)
             ->where('active', true)
             ->first();
     }

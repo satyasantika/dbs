@@ -45,8 +45,10 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 | `penguji1` | Dosen (penguji) | `simulasi` | `/home` |
 | `penguji2` | Dosen (penguji) | `simulasi` | `/home` |
 | `penguji3` | Dosen (hanya kuota P2) | `simulasi` | `/home` |
-| `mahasiswa1` … `mahasiswa8` | Mahasiswa | `simulasi` | `/mahasiswa` |
-| `mahasiswa9` | Mahasiswa (belum mengajukan NUIR) | `simulasi` | `/mahasiswa` |
+| `992151001` … `992151008` | Mahasiswa | `simulasi` | `/mahasiswa` |
+| `992151009` | Mahasiswa (belum mengajukan NUIR) | `simulasi` | `/mahasiswa` |
+
+> **Catatan username mahasiswa:** dua digit awal (`99`) sengaja meniru pola NIM asli (2 digit awal = angkatan) supaya seeder ini juga menguji deteksi angkatan otomatis via username — bukan cuma lewat data eksplisit di `guide_examiners`. `99` → angkatan **2099** (`SIMULATION_YEAR`), tidak akan bentrok dengan angkatan asli. Nomor urut mahasiswa 1–9 pada dokumen ini mengikuti tiga digit terakhir (`...001` = mahasiswa 1, dst — lihat `NuirSimulationAccountSeeder::MAHASISWA_USERNAMES`).
 
 > **Catatan:** Akun ini hanya untuk development/staging. Jangan dipakai di production.
 
@@ -56,29 +58,29 @@ Angkatan simulasi NUIR: **2099** (stage 1, aktif, deadline +2 bulan).
 
 ## Skenario Data per Mahasiswa
 
-| Akun | Status NUIR | Kegunaan uji |
-|---|---|---|
-| `mahasiswa1` | `title_slot` (hanya judul) | Workspace: judul sudah disimpan; isi Novelty/Urgency/Impact per tombol Simpan |
-| `mahasiswa2` | `submitted` + proposal + histori revisi | **Impact**: revisi ganda P1+P2 (belum diperbaiki); referensi campuran + histori validator |
-| `mahasiswa3` | `submitted` + 10 ref disetujui | Semua referensi lulus validasi; siap diajukan ke pembimbing |
-| `mahasiswa4` | `submitted` + **3 ref diminta revisi** + revisi NUI | Referensi #5–7 ditolak validator (catatan spesifik); Novelty diminta revisi P1, Impact diminta revisi P2 |
-| `mahasiswa5` | `content_ok` + **P2 dibatalkan manajer** | P1 pending; P2 dibatalkan oleh `manajer1` (histori tercatat); mahasiswa dapat pilih ulang calon P2 |
-| `mahasiswa6` | `content_ok` + P1 accepted, P2 pending | P1 sudah terima kursi; P2 belum merespons |
-| `mahasiswa7` | `content_ok` + penolakan penguji + proposal ulang | Histori penolakan usulan + kursi baru ke pembimbing1/2 |
-| `mahasiswa8` | `finalized` | Keduanya accepted; pembimbing terisi di `guide_examiners` |
-| `mahasiswa9` | belum ada submission | Form Judul kosong; submission `title_slot` dibuat otomatis saat simpan judul pertama |
+| No. | Akun | Status NUIR | Kegunaan uji |
+|---|---|---|---|
+| 1 | `992151001` | `title_slot` (hanya judul) | Workspace: judul sudah disimpan; isi Novelty/Urgency/Impact per tombol Simpan |
+| 2 | `992151002` | `submitted` + proposal + histori revisi | **Impact**: revisi ganda P1+P2 (belum diperbaiki); referensi campuran + histori validator |
+| 3 | `992151003` | `submitted` + 10 ref disetujui | Semua referensi lulus validasi; siap diajukan ke pembimbing |
+| 4 | `992151004` | `submitted` + **3 ref diminta revisi** + revisi NUI | Referensi #5–7 ditolak validator (catatan spesifik); Novelty diminta revisi P1, Impact diminta revisi P2 |
+| 5 | `992151005` | `content_ok` + **P2 dibatalkan manajer** | P1 pending; P2 dibatalkan oleh `manajer1` (histori tercatat); mahasiswa dapat pilih ulang calon P2 |
+| 6 | `992151006` | `content_ok` + P1 accepted, P2 pending | P1 sudah terima kursi; P2 belum merespons |
+| 7 | `992151007` | `content_ok` + penolakan penguji + proposal ulang | Histori penolakan usulan + kursi baru ke pembimbing1/2 |
+| 8 | `992151008` | `finalized` | Keduanya accepted; pembimbing terisi di `guide_examiners` |
+| 9 | `992151009` | belum ada submission | Form Judul kosong; submission `title_slot` dibuat otomatis saat simpan judul pertama |
 
-Proposal aktif memakai **`pembimbing1`** (P1) + **`pembimbing2`** (P2). Penolakan pada `mahasiswa7` memakai **`penguji1`** + **`penguji2`**.
+Proposal aktif memakai **`pembimbing1`** (P1) + **`pembimbing2`** (P2). Penolakan pada `992151007` memakai **`penguji1`** + **`penguji2`**.
 
 ---
 
-## Skenario khusus: referensi diminta revisi + revisi NUI (mahasiswa4)
+## Skenario khusus: referensi diminta revisi + revisi NUI (992151004)
 
-**Akun uji:** `mahasiswa4` → `/mahasiswa/nuir-submission`
+**Akun uji:** `992151004` → `/mahasiswa/nuir-submission`
 
 Kondisi seeder: submission `submitted`; validator sudah menolak 3 referensi dengan catatan spesifik; P1 meminta revisi Novelty dan P2 meminta revisi Impact; mahasiswa belum memperbaiki keduanya.
 
-### Referensi (`mahasiswa4`)
+### Referensi (`992151004`)
 
 | Slot | Status badge | Catatan validator | Bagian yang perlu diperbaiki |
 |---|---|---|---|
@@ -90,7 +92,7 @@ Kondisi seeder: submission `submitted`; validator sudah menolak 3 referensi deng
 
 Setiap referensi yang ditolak menampilkan catatan validator dan bagian yang perlu diperbaiki. Mahasiswa dapat langsung mengedit field yang bersangkutan dan menekan **Simpan Referensi #N**.
 
-### Komponen NUIR (`mahasiswa4`)
+### Komponen NUIR (`992151004`)
 
 | Komponen | P1 | P2 | Tampilan workspace |
 |---|---|---|---|
@@ -106,11 +108,11 @@ Catatan simulasi:
 
 ## Skenario khusus: revisi NUI ganda (P1 + P2), mahasiswa belum memperbaiki
 
-**Akun uji:** `mahasiswa2` → `/mahasiswa/nuir-submission`
+**Akun uji:** `992151002` → `/mahasiswa/nuir-submission`
 
 Kondisi seeder: usulan sudah ke P1/P2; Novelty & Urgency disetujui keduanya; **Impact** diminta revisi oleh **P1 dan P2** dengan catatan berbeda; mahasiswa **belum** menekan **Simpan Revisi Impact**.
 
-### Komponen NUIR (`mahasiswa2`)
+### Komponen NUIR (`992151002`)
 
 | Komponen | P1 | P2 | Tampilan workspace |
 |---|---|---|---|
@@ -124,7 +126,7 @@ Catatan simulasi Impact:
 
 Histori accordion Impact menampilkan dua entri permintaan revisi. Setelah **Simpan Revisi Impact**, review pembimbing di-reset dan badge kembali *Menunggu*.
 
-### Referensi (`mahasiswa2`)
+### Referensi (`992151002`)
 
 | Slot | Status badge | Catatan |
 |---|---|---|
@@ -188,7 +190,7 @@ Setiap halaman detail submission (`/nuir-manajer/nuir-submissions/{id}`) memilik
 - Jika sebuah seat pernah dibatalkan manajer, muncul informasi pembatalan (tanggal + aktor + alasan) di bawah nama seat tersebut.
 
 **Alur pembatalan:**
-1. Buka detail submission `mahasiswa5` (`/nuir-manajer/nuir-submissions/{id}`).
+1. Buka detail submission `992151005` (`/nuir-manajer/nuir-submissions/{id}`).
 2. Section **Pengusulan Pembimbing** → klik **Batalkan Calon P2**.
 3. Isi catatan (opsional) → konfirmasi → histori pembatalan tercatat.
 4. Mahasiswa login → workspace P2 kembali ke dropdown kosong; dapat pilih calon baru.
@@ -198,10 +200,10 @@ Pembatalan hanya memengaruhi kursi yang dipilih — kursi lain tidak berubah.
 ### Langkah uji cepat
 
 1. **Kuota** — filter tahun **2099** → lihat kuota `pembimbing1`/`pembimbing2`.
-2. **Delegasi** — `mahasiswa2` sudah didelegasikan ke `validator1` (seeder); coba **Ubah** validator pada submission lain.
-3. **Monitor progress** — buka `mahasiswa3` → progress validasi referensi 10/10 disetujui.
+2. **Delegasi** — `992151002` sudah didelegasikan ke `validator1` (seeder); coba **Ubah** validator pada submission lain.
+3. **Monitor progress** — buka `992151003` → progress validasi referensi 10/10 disetujui.
 4. **Filter dashboard** — klik kartu **Belum Didelegasikan** / **Konten Disetujui**.
-5. **Pembatalan calon pembimbing** — buka `mahasiswa5` → section Pengusulan Pembimbing → verifikasi P2 sudah dibatalkan seeder; coba **Batalkan Calon P1**.
+5. **Pembatalan calon pembimbing** — buka `992151005` → section Pengusulan Pembimbing → verifikasi P2 sudah dibatalkan seeder; coba **Batalkan Calon P1**.
 
 ---
 
@@ -209,7 +211,7 @@ Pembatalan hanya memengaruhi kursi yang dipilih — kursi lain tidak berubah.
 
 **Login:** `validator1` / `simulasi` → **`/nuir-validator`**
 
-Hanya melihat submission yang sudah didelegasikan manajer. `mahasiswa9` (belum ada submission) **tidak** muncul.
+Hanya melihat submission yang sudah didelegasikan manajer. `992151009` (belum ada submission) **tidak** muncul.
 
 ### Dashboard (kartu statistik)
 
@@ -236,10 +238,10 @@ Interaksi tombol per referensi:
 
 ### Langkah uji cepat
 
-1. Kartu **Submission Ditugaskan** → buka `mahasiswa2`.
+1. Kartu **Submission Ditugaskan** → buka `992151002`.
 2. Validasi referensi — **Setujui** atau **Minta Revisi** (catatan + bagian wajib).
-3. Kartu **Permintaan Revisi** — referensi #8 `mahasiswa2` dan referensi #5–7 `mahasiswa4` menunggu validasi ulang dari mahasiswa.
-4. Buka `mahasiswa4` — lihat catatan revisi spesifik per referensi (link rusak, indexer salah, kutipan tidak relevan).
+3. Kartu **Permintaan Revisi** — referensi #8 `992151002` dan referensi #5–7 `992151004` menunggu validasi ulang dari mahasiswa.
+4. Buka `992151004` — lihat catatan revisi spesifik per referensi (link rusak, indexer salah, kutipan tidak relevan).
 5. Coba **Setujui** salah satu referensi lalu klik **Batalkan Persetujuan** — status kembali *Pending* dan tombol Setujui/Minta Revisi muncul lagi.
 
 ---
@@ -260,8 +262,8 @@ DBS bertanggung jawab memantau submission, mengatur konfigurasi NUIR, dan memoni
 
 ### Langkah uji cepat
 
-1. Monitor Submission → lihat progress `mahasiswa2`, `mahasiswa3`, `mahasiswa4`.
-2. Monitor Usulan → `mahasiswa5`–`mahasiswa8` → **Force Finalize** bila perlu.
+1. Monitor Submission → lihat progress `992151002`, `992151003`, `992151004`.
+2. Monitor Usulan → `992151005`–`992151008` → **Force Finalize** bila perlu.
 
 ---
 
@@ -287,11 +289,11 @@ Pembimbing **tidak** memvalidasi/menyetujui referensi (itu tugas Validator NUIR)
 
 ### Langkah uji per akun
 
-**`pembimbing1` (P1):** `mahasiswa4` (Novelty diminta revisi oleh P1 — lihat catatan), `mahasiswa5` (review dari awal), `mahasiswa6` (P1 sudah accepted).
+**`pembimbing1` (P1):** `992151004` (Novelty diminta revisi oleh P1 — lihat catatan), `992151005` (review dari awal), `992151006` (P1 sudah accepted).
 
-**`pembimbing2` (P2):** `mahasiswa4` (Impact diminta revisi oleh P2), `mahasiswa5` & `mahasiswa6` (lanjutkan review), `mahasiswa7` (terima/tolak ulang).
+**`pembimbing2` (P2):** `992151004` (Impact diminta revisi oleh P2), `992151005` & `992151006` (lanjutkan review), `992151007` (terima/tolak ulang).
 
-**`mahasiswa2`:** Novelty/Urgency disetujui; **Impact** sudah diminta revisi P1 **dan** P2 — mahasiswa belum simpan perbaikan.
+**`992151002`:** Novelty/Urgency disetujui; **Impact** sudah diminta revisi P1 **dan** P2 — mahasiswa belum simpan perbaikan.
 
 ---
 
@@ -299,13 +301,13 @@ Pembimbing **tidak** memvalidasi/menyetujui referensi (itu tugas Validator NUIR)
 
 **Login:** `penguji1`, `penguji2`, atau `penguji3` / `simulasi` → **`/home`**
 
-Simulasi penolakan `mahasiswa7` memakai `penguji1` + `penguji2`. `penguji3` hanya kuota P2 — uji filter dropdown usulan mahasiswa.
+Simulasi penolakan `992151007` memakai `penguji1` + `penguji2`. `penguji3` hanya kuota P2 — uji filter dropdown usulan mahasiswa.
 
 ---
 
 ## Role: Mahasiswa
 
-**Login:** `mahasiswa1` … `mahasiswa9` / `simulasi` → **`/mahasiswa`**
+**Login:** `992151001` … `992151009` / `simulasi` → **`/mahasiswa`**
 
 ### Fitur yang dapat diakses
 
@@ -328,29 +330,29 @@ Simulasi penolakan `mahasiswa7` memakai `penguji1` + `penguji2`. `penguji3` hany
 
 | Akun | Yang bisa dicoba |
 |---|---|
-| `mahasiswa9` | Form Judul kosong → **Simpan Judul** |
-| `mahasiswa1` | Judul ada; lanjutkan isi NUI per komponen |
-| `mahasiswa2` | **Impact**: badge P1+P2 revisi, banner catatan ganda, **Simpan Revisi Impact**; referensi campuran |
-| `mahasiswa3` | Semua referensi lulus; ajukan P1 dan P2 dari workspace |
-| `mahasiswa4` | **Referensi #5–7**: badge "Diminta Revisi Validator", catatan spesifik per slot, edit & simpan ulang; **Novelty/Impact**: banner revisi pembimbing, simpan perbaikan |
-| `mahasiswa5` | P1 masih pending; P2 dibatalkan manajer → **histori P2** menampilkan Diusulkan + Dibatalkan; workspace P2 bisa pilih calon baru |
-| `mahasiswa6` | P1 accepted → **histori P1** menampilkan Diusulkan + Diterima; P2 pending |
-| `mahasiswa7` | **Histori P1 & P2**: Diusulkan (penguji) → Ditolak → Diusulkan kembali (pembimbing); lihat timeline lengkap |
-| `mahasiswa8` | Status finalized; **histori** keduanya menampilkan Diusulkan + Diterima |
+| `992151009` | Form Judul kosong → **Simpan Judul** |
+| `992151001` | Judul ada; lanjutkan isi NUI per komponen |
+| `992151002` | **Impact**: badge P1+P2 revisi, banner catatan ganda, **Simpan Revisi Impact**; referensi campuran |
+| `992151003` | Semua referensi lulus; ajukan P1 dan P2 dari workspace |
+| `992151004` | **Referensi #5–7**: badge "Diminta Revisi Validator", catatan spesifik per slot, edit & simpan ulang; **Novelty/Impact**: banner revisi pembimbing, simpan perbaikan |
+| `992151005` | P1 masih pending; P2 dibatalkan manajer → **histori P2** menampilkan Diusulkan + Dibatalkan; workspace P2 bisa pilih calon baru |
+| `992151006` | P1 accepted → **histori P1** menampilkan Diusulkan + Diterima; P2 pending |
+| `992151007` | **Histori P1 & P2**: Diusulkan (penguji) → Ditolak → Diusulkan kembali (pembimbing); lihat timeline lengkap |
+| `992151008` | Status finalized; **histori** keduanya menampilkan Diusulkan + Diterima |
 
 ---
 
 ## Alur End-to-End (Recommended)
 
-1. **`mahasiswa9`** — **Simpan Judul** (submission otomatis).
+1. **`992151009`** — **Simpan Judul** (submission otomatis).
 2. **`manajer1`** — verifikasi delegasi seeder; coba delegasi ulang pada submission lain.
-3. **`validator1`** — review referensi `mahasiswa2`; buka `mahasiswa4` → lihat 3 referensi yang sudah ditolak.
-4. **`mahasiswa4`** — perbaiki referensi #5–7 (edit field yang diminta) + perbaiki Novelty & Impact.
-5. **`mahasiswa2`** — verifikasi **Impact** (badge P1+P2, catatan ganda, **Simpan Revisi Impact**).
-6. **`mahasiswa3`** — ajukan P1 lalu P2 dari workspace (semua referensi sudah lulus).
-7. **`pembimbing1`** & **`pembimbing2`** — setujui N/U/I pada `mahasiswa5`.
+3. **`validator1`** — review referensi `992151002`; buka `992151004` → lihat 3 referensi yang sudah ditolak.
+4. **`992151004`** — perbaiki referensi #5–7 (edit field yang diminta) + perbaiki Novelty & Impact.
+5. **`992151002`** — verifikasi **Impact** (badge P1+P2, catatan ganda, **Simpan Revisi Impact**).
+6. **`992151003`** — ajukan P1 lalu P2 dari workspace (semua referensi sudah lulus).
+7. **`pembimbing1`** & **`pembimbing2`** — setujui N/U/I pada `992151005`.
 8. Verifikasi kursi **accepted** → **finalized** bila keduanya selesai.
-9. **`mahasiswa7`** — histori penolakan; **`pembimbing1`** lihat jejak yang sama.
+9. **`992151007`** — histori penolakan; **`pembimbing1`** lihat jejak yang sama.
 
 ---
 
@@ -364,7 +366,7 @@ Simulasi penolakan `mahasiswa7` memakai `penguji1` + `penguji2`. `penguji3` hany
 | Dropdown pembimbing kosong | Kuota P1/P2 habis | `manajer1` → tambah kuota tahun 2099 |
 | `penguji3` tidak muncul di P1 | Kuota P1 = 0 | Pilih posisi P2 |
 | Validator tidak melihat submission | Belum didelegasikan | `manajer1` → delegasikan validator |
-| Referensi tidak menampilkan catatan revisi | Ref belum ditolak oleh validator | Gunakan `mahasiswa4` (slot #5–7 sudah ditolak seeder) |
+| Referensi tidak menampilkan catatan revisi | Ref belum ditolak oleh validator | Gunakan `992151004` (slot #5–7 sudah ditolak seeder) |
 | Simpan revisi referensi tidak muncul | Referensi berstatus disetujui / readonly | Gunakan slot yang berstatus "Diminta Revisi Validator" |
 | Impact hanya badge P1 revisi | Data seeder stale | Jalankan ulang `NuirSeeder` |
 | Kursi tidak accepted otomatis | N/U/I belum semua disetujui oleh kedua pembimbing | Setujui ketiga elemen NUI dari kedua akun pembimbing |

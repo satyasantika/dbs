@@ -55,7 +55,7 @@ class NuirSeeder extends Seeder
 
     public function run(): void
     {
-        $this->simulationMode = User::where('username', 'mahasiswa1')->exists();
+        $this->simulationMode = User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[1])->exists();
         $this->year = $this->simulationMode
             ? NuirSimulationAccountSeeder::SIMULATION_YEAR
             : self::LEGACY_YEAR;
@@ -133,7 +133,7 @@ class NuirSeeder extends Seeder
     private function simulationStudents(): Collection
     {
         return collect(range(1, 8))
-            ->map(fn (int $number) => User::where('username', "mahasiswa{$number}")->first())
+            ->map(fn (int $number) => User::where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[$number])->first())
             ->filter()
             ->values();
     }
@@ -677,7 +677,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa2 (submitted + proposal): novelty+urgency approved by both, impact rejected by both
-        $submittedWithProposal = $this->latestSubmissionFor('mahasiswa2', 'submitted');
+        $submittedWithProposal = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[2], 'submitted');
         if ($submittedWithProposal) {
             foreach (['novelty', 'urgency'] as $field) {
                 foreach ([
@@ -703,7 +703,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa4 (submitted, NUI revision by guides): P1 rejects novelty, P2 rejects impact
-        $nuiRevisionSubmission = $this->latestSubmissionFor('mahasiswa4', 'submitted');
+        $nuiRevisionSubmission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[4], 'submitted');
         if ($nuiRevisionSubmission) {
             foreach ([
                 [$this->pembimbing1, NuirContentReview::ROLE_GUIDE1, 'novelty', false, 'Kebaruan penelitian perlu lebih spesifik — bandingkan dengan literatur terkini.'],
@@ -721,7 +721,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa5, mahasiswa7 (content_ok via guide approval): both guides approve all NUI fields
-        foreach (['mahasiswa5', 'mahasiswa7'] as $username) {
+        foreach ([NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[5], NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[7]] as $username) {
             $submission = $this->latestSubmissionFor($username, 'content_ok');
             if ($submission) {
                 $this->seedFullGuideApprovals($submission, daysAgo: 7);
@@ -729,7 +729,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa6 (content_ok, partial proposal acceptance): both guides approve all NUI fields
-        $partialSubmission = $this->latestSubmissionFor('mahasiswa6', 'content_ok');
+        $partialSubmission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[6], 'content_ok');
         if ($partialSubmission) {
             // guide1: all fields approved
             foreach (NuirContentReview::FIELDS as $field) {
@@ -748,7 +748,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa8 (finalized): both guides approve all NUI fields
-        $finalizedSubmission = $this->latestSubmissionFor('mahasiswa8', 'finalized');
+        $finalizedSubmission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[8], 'finalized');
         if ($finalizedSubmission) {
             $this->seedFullGuideApprovals($finalizedSubmission, daysAgo: 3);
         }
@@ -771,7 +771,7 @@ class NuirSeeder extends Seeder
 
     private function seedSimulationRevisionHistory(): void
     {
-        $submitted = $this->latestSubmissionFor('mahasiswa2', 'submitted');
+        $submitted = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[2], 'submitted');
         if ($submitted && $this->validator) {
             $submitted->references()
                 ->where('ref_approved', false)
@@ -795,7 +795,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa4 (submitted, revisi NUI + referensi): log guide NUI revision events + reference rejection events
-        $nuiRevisionSubmission = $this->latestSubmissionFor('mahasiswa4', 'submitted');
+        $nuiRevisionSubmission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[4], 'submitted');
         if ($nuiRevisionSubmission && $this->pembimbing1 && $this->pembimbing2) {
             foreach ([
                 ['field' => 'novelty', 'actor' => $this->pembimbing1, 'role' => NuirRevisionEvent::ROLE_GUIDE1, 'note' => 'Kebaruan penelitian perlu lebih spesifik — bandingkan dengan literatur terkini.'],
@@ -840,7 +840,7 @@ class NuirSeeder extends Seeder
                 });
         }
 
-        $retriedSubmission = $this->latestSubmissionFor('mahasiswa7', 'content_ok');
+        $retriedSubmission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[7], 'content_ok');
         if ($retriedSubmission) {
             $rejectedProposal = NuirProposal::query()
                 ->where('nuir_submission_id', $retriedSubmission->id)
@@ -881,7 +881,7 @@ class NuirSeeder extends Seeder
             return;
         }
 
-        $submission = $this->latestSubmissionFor('mahasiswa2', 'submitted');
+        $submission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[2], 'submitted');
 
         if ($submission) {
             $submission->update([
@@ -943,7 +943,7 @@ class NuirSeeder extends Seeder
         $versionTwo = NuirSubmission::query()
             ->where('year_generation', $this->year)
             ->where('version', 2)
-            ->whereHas('user', fn ($query) => $query->where('username', 'mahasiswa4'))
+            ->whereHas('user', fn ($query) => $query->where('username', NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[4]))
             ->first();
 
         if ($versionTwo) {
@@ -994,7 +994,7 @@ class NuirSeeder extends Seeder
         }
 
         // mahasiswa5 (content_ok, pending proposal): P2 dibatalkan oleh manajer
-        $submission = $this->latestSubmissionFor('mahasiswa5', 'content_ok');
+        $submission = $this->latestSubmissionFor(NuirSimulationAccountSeeder::MAHASISWA_USERNAMES[5], 'content_ok');
 
         if (! $submission) {
             return;
