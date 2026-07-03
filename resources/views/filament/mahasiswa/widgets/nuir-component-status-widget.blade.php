@@ -28,7 +28,7 @@
             @endforeach
         </div>
 
-        <div class="mt-4">
+        <div class="mt-6">
             <x-filament::button
                 tag="a"
                 href="{{ $this->workspaceUrl() }}"

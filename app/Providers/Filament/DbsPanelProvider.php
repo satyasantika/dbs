@@ -12,6 +12,7 @@ use App\Filament\Resources\SelectionElementCommentResource;
 use App\Filament\Resources\SelectionElementResource;
 use App\Filament\Resources\SetScoringToExaminerResource;
 use App\Http\Middleware\FilamentAuthenticate as Authenticate;
+use App\Support\FilamentBrand;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -20,6 +21,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -35,7 +37,8 @@ class DbsPanelProvider extends PanelProvider
             ->id('dbs')
             ->path('dbs')
             ->login(false)
-            ->brandName('DBS Panel')
+            ->brandName(fn () => FilamentBrand::withHomeIcon('Portal DBS'))
+            ->homeUrl(fn () => route('home'))
             ->colors([
                 'primary' => Color::Blue,
             ])
@@ -59,12 +62,16 @@ class DbsPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->navigationGroups([
-                NavigationGroup::make('Manajemen Seleksi')->icon('heroicon-o-funnel'),
-                NavigationGroup::make('Manajemen NUIR')->icon('heroicon-o-document-text'),
-                NavigationGroup::make('Manajemen Ujian')
-                    ->icon('heroicon-o-academic-cap')
-                    ->collapsed(),
+                // Tanpa icon di level grup — menghindari icon anggota grup
+                // disembunyikan oleh mode dropdown grup di Filament.
+                NavigationGroup::make('Manajemen Seleksi'),
+                NavigationGroup::make('Manajemen NUIR'),
+                NavigationGroup::make('Manajemen Ujian')->collapsed(),
             ])
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.shared.role-switcher')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

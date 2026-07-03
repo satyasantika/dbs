@@ -2,11 +2,14 @@
 
 namespace Tests\Unit;
 
+use App\Models\NuirContentReview;
+use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Services\NuirMahasiswaWorkspaceService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class NuirMahasiswaWorkspaceServiceTest extends TestCase
@@ -78,5 +81,100 @@ class NuirMahasiswaWorkspaceServiceTest extends TestCase
         $reference->update(['quote' => 'Kutipan referensi']);
 
         $this->assertTrue($this->workspace->isReferenceSlotFilled($reference->fresh()));
+    }
+
+    public function test_guide_seat_state_can_cancel_true_saat_belum_ada_elemen_disetujui_pembimbing(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create();
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_status' => 'pending',
+        ]);
+
+        $state = $this->workspace->guideSeatState($submission, $proposal, 1);
+
+        $this->assertTrue($state['can_cancel']);
+    }
+
+    /** @dataProvider nuiFieldProvider */
+    public function test_guide_seat_state_can_cancel_false_saat_salah_satu_elemen_disetujui_pembimbing(string $field): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create();
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_status' => 'pending',
+        ]);
+
+        NuirContentReview::create([
+            'nuir_submission_id' => $submission->id,
+            'user_id' => $proposal->guide1_id,
+            'role' => NuirContentReview::ROLE_GUIDE1,
+            'field' => $field,
+            'approved' => true,
+            'reviewed_at' => now(),
+        ]);
+
+        $state = $this->workspace->guideSeatState($submission->fresh(), $proposal->fresh(), 1);
+
+        $this->assertFalse($state['can_cancel']);
+    }
+
+    public function test_guide_seat_state_can_cancel_tidak_terpengaruh_persetujuan_pembimbing_lain(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create();
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_status' => 'pending',
+            'guide2_status' => 'pending',
+        ]);
+
+        NuirContentReview::create([
+            'nuir_submission_id' => $submission->id,
+            'user_id' => $proposal->guide2_id,
+            'role' => NuirContentReview::ROLE_GUIDE2,
+            'field' => NuirContentReview::FIELD_NOVELTY,
+            'approved' => true,
+            'reviewed_at' => now(),
+        ]);
+
+        $state = $this->workspace->guideSeatState($submission->fresh(), $proposal->fresh(), 1);
+
+        $this->assertTrue($state['can_cancel']);
+    }
+
+    public function test_cancel_guide_seat_ditolak_jika_pembimbing_sudah_setujui_salah_satu_elemen(): void
+    {
+        $mahasiswa = User::factory()->create();
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $mahasiswa->id,
+        ]);
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_status' => 'pending',
+        ]);
+
+        NuirContentReview::create([
+            'nuir_submission_id' => $submission->id,
+            'user_id' => $proposal->guide1_id,
+            'role' => NuirContentReview::ROLE_GUIDE1,
+            'field' => NuirContentReview::FIELD_TITLE,
+            'approved' => true,
+            'reviewed_at' => now(),
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        $this->workspace->cancelGuideSeat($submission, $mahasiswa, 1);
+    }
+
+    /** @return list<list<string>> */
+    public static function nuiFieldProvider(): array
+    {
+        return [
+            [NuirContentReview::FIELD_TITLE],
+            [NuirContentReview::FIELD_NOVELTY],
+            [NuirContentReview::FIELD_URGENCY],
+            [NuirContentReview::FIELD_IMPACT],
+        ];
     }
 }

@@ -11,13 +11,16 @@ use App\Filament\Dosen\Pages\GuideSupervision;
 use App\Filament\Dosen\Pages\Scoring;
 use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Filament\Dosen\Pages\ViewChiefExam;
+use App\Support\FilamentBrand;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\MaxWidth;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -33,12 +36,13 @@ class DosenPanelProvider extends PanelProvider
             ->id('dosen')
             ->path('home')
             ->login(false)
-            ->navigation(false)
-            ->brandName('DBS Penguji')
+            ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Dosen'))
+            ->homeUrl(fn () => route('home'))
             ->colors([
                 'primary' => Color::Blue,
             ])
             ->darkMode(false)
+            ->sidebarCollapsibleOnDesktop()
             ->maxContentWidth(MaxWidth::SevenExtraLarge)
             ->discoverPages(in: app_path('Filament/Dosen/Pages'), for: 'App\\Filament\\Dosen\\Pages')
             ->pages([
@@ -52,6 +56,17 @@ class DosenPanelProvider extends PanelProvider
                 GraduationEvidence::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Dosen/Widgets'), for: 'App\\Filament\\Dosen\\Widgets')
+            ->navigationItems([
+                NavigationItem::make('Menu usulan NUIR')
+                    ->icon('heroicon-o-document-text')
+                    ->url(fn (): string => route('nuir.dosen.index'))
+                    ->visible(fn (): bool => auth()->user()?->can('respond nuir proposal') ?? false)
+                    ->sort(2),
+            ])
+            ->renderHook(
+                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
+                fn (): string => view('filament.shared.role-switcher')->render(),
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

@@ -561,6 +561,13 @@ class NuirMahasiswaWorkspaceService
 
         $canChange = $status === 'rejected' || ($guideId === null && $status === 'pending');
 
+        $hasApprovedAnyField = $guideId
+            ? $submission->contentReviews()
+                ->where('user_id', $guideId)
+                ->where('approved', true)
+                ->exists()
+            : false;
+
         return [
             'guide_id' => $guideId,
             'status' => $status,
@@ -568,7 +575,10 @@ class NuirMahasiswaWorkspaceService
             'locked' => $locked,
             'can_change' => $canChange && ! $submission->hasActiveFinalProposal(),
             'is_readonly' => filled($guideId) && $status !== 'rejected',
-            'can_cancel' => filled($guideId) && $status === 'pending' && ! $submission->hasActiveFinalProposal(),
+            'can_cancel' => filled($guideId)
+                && $status === 'pending'
+                && ! $submission->hasActiveFinalProposal()
+                && ! $hasApprovedAnyField,
         ];
     }
 
@@ -587,6 +597,14 @@ class NuirMahasiswaWorkspaceService
         if ($status !== 'pending') {
             throw ValidationException::withMessages([
                 'guide' => 'Usulan hanya dapat dibatalkan selagi menunggu respons pembimbing.',
+            ]);
+        }
+
+        $guideId = $seat === 1 ? $proposal->guide1_id : $proposal->guide2_id;
+
+        if ($guideId && $submission->contentReviews()->where('user_id', $guideId)->where('approved', true)->exists()) {
+            throw ValidationException::withMessages([
+                'guide' => 'Usulan tidak dapat dibatalkan karena pembimbing sudah menyetujui salah satu elemen NUI.',
             ]);
         }
 

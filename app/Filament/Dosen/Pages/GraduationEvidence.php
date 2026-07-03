@@ -23,6 +23,8 @@ class GraduationEvidence extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-document-check';
 
+    protected static ?string $navigationGroup = 'Menu Dosen';
+
     protected static ?string $title = 'Lulusan Pembimbing Penguji';
 
     protected static ?string $slug = 'information/pass';

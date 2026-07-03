@@ -13,6 +13,10 @@ use Filament\Widgets\StatsOverviewWidget\Stat;
 
 class DosenStatsWidget extends BaseWidget
 {
+    protected static bool $isLazy = false;
+
+    protected ?string $heading = 'Bimbingan dan Ujian';
+
     protected static ?int $sort = 2;
 
     protected function getStats(): array

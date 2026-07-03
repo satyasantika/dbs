@@ -16,6 +16,7 @@ use App\Filament\Resources\SetScoringToExaminerResource;
 use App\Filament\Resources\UserResource;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -113,5 +114,48 @@ class DbsPanelSmokeTest extends TestCase
         $this->actingAs($mahasiswa)
             ->get(NuirSettingResource::getUrl('index', panel: 'dbs'))
             ->assertForbidden();
+    }
+
+    public function test_panel_dbs_menggunakan_sidebar_dan_nama_portal_dbs(): void
+    {
+        $panel = Filament::getPanel('dbs');
+
+        $this->assertFalse($panel->hasTopNavigation());
+        $this->assertTrue($panel->isSidebarCollapsibleOnDesktop());
+        $this->assertStringContainsString('Portal DBS', (string) $panel->getBrandName());
+
+        $this->actingAs($this->dbs)
+            ->get(Dashboard::getUrl(panel: 'dbs'))
+            ->assertOk()
+            ->assertSee('Portal DBS')
+            ->assertDontSee('DBS Panel');
+    }
+
+    public function test_dbs_dengan_satu_role_tidak_melihat_select_role(): void
+    {
+        $this->actingAs($this->dbs)
+            ->get(Dashboard::getUrl(panel: 'dbs'))
+            ->assertOk()
+            ->assertDontSee('id="role-switcher"', false);
+    }
+
+    public function test_dbs_dengan_role_ganda_melihat_select_role(): void
+    {
+        $this->dbs->assignRole('dosen');
+
+        $this->actingAs($this->dbs)
+            ->get(Dashboard::getUrl(panel: 'dbs'))
+            ->assertOk()
+            ->assertSee('id="role-switcher"', false)
+            ->assertSeeInOrder(['Portal Dosen', 'Portal DBS']);
+    }
+
+    public function test_panel_admin_tidak_terpengaruh_perubahan_role_switcher(): void
+    {
+        $panel = Filament::getPanel('admin');
+
+        $this->assertFalse($panel->hasTopNavigation());
+        $this->assertSame('DBS Admin', $panel->getBrandName());
+        $this->assertNull($panel->getHomeUrl());
     }
 }

@@ -16,6 +16,8 @@ class ChiefExam extends Page implements HasTable
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
 
+    protected static ?string $navigationGroup = 'Menu Dosen';
+
     protected static ?string $title = 'Halaman Ketua Penguji';
 
     protected static ?string $slug = 'examination/chief';

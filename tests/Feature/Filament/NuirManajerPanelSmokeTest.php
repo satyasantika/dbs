@@ -9,6 +9,7 @@ use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use Database\Seeders\PermissionSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -102,5 +103,38 @@ class NuirManajerPanelSmokeTest extends TestCase
         $this->actingAs($this->mahasiswa)
             ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
             ->assertForbidden();
+    }
+
+    public function test_panel_manajer_menggunakan_sidebar_dan_nama_portal_manajer_nuir(): void
+    {
+        $panel = Filament::getPanel('nuir-manajer');
+
+        $this->assertFalse($panel->hasTopNavigation());
+        $this->assertTrue($panel->isSidebarCollapsibleOnDesktop());
+        $this->assertStringContainsString('Portal Manajer NUIR', (string) $panel->getBrandName());
+
+        $this->actingAs($this->manajer)
+            ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertSee('Portal Manajer NUIR');
+    }
+
+    public function test_manajer_dengan_satu_role_tidak_melihat_select_role(): void
+    {
+        $this->actingAs($this->manajer)
+            ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertDontSee('id="role-switcher"', false);
+    }
+
+    public function test_manajer_dengan_role_ganda_melihat_select_role(): void
+    {
+        $this->manajer->assignRole('dosen');
+
+        $this->actingAs($this->manajer)
+            ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
+            ->assertOk()
+            ->assertSee('id="role-switcher"', false)
+            ->assertSeeInOrder(['Portal Dosen', 'Portal Manajer NUIR']);
     }
 }
