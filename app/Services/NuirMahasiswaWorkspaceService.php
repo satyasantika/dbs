@@ -315,11 +315,14 @@ class NuirMahasiswaWorkspaceService
 
     public function isNuiComplete(NuirSubmission $submission, NuirSetting $setting): bool
     {
-        if (! $this->hasAllNuiFieldsFilled($submission)) {
-            return false;
-        }
+        // Stage 2 only requires the title; stage 1 requires all four NUI fields.
+        $requiredFields = (int) $setting->stage === 2 ? ['title'] : ['title', 'novelty', 'urgency', 'impact'];
 
-        foreach (['title', 'novelty', 'urgency', 'impact'] as $field) {
+        foreach ($requiredFields as $field) {
+            if (blank($submission->{$field})) {
+                return false;
+            }
+
             if ($field === 'title') {
                 if (NuirTextLimits::validateTitleField($submission->title, $setting) !== null) {
                     return false;

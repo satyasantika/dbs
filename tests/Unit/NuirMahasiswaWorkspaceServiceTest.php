@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
+use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Services\NuirMahasiswaWorkspaceService;
@@ -165,6 +166,36 @@ class NuirMahasiswaWorkspaceServiceTest extends TestCase
         $this->expectException(ValidationException::class);
 
         $this->workspace->cancelGuideSeat($submission, $mahasiswa, 1);
+    }
+
+    public function test_is_nui_complete_stage_1_wajib_semua_field(): void
+    {
+        $setting = NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 1]);
+        $submission = NuirSubmission::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji lengkap',
+            'novelty' => '',
+            'urgency' => '',
+            'impact' => '',
+        ]);
+
+        $this->assertFalse($this->workspace->isNuiComplete($submission, $setting));
+    }
+
+    public function test_is_nui_complete_stage_2_hanya_wajib_judul(): void
+    {
+        $setting = NuirSetting::factory()->create(['year_generation' => '2022', 'stage' => 2]);
+        $submission = NuirSubmission::factory()->create([
+            'user_id' => User::factory()->create()->id,
+            'year_generation' => '2022',
+            'title' => 'Judul penelitian simulasi uji lengkap',
+            'novelty' => '',
+            'urgency' => '',
+            'impact' => '',
+        ]);
+
+        $this->assertTrue($this->workspace->isNuiComplete($submission, $setting));
     }
 
     /** @return list<list<string>> */

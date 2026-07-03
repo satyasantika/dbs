@@ -122,18 +122,31 @@ class NuirDosenResponseTest extends TestCase
             ->assertSessionHasErrors('note');
     }
 
-    public function test_kedua_dosen_terima_memicu_final_dan_guide_examiners(): void
+    public function test_kedua_dosen_terima_tidak_lagi_otomatis_final_menunggu_manajer(): void
     {
         $this->approveAllNuiFields($this->dosen1);
         $this->approveAllNuiFields($this->dosen2);
 
         $proposal = $this->proposal->fresh();
-        $this->assertTrue($proposal->final);
-        $this->assertEquals('finalized', $proposal->submission->status);
+        $this->assertTrue($proposal->isBothAccepted());
+        $this->assertFalse($proposal->final);
+        $this->assertEquals('content_ok', $proposal->submission->status);
 
         $ge = $this->ge->fresh();
-        $this->assertEquals($this->dosen1->id, $ge->guide1_id);
-        $this->assertEquals($this->dosen2->id, $ge->guide2_id);
+        $this->assertNull($ge->guide1_id);
+        $this->assertNull($ge->guide2_id);
+
+        app(\App\Services\NuirService::class)->finalizeProposal($proposal);
+
+        $this->assertTrue($proposal->fresh()->final);
+        $this->assertEquals('finalized', $proposal->fresh()->submission->status);
+        $this->assertDatabaseHas('selection_stages', [
+            'user_id' => $this->mahasiswa->id,
+            'guide1_id' => $this->dosen1->id,
+            'guide2_id' => $this->dosen2->id,
+            'final' => false,
+        ]);
+        $this->assertNull($ge->fresh()->guide1_id);
     }
 
     public function test_sejarah_penolakan_proposal_tahap_1_tersimpan_saat_proposal_baru_dibuat(): void

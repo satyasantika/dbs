@@ -221,16 +221,17 @@ class NuirDosenRoleTest extends TestCase
         $this->assertFalse($proposal->final);
     }
 
-    public function test_final_hanya_jika_kedua_kursi_menyetujui_seluruh_elemen(): void
+    public function test_kedua_kursi_accepted_jika_kedua_pembimbing_menyetujui_seluruh_elemen(): void
     {
         $this->approveAllNuiFields($this->dosenP1, $this->proposal);
         $this->approveAllNuiFields($this->dosenP2, $this->proposal);
 
         $proposal = $this->proposal->fresh();
-        $this->assertTrue($proposal->final);
-        $this->assertEquals('finalized', $proposal->submission->status);
+        $this->assertFalse($proposal->final);
+        $this->assertEquals('content_ok', $proposal->submission->status);
         $this->assertEquals('accepted', $proposal->guide1_status);
         $this->assertEquals('accepted', $proposal->guide2_status);
+        $this->assertTrue($proposal->isBothAccepted());
     }
 
     public function test_minta_revisi_mengembalikan_kursi_ke_pending(): void

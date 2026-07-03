@@ -5,6 +5,7 @@ namespace App\Filament\NuirManajer\Resources\NuirSubmissionResource\Pages;
 use App\Filament\NuirManajer\Concerns\BuildsManajerNuirSubmissionInfolist;
 use App\Filament\NuirManajer\Resources\NuirSubmissionResource;
 use App\Models\NuirProposal;
+use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\User;
 use App\Services\NuirAssignmentService;
@@ -47,7 +48,8 @@ class ViewNuirSubmission extends ViewRecord
                 ->modalHeading('Hapus Submission NUIR?')
                 ->modalDescription('Seluruh data submission ini (konten, referensi, usulan pembimbing, histori, dan delegasi validator) akan dihapus permanen. Tindakan ini tidak dapat dibatalkan.')
                 ->modalSubmitActionLabel('Ya, hapus')
-                ->visible(fn (): bool => auth()->user()?->can('delete nuir submission') ?? false)
+                ->visible(fn (NuirSubmission $record): bool => (auth()->user()?->can('delete nuir submission') ?? false)
+                    && ! app(NuirService::class)->hasGuideOrValidatorResponse($record))
                 ->action(function (): void {
                     /** @var NuirSubmission $submission */
                     $submission = $this->record;
@@ -68,6 +70,8 @@ class ViewNuirSubmission extends ViewRecord
                             ->send();
                     }
                 }),
+            $this->finalizeGuideAction(),
+            $this->assignGuideDirectAction(),
         ];
     }
 
@@ -158,6 +162,101 @@ class ViewNuirSubmission extends ViewRecord
         }
 
         return (bool) ($seat === 1 ? $proposal->guide1_id : $proposal->guide2_id);
+    }
+
+    private function latestNonFinalProposal(NuirSubmission $record): ?NuirProposal
+    {
+        return $record->proposals()->where('final', false)->latest('id')->first();
+    }
+
+    private function finalizeGuideAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('finalizeGuide')
+            ->label('Tetapkan Pembimbing')
+            ->icon('heroicon-o-check-badge')
+            ->color('success')
+            ->requiresConfirmation()
+            ->modalHeading('Tetapkan Calon Pembimbing sebagai Pembimbing?')
+            ->modalDescription('Pasangan pembimbing akan didaftarkan ke tahap seleksi, menunggu pengesahan batch per angkatan sebelum tercatat resmi.')
+            ->visible(function (NuirSubmission $record): bool {
+                if (! (auth()->user()?->can('finalize nuir guide') ?? false)) {
+                    return false;
+                }
+
+                $stage = NuirSetting::where('year_generation', $record->year_generation)->value('stage');
+
+                if ($record->status !== 'content_ok' && (int) $stage !== 3) {
+                    return false;
+                }
+
+                $proposal = $this->latestNonFinalProposal($record);
+
+                return $proposal !== null && $proposal->isBothAccepted();
+            })
+            ->action(function (): void {
+                /** @var NuirSubmission $submission */
+                $submission = $this->record;
+                $proposal = $this->latestNonFinalProposal($submission);
+
+                if (! $proposal) {
+                    return;
+                }
+
+                app(NuirService::class)->finalizeProposal($proposal);
+
+                Notification::make()->success()->title('Pembimbing berhasil ditetapkan.')->send();
+
+                $this->record->refresh();
+            });
+    }
+
+    private function assignGuideDirectAction(): \Filament\Actions\Action
+    {
+        return \Filament\Actions\Action::make('assignGuideDirect')
+            ->label('Tunjuk Pembimbing')
+            ->icon('heroicon-o-user-plus')
+            ->color('primary')
+            ->visible(function (NuirSubmission $record): bool {
+                if (! (auth()->user()?->can('finalize nuir guide') ?? false)) {
+                    return false;
+                }
+
+                $stage = NuirSetting::where('year_generation', $record->year_generation)->value('stage');
+
+                return (int) $stage === 3 && $this->latestNonFinalProposal($record) === null;
+            })
+            ->form([
+                Forms\Components\Select::make('guide1_id')
+                    ->label('Calon Pembimbing 1')
+                    ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
+                    ->required()
+                    ->searchable(),
+                Forms\Components\Select::make('guide2_id')
+                    ->label('Calon Pembimbing 2')
+                    ->options(fn () => User::role('dosen')->orderBy('name')->pluck('name', 'id'))
+                    ->required()
+                    ->searchable()
+                    ->rule('different:guide1_id'),
+            ])
+            ->action(function (array $data): void {
+                /** @var NuirSubmission $submission */
+                $submission = $this->record;
+
+                NuirProposal::create([
+                    'nuir_submission_id' => $submission->id,
+                    'guide1_id' => $data['guide1_id'],
+                    'guide2_id' => $data['guide2_id'],
+                    'guide1_status' => 'accepted',
+                    'guide2_status' => 'accepted',
+                    'guide1_responded_at' => now(),
+                    'guide2_responded_at' => now(),
+                    'final' => false,
+                ]);
+
+                Notification::make()->success()->title('Calon pembimbing berhasil ditunjuk.')->send();
+
+                $this->record->refresh();
+            });
     }
 
     private function validatorManagementAction(): Action

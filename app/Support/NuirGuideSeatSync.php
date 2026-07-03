@@ -5,14 +5,9 @@ namespace App\Support;
 use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\User;
-use App\Services\NuirService;
 
 class NuirGuideSeatSync
 {
-    public function __construct(private NuirService $nuirService)
-    {
-    }
-
     public function guideHasApprovedAllNuiFields(NuirProposal $proposal, User $guide): bool
     {
         foreach (NuirContentReview::FIELDS as $field) {
@@ -90,18 +85,13 @@ class NuirGuideSeatSync
         return $proposal->fresh();
     }
 
+    /**
+     * Both-accepted no longer auto-finalizes — a manajer must explicitly
+     * confirm via the "Tetapkan Pembimbing" action (see NuirService::finalizeProposal()).
+     * This is kept as a harmless refresh so existing call sites don't need touching.
+     */
     public function tryFinalize(NuirProposal $proposal): NuirProposal
     {
-        $proposal = $proposal->fresh();
-
-        if ($proposal->final) {
-            return $proposal;
-        }
-
-        if ($proposal->isBothAccepted()) {
-            $this->nuirService->finalizeProposal($proposal);
-        }
-
         return $proposal->fresh();
     }
 }
