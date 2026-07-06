@@ -4,6 +4,7 @@ namespace Tests\Feature\Filament;
 
 use App\Filament\Dosen\Resources\NuirSubmissionResource;
 use App\Models\GuideExaminer;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirRevisionEvent;
@@ -324,6 +325,92 @@ class DosenNuirSubmissionResourceTest extends TestCase
             ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
             ->assertOk()
             ->assertDontSee('Batalkan');
+    }
+
+    public function test_status_kursi_menunggu_validasi_referensi_saat_belum_content_ok(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->guide1->id,
+            'guide2_id' => $this->guide2->id,
+        ]);
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertSee('Menunggu Selesai Validasi Referensi');
+    }
+
+    public function test_status_kursi_menampilkan_elemen_yang_belum_disetujui(): void
+    {
+        Livewire::actingAs($this->guide1)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->call('approveContentField', 'title')
+            ->call('approveContentField', 'novelty');
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertSee('Menunggu Persetujuan Anda: Urgency/Impact');
+    }
+
+    public function test_status_kursi_menunggu_pasangan_setelah_dosen_menyetujui_semua(): void
+    {
+        $page = Livewire::actingAs($this->guide1)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ]);
+
+        foreach (['title', 'novelty', 'urgency', 'impact'] as $field) {
+            $page->call('approveContentField', $field);
+        }
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertSee('Menunggu Penerimaan dari Pasangan Pembimbing');
+    }
+
+    public function test_status_kursi_diterima_saat_kedua_kursi_menerima(): void
+    {
+        $this->proposal->update(['guide1_status' => 'accepted', 'guide2_status' => 'accepted']);
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertSee('Diterima')
+            ->assertDontSee('Menunggu Penerimaan dari Pasangan Pembimbing');
+    }
+
+    public function test_sync_manual_memperbarui_status_kursi(): void
+    {
+        foreach (['title', 'novelty', 'urgency', 'impact'] as $field) {
+            NuirContentReview::create([
+                'nuir_submission_id' => $this->submission->id,
+                'user_id' => $this->guide1->id,
+                'role' => NuirContentReview::ROLE_GUIDE1,
+                'field' => $field,
+                'approved' => true,
+                'reviewed_at' => now(),
+            ]);
+        }
+
+        $this->assertSame('pending', $this->proposal->fresh()->guide1_status);
+
+        Livewire::actingAs($this->guide1)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $this->submission->getRouteKey(),
+            ])
+            ->call('syncMySeatStatus');
+
+        $this->assertSame('accepted', $this->proposal->fresh()->guide1_status);
     }
 
     public function test_dosen_lain_tidak_dapat_membuka_submission_yang_bukan_usulannya(): void
