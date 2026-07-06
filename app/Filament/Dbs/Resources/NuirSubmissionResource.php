@@ -45,10 +45,19 @@ class NuirSubmissionResource extends Resource
             Infolists\Components\Section::make('Ringkasan')
                 ->schema([
                     Infolists\Components\TextEntry::make('user.name')->label('Mahasiswa'),
+                    Infolists\Components\TextEntry::make('user.username')->label('NIM'),
                     Infolists\Components\TextEntry::make('year_generation')->label('Angkatan'),
                     Infolists\Components\TextEntry::make('version')->label('Versi'),
                     Infolists\Components\TextEntry::make('status')->label('Status')->badge(),
                     Infolists\Components\TextEntry::make('dbs_note')->label('Catatan DBS')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('nuir_document_link')
+                        ->label('Dokumen NUIR (Google Drive)')
+                        ->formatStateUsing(fn (?string $state): string => \App\Support\NuirExternalUrl::normalize($state) ?? (string) $state)
+                        ->url(fn (?string $state): ?string => filled($state) ? \App\Support\NuirExternalUrl::normalize($state) : null)
+                        ->openUrlInNewTab()
+                        ->color('primary')
+                        ->visible(fn (NuirSubmission $record): bool => filled($record->nuir_document_link))
+                        ->columnSpanFull(),
                 ])->columns(4),
             Infolists\Components\Section::make('Konten')
                 ->schema([

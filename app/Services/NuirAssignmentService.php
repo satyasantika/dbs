@@ -115,6 +115,12 @@ class NuirAssignmentService
             abort(403);
         }
 
+        if ($submission->isFinalized()) {
+            throw ValidationException::withMessages([
+                'reference' => 'Submission sudah disahkan manajer; persetujuan referensi tidak dapat dibatalkan.',
+            ]);
+        }
+
         if ($reference->ref_approved !== true) {
             return;
         }
@@ -381,10 +387,6 @@ class NuirAssignmentService
     public function guideCanAcceptProposal(NuirProposal $proposal, User $guide): bool
     {
         if ($proposal->guide1_id !== $guide->id && $proposal->guide2_id !== $guide->id) {
-            return false;
-        }
-
-        if (! $proposal->submission->isContentFinalForPembimbing()) {
             return false;
         }
 

@@ -195,7 +195,7 @@ class NuirValidatorManajerTest extends TestCase
         ]);
     }
 
-    public function test_calon_pembimbing_tidak_dapat_terima_sebelum_content_ok(): void
+    public function test_calon_pembimbing_tidak_dapat_terima_sebelum_menyetujui_semua_elemen(): void
     {
         $proposal = NuirProposal::factory()->create([
             'nuir_submission_id' => $this->submission->id,
@@ -209,6 +209,25 @@ class NuirValidatorManajerTest extends TestCase
             ->assertSessionHas('warning');
 
         $this->assertEquals('pending', $proposal->fresh()->guide1_status);
+    }
+
+    public function test_calon_pembimbing_dapat_terima_walau_belum_content_ok(): void
+    {
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'guide1_id' => $this->dosen1->id,
+            'guide2_id' => $this->dosen2->id,
+        ]);
+
+        foreach (\App\Models\NuirContentReview::FIELDS as $field) {
+            $this->actingAs($this->dosen1)
+                ->patch("/nuir/dosen/{$proposal->id}/content", [
+                    'field' => $field,
+                    'approved' => '1',
+                ]);
+        }
+
+        $this->assertEquals('accepted', $proposal->fresh()->guide1_status);
     }
 
     public function test_calon_pembimbing_dapat_terima_setelah_content_ok(): void

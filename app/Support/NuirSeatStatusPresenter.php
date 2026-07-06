@@ -53,10 +53,6 @@ class NuirSeatStatusPresenter
             return ['label' => 'Diterima — Menunggu Penerimaan dari Pasangan Pembimbing', 'color' => 'info'];
         }
 
-        if (! $proposal->submission?->isContentFinalForPembimbing()) {
-            return ['label' => 'Menunggu Selesai Validasi Referensi', 'color' => 'gray'];
-        }
-
         $pendingLabels = collect(NuirContentReview::FIELDS)
             ->reject(fn (string $field): bool => NuirContentReview::query()
                 ->where('nuir_submission_id', $proposal->nuir_submission_id)

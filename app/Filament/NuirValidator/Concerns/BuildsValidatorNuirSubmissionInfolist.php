@@ -19,7 +19,7 @@ trait BuildsValidatorNuirSubmissionInfolist
         return [
             'references' => $references,
             'revisionFieldOptions' => NuirReferenceRevisionFields::options(),
-            'allReferencesApproved' => $references->isNotEmpty() && $references->every(fn ($r) => $r->ref_approved === true),
+            'submissionFinalized' => $record->isFinalized(),
             'histories' => $references
                 ->pluck('ref_order')
                 ->mapWithKeys(fn (int $refOrder) => [

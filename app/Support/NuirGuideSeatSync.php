@@ -59,17 +59,6 @@ class NuirGuideSeatSync
             return $proposal;
         }
 
-        if (! $proposal->submission->isContentFinalForPembimbing()) {
-            if ($proposal->{$statusColumn} === 'accepted') {
-                $proposal->update([
-                    $statusColumn => 'pending',
-                    $respondedColumn => null,
-                ]);
-            }
-
-            return $proposal->fresh();
-        }
-
         if ($this->guideHasApprovedAllNuiFields($proposal, $guide)) {
             $proposal->update([
                 $statusColumn => 'accepted',

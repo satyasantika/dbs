@@ -29,6 +29,7 @@ trait BuildsManajerNuirSubmissionInfolist
 
         return [
             TextEntry::make('user.name')->label('Mahasiswa'),
+            TextEntry::make('user.username')->label('NIM'),
             TextEntry::make('year_generation')->label('Angkatan'),
             TextEntry::make('version')->label('Versi'),
             TextEntry::make('status')->label('Status')->badge(),
@@ -39,11 +40,11 @@ trait BuildsManajerNuirSubmissionInfolist
                 ->columnSpanFull(),
             TextEntry::make('nuir_document_link')
                 ->label('Dokumen NUIR (Google Drive)')
-                ->placeholder('Belum dilampirkan')
                 ->formatStateUsing(fn (?string $state): string => NuirExternalUrl::normalize($state) ?? (string) $state)
                 ->url(fn (?string $state): ?string => filled($state) ? NuirExternalUrl::normalize($state) : null)
                 ->openUrlInNewTab()
-                ->color(fn (?string $state): string => filled($state) ? 'primary' : 'gray')
+                ->color('primary')
+                ->visible(fn (NuirSubmission $record): bool => filled($record->nuir_document_link))
                 ->columnSpanFull(),
         ];
     }

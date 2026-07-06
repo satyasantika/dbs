@@ -41,10 +41,6 @@ class NuirProposalController extends Controller
         $this->authorizeProposal($nuirProposal);
         $this->ensureCanRespond($nuirProposal);
 
-        if (! $nuirProposal->submission->isContentFinalForPembimbing()) {
-            return back()->with('warning', 'Review NUI hanya dapat diselesaikan setelah NUIR disetujui final (content_ok).');
-        }
-
         if (! $this->assignmentService->guideHasApprovedAllNuiFields($nuirProposal, auth()->user())) {
             return back()->with('warning', 'Setujui seluruh elemen NUI (Novelty, Urgency, Impact) terlebih dahulu.');
         }

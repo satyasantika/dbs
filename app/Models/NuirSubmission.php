@@ -121,9 +121,9 @@ class NuirSubmission extends Model
         return ! in_array($this->status, ['draft'], true);
     }
 
-    public function isContentFinalForPembimbing(): bool
+    public function isFinalized(): bool
     {
-        return $this->status === 'content_ok';
+        return $this->status === 'finalized';
     }
 
     public function isEditable(): bool

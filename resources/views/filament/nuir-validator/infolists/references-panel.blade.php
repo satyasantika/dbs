@@ -6,7 +6,7 @@
     $showRevisionBadges = $showRevisionBadges ?? [];
     $canReview = $canReview ?? false;
     $revisionFieldOptions = $revisionFieldOptions ?? [];
-    $allReferencesApproved = $allReferencesApproved ?? false;
+    $submissionFinalized = $submissionFinalized ?? false;
 @endphp
 
 <div class="space-y-2">
@@ -18,7 +18,7 @@
             $isVerifiable = NuirReferenceExistence::isVerifiable($reference);
             $isApproved = $reference->ref_approved === true;
             $canActOnReference = $canReview && ! $isApproved;
-            $canCancelApproval = $canReview && $isApproved && ! $allReferencesApproved;
+            $canCancelApproval = $canReview && $isApproved && ! $submissionFinalized;
             $statusLabel = match ($reference->ref_approved) {
                 true => 'Disetujui',
                 false => 'Diminta Revisi',
