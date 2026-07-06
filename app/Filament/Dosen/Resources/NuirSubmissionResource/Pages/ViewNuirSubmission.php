@@ -72,7 +72,15 @@ class ViewNuirSubmission extends ViewRecord
                         ->label('Status')
                         ->badge()
                         ->state(fn (NuirSubmission $record): string => $this->mySeatStatusLabel($record))
-                        ->color(fn (NuirSubmission $record): string => $this->mySeatStatusColor($record)),
+                        ->color(fn (NuirSubmission $record): string => $this->mySeatStatusColor($record))
+                        ->hintAction(
+                            Infolists\Components\Actions\Action::make('syncSeatStatus')
+                                ->label('Sinkronkan')
+                                ->icon('heroicon-m-arrow-path')
+                                ->tooltip('Muat ulang status kursi berdasarkan progres review terbaru')
+                                ->visible(fn (NuirSubmission $record): bool => $this->currentProposal($record) !== null)
+                                ->action(fn () => $this->syncMySeatStatus()),
+                        ),
                     Infolists\Components\TextEntry::make('seat_note')
                         ->label('Catatan Penolakan')
                         ->placeholder('—')
@@ -304,6 +312,23 @@ class ViewNuirSubmission extends ViewRecord
         return $proposal ? $this->dosenSeatLabel($proposal, auth()->user()) : null;
     }
 
+    public function syncMySeatStatus(): void
+    {
+        /** @var NuirSubmission $submission */
+        $submission = $this->record;
+        $proposal = $this->currentProposal($submission);
+
+        if (! $proposal) {
+            return;
+        }
+
+        app(NuirGuideSeatSync::class)->syncGuideSeat($proposal, auth()->user());
+
+        $this->pollRefresh();
+
+        Notification::make()->success()->title('Status kursi diperbarui.')->send();
+    }
+
     private function mySeatStatusLabel(NuirSubmission $record): string
     {
         $proposal = $this->currentProposal($record);
@@ -312,7 +337,7 @@ class ViewNuirSubmission extends ViewRecord
             return 'Tidak termasuk usulan';
         }
 
-        return \App\Support\NuirSeatStatusPresenter::present($this->dosenSeatStatus($proposal, auth()->user()))['label'];
+        return \App\Support\NuirSeatStatusPresenter::detailed($proposal, auth()->user())['label'];
     }
 
     private function mySeatStatusColor(NuirSubmission $record): string
@@ -323,7 +348,7 @@ class ViewNuirSubmission extends ViewRecord
             return 'gray';
         }
 
-        return \App\Support\NuirSeatStatusPresenter::present($this->dosenSeatStatus($proposal, auth()->user()))['color'];
+        return \App\Support\NuirSeatStatusPresenter::detailed($proposal, auth()->user())['color'];
     }
 
     private function mySeatNote(NuirSubmission $record): ?string
