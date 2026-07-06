@@ -69,7 +69,6 @@ class DosenNuirPembimbingWidget extends BaseWidget
 
                 return in_array($status, ['pending', 'accepted'], true);
             })
-            ->filter(fn (NuirProposal $proposal): bool => $proposal->submission?->isContentFinalForPembimbing() ?? false)
             ->reject(fn (NuirProposal $proposal): bool => $seatSync->guideHasApprovedAllNuiFields($proposal, $guide))
             ->count();
     }

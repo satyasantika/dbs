@@ -327,7 +327,32 @@ class DosenNuirSubmissionResourceTest extends TestCase
             ->assertDontSee('Batalkan');
     }
 
-    public function test_status_kursi_menunggu_validasi_referensi_saat_belum_content_ok(): void
+    public function test_ringkasan_menampilkan_nim_mahasiswa(): void
+    {
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertSee('NIM')
+            ->assertSee($this->mahasiswa->username);
+    }
+
+    public function test_ringkasan_menampilkan_dokumen_nuir_hanya_jika_ada(): void
+    {
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertDontSee('Dokumen NUIR (Google Drive)', false);
+
+        $this->submission->update(['nuir_document_link' => 'https://drive.google.com/file/d/xyz/view']);
+
+        $this->actingAs($this->guide1)
+            ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'dosen'))
+            ->assertOk()
+            ->assertSee('Dokumen NUIR (Google Drive)', false)
+            ->assertSee('https://drive.google.com/file/d/xyz/view', false);
+    }
+
+    public function test_status_kursi_menunggu_persetujuan_walau_belum_content_ok(): void
     {
         $submission = NuirSubmission::factory()->submitted()->create([
             'user_id' => $this->mahasiswa->id,
@@ -343,7 +368,32 @@ class DosenNuirSubmissionResourceTest extends TestCase
         $this->actingAs($this->guide1)
             ->get(NuirSubmissionResource::getUrl('view', ['record' => $submission], panel: 'dosen'))
             ->assertOk()
-            ->assertSee('Menunggu Selesai Validasi Referensi');
+            ->assertSee('Menunggu Persetujuan Anda: Judul/Novelty/Urgency/Impact');
+    }
+
+    public function test_kursi_diterima_walau_submission_belum_content_ok(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        $proposal = NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $this->guide1->id,
+            'guide2_id' => $this->guide2->id,
+        ]);
+
+        $page = Livewire::actingAs($this->guide1)
+            ->test(NuirSubmissionResource\Pages\ViewNuirSubmission::class, [
+                'record' => $submission->getRouteKey(),
+            ]);
+
+        foreach (['title', 'novelty', 'urgency', 'impact'] as $field) {
+            $page->call('approveContentField', $field);
+        }
+
+        $this->assertSame('accepted', $proposal->fresh()->guide1_status);
     }
 
     public function test_status_kursi_menampilkan_elemen_yang_belum_disetujui(): void

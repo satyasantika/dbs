@@ -227,6 +227,74 @@ class NuirValidatorPanelSmokeTest extends TestCase
         );
     }
 
+    public function test_ringkasan_detail_menampilkan_nim_dan_dokumen_nuir_hanya_jika_ada(): void
+    {
+        $this->actingAs($this->validator)
+            ->get(ValidatorSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('NIM')
+            ->assertSee($this->mahasiswa->username)
+            ->assertDontSee('Dokumen NUIR (Google Drive)', false);
+
+        $this->submission->update(['nuir_document_link' => 'https://drive.google.com/file/d/xyz/view']);
+
+        $this->actingAs($this->validator)
+            ->get(ValidatorSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('Dokumen NUIR (Google Drive)', false)
+            ->assertSee('https://drive.google.com/file/d/xyz/view', false);
+    }
+
+    public function test_status_detail_referensi_belum_divalidasi_saat_belum_satupun_disetujui(): void
+    {
+        NuirReference::factory()->verifiable()->count(2)->sequence(
+            ['ref_order' => 1],
+            ['ref_order' => 2],
+        )->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_approved' => null,
+        ]);
+
+        $this->actingAs($this->validator)
+            ->get(ValidatorSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('Referensi Belum Divalidasi');
+    }
+
+    public function test_status_detail_referensi_sebagian_divalidasi_saat_masih_ada_yang_belum(): void
+    {
+        NuirReference::factory()->verifiable()->approved()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 1,
+        ]);
+
+        NuirReference::factory()->verifiable()->create([
+            'nuir_submission_id' => $this->submission->id,
+            'ref_order' => 2,
+            'ref_approved' => null,
+        ]);
+
+        $this->actingAs($this->validator)
+            ->get(ValidatorSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('Referensi Sebagian Divalidasi');
+    }
+
+    public function test_status_detail_referensi_tervalidasi_saat_semua_disetujui(): void
+    {
+        NuirReference::factory()->verifiable()->approved()->count(2)->sequence(
+            ['ref_order' => 1],
+            ['ref_order' => 2],
+        )->create([
+            'nuir_submission_id' => $this->submission->id,
+        ]);
+
+        $this->actingAs($this->validator)
+            ->get(ValidatorSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-validator'))
+            ->assertOk()
+            ->assertSee('Referensi Tervalidasi');
+    }
+
     public function test_validator_tidak_melihat_submission_yang_belum_didelegasikan(): void
     {
         $other = NuirSubmission::factory()->submitted()->create([

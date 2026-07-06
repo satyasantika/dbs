@@ -145,6 +145,30 @@ class NuirValidatorReferenceStatus
         return $badges;
     }
 
+    /**
+     * Status progres validasi referensi untuk badge Status di panel validator.
+     * "Divalidasi" berarti disetujui validator, selaras dengan
+     * validationCompleteSubmissionsScope() (view "Validasi Selesai").
+     *
+     * @return array{label: string, color: string}
+     */
+    public static function validationProgressBadge(NuirSubmission $submission): array
+    {
+        $counts = self::referenceCounts($submission);
+        $total = array_sum($counts);
+        $approved = $counts['approved'];
+
+        if ($total === 0 || $approved === 0) {
+            return ['label' => 'Referensi Belum Divalidasi', 'color' => 'gray'];
+        }
+
+        if ($approved < $total) {
+            return ['label' => 'Referensi Sebagian Divalidasi', 'color' => 'warning'];
+        }
+
+        return ['label' => 'Referensi Tervalidasi', 'color' => 'success'];
+    }
+
     public static function referenceHasValidatorResponse(NuirReference $reference): bool
     {
         if ($reference->ref_approved !== null) {

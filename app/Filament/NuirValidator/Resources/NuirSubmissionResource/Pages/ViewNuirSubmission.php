@@ -7,7 +7,9 @@ use App\Filament\NuirValidator\Resources\NuirSubmissionResource;
 use App\Models\NuirReference;
 use App\Models\NuirSubmission;
 use App\Services\NuirAssignmentService;
+use App\Support\NuirExternalUrl;
 use App\Support\NuirValidatorListReturn;
+use App\Support\NuirValidatorReferenceStatus;
 use Filament\Actions;
 use Filament\Infolists;
 use Filament\Infolists\Infolist;
@@ -36,10 +38,23 @@ class ViewNuirSubmission extends ViewRecord
             Infolists\Components\Section::make('Ringkasan')
                 ->schema([
                     Infolists\Components\TextEntry::make('user.name')->label('Mahasiswa'),
+                    Infolists\Components\TextEntry::make('user.username')->label('NIM'),
                     Infolists\Components\TextEntry::make('year_generation')->label('Angkatan'),
                     Infolists\Components\TextEntry::make('version')->label('Versi'),
-                    Infolists\Components\TextEntry::make('status')->label('Status')->badge(),
+                    Infolists\Components\TextEntry::make('status')
+                        ->label('Status')
+                        ->badge()
+                        ->state(fn (NuirSubmission $record): string => NuirValidatorReferenceStatus::validationProgressBadge($record)['label'])
+                        ->color(fn (NuirSubmission $record): string => NuirValidatorReferenceStatus::validationProgressBadge($record)['color']),
                     Infolists\Components\TextEntry::make('title')->label('Judul')->columnSpanFull(),
+                    Infolists\Components\TextEntry::make('nuir_document_link')
+                        ->label('Dokumen NUIR (Google Drive)')
+                        ->formatStateUsing(fn (?string $state): string => NuirExternalUrl::normalize($state) ?? (string) $state)
+                        ->url(fn (?string $state): ?string => filled($state) ? NuirExternalUrl::normalize($state) : null)
+                        ->openUrlInNewTab()
+                        ->color('primary')
+                        ->visible(fn (NuirSubmission $record): bool => filled($record->nuir_document_link))
+                        ->columnSpanFull(),
                 ])
                 ->columns(4),
             Infolists\Components\Section::make('Referensi')

@@ -536,13 +536,12 @@ class NuirManajerRoleTest extends TestCase
             ->assertSee($indexUrl, false);
     }
 
-    public function test_ringkasan_submission_menampilkan_link_dokumen_nuir(): void
+    public function test_ringkasan_submission_menampilkan_link_dokumen_nuir_hanya_jika_ada(): void
     {
         $this->actingAs($this->manajer)
             ->get(NuirSubmissionResource::getUrl('view', ['record' => $this->submission], panel: 'nuir-manajer'))
             ->assertOk()
-            ->assertSee('Dokumen NUIR (Google Drive)', false)
-            ->assertSee('Belum dilampirkan');
+            ->assertDontSee('Dokumen NUIR (Google Drive)', false);
 
         $link = 'https://drive.google.com/file/d/xyz/view';
 
