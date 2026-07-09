@@ -151,53 +151,60 @@
         </div>
     @endif
 
-    {{-- word count + auto-resize --}}
-    <div
-        class="space-y-2"
-        x-data="{
-            c: {{ $tWc }},
-            min: {{ $tMin !== null ? $tMin : 'null' }},
-            max: {{ $tMax !== null ? $tMax : 'null' }},
-            ok() {
-                return (this.min === null || this.c >= this.min)
-                    && (this.max === null || this.c <= this.max);
-            },
-            resize(el) {
-                el.style.height = 'auto';
-                el.style.height = el.scrollHeight + 'px';
-            }
-        }"
-        x-init="$nextTick(() => $el.querySelectorAll('textarea').forEach(t => resize(t)))"
-        @input="
-            if ($event.target.tagName === 'TEXTAREA') {
-                c = ($event.target.value.trim() === '') ? 0 : $event.target.value.trim().split(/\s+/).length;
-                resize($event.target);
-            }
-        "
-    >
-        <div class="flex flex-wrap items-center gap-2">
-            @if ($tHint)
-                <span class="text-xs text-gray-500 dark:text-gray-400">{{ $tHint }}</span>
-            @endif
-            <span
-                x-show="c > 0"
-                x-cloak
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                x-bind:class="ok()
-                    ? 'bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300'
-                    : 'bg-danger-100 text-danger-700 dark:bg-danger-900 dark:text-danger-300'"
-                x-text="c + ' kata'"
-            ></span>
-        </div>
+    @if ($tStatus['key'] === 'approved')
+        {{-- approved: plain text with success background --}}
+        <div class="rounded-lg border border-success-200 bg-success-50 px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-success-900 dark:border-success-700 dark:bg-success-950/40 dark:text-success-100">{{ $this->titleField }}</div>
+    @elseif ($tRo && filled($this->titleField))
+        {{-- readonly with content: plain div, avoids textarea height issues --}}
+        <div class="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-gray-800 dark:border-gray-700 dark:bg-gray-900/40 dark:text-gray-200">{{ $this->titleField }}</div>
+    @else
+        {{-- editable / compose / revision: textarea with word count and auto-resize --}}
+        <div
+            class="space-y-2"
+            x-data="{
+                c: {{ $tWc }},
+                min: {{ $tMin !== null ? $tMin : 'null' }},
+                max: {{ $tMax !== null ? $tMax : 'null' }},
+                ok() {
+                    return (this.min === null || this.c >= this.min)
+                        && (this.max === null || this.c <= this.max);
+                },
+                resize(el) {
+                    el.style.height = 'auto';
+                    el.style.height = el.scrollHeight + 'px';
+                }
+            }"
+            x-init="$nextTick(() => $el.querySelectorAll('textarea').forEach(t => resize(t)))"
+            @input="
+                if ($event.target.tagName === 'TEXTAREA') {
+                    c = ($event.target.value.trim() === '') ? 0 : $event.target.value.trim().split(/\s+/).length;
+                    resize($event.target);
+                }
+            "
+        >
+            <div class="flex flex-wrap items-center gap-2">
+                @if ($tHint)
+                    <span class="text-xs text-gray-500 dark:text-gray-400">{{ $tHint }}</span>
+                @endif
+                <span
+                    x-show="c > 0"
+                    x-cloak
+                    class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                    x-bind:class="ok()
+                        ? 'bg-success-100 text-success-700 dark:bg-success-900 dark:text-success-300'
+                        : 'bg-danger-100 text-danger-700 dark:bg-danger-900 dark:text-danger-300'"
+                    x-text="c + ' kata'"
+                ></span>
+            </div>
 
-        <textarea
-            wire:model="titleField"
-            rows="1"
-            @disabled($tRo)
-            placeholder="Ketik judul penelitian di sini…"
-            class="nuir-auto block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 disabled:cursor-default disabled:bg-gray-100 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100 dark:disabled:bg-gray-900/60"
-        >{{ $this->titleField }}</textarea>
-    </div>
+            <textarea
+                wire:model="titleField"
+                rows="1"
+                placeholder="Ketik judul penelitian di sini…"
+                class="nuir-auto block w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-primary-500 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-950 dark:text-gray-100"
+            >{{ $this->titleField }}</textarea>
+        </div>
+    @endif
 
     {{-- buttons --}}
     @if ($tSave || $tEdit || $tCancel)
