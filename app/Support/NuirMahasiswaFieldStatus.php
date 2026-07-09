@@ -368,10 +368,12 @@ class NuirMahasiswaFieldStatus
             return self::uiCompose($fieldLabel, $versionLabel);
         }
 
+        $canPersist = $submission->isNuiFieldEditable('title');
+
         return self::uiEdit(
             $fieldLabel,
-            canPersist: $submission->isNuiFieldEditable('title'),
-            showEdit: true,
+            canPersist: $canPersist,
+            showEdit: $canPersist,
             versionLabel: $versionLabel,
         );
     }
