@@ -16,7 +16,7 @@ class NuirReferenceExistence
 
         if (blank($reference->link_ojs)) {
             $issues[] = 'Link OJS wajib ada untuk memvalidasi eksistensi referensi.';
-        } elseif (! filter_var($reference->link_ojs, FILTER_VALIDATE_URL)) {
+        } elseif (NuirExternalUrl::normalize($reference->link_ojs) === null) {
             $issues[] = 'Link OJS tidak valid.';
         }
 
@@ -26,7 +26,7 @@ class NuirReferenceExistence
 
         if (blank($reference->link_index)) {
             $issues[] = 'Link index wajib ada untuk memvalidasi eksistensi referensi.';
-        } elseif (! filter_var($reference->link_index, FILTER_VALIDATE_URL)) {
+        } elseif (NuirExternalUrl::normalize($reference->link_index) === null) {
             $issues[] = 'Link index tidak valid.';
         }
 
