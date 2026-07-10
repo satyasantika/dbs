@@ -353,6 +353,24 @@ class NuirAssignmentService
 
         if (! $approved) {
             $this->revisionHistory->logNuiRevision($submission, $guide, $role, $field, $note);
+
+            // The other guide's existing sign-off was on the content as it stood
+            // before this revision request — it must not silently count once the
+            // rejecting guide re-approves the (about to be) revised text.
+            $otherGuide = $role === NuirContentReview::ROLE_GUIDE1 ? $proposal->guide2 : $proposal->guide1;
+
+            if ($otherGuide) {
+                $invalidated = NuirContentReview::query()
+                    ->where('nuir_submission_id', $submission->id)
+                    ->where('user_id', $otherGuide->id)
+                    ->where('field', $field)
+                    ->where('approved', true)
+                    ->delete();
+
+                if ($invalidated > 0) {
+                    $this->guideSeatSync->syncGuideSeat($proposal, $otherGuide);
+                }
+            }
         }
 
         $this->guideSeatSync->syncGuideSeat($proposal, $guide);

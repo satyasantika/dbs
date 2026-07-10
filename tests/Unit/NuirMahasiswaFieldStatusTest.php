@@ -114,7 +114,7 @@ class NuirMahasiswaFieldStatusTest extends TestCase
         $this->assertSame('info', $status['color']);
     }
 
-    public function test_workspace_field_ui_edit_muncul_saat_menunggu_review_pembimbing(): void
+    public function test_workspace_field_ui_edit_tersembunyi_saat_menunggu_review_pembimbing(): void
     {
         $submission = NuirSubmission::factory()->submitted()->create([
             'novelty' => str_repeat('novelty ', 15),
@@ -133,9 +133,11 @@ class NuirMahasiswaFieldStatusTest extends TestCase
 
         $ui = NuirMahasiswaFieldStatus::workspaceFieldUi($submission, $proposal, 'novelty', 'Novelty');
 
+        // showEdit must follow canPersist — otherwise the button appears but
+        // clicking it does nothing while waiting on the guides' response.
         $this->assertSame('edit', $ui['action']);
-        $this->assertTrue($ui['showEdit']);
         $this->assertFalse($ui['canPersist']);
+        $this->assertFalse($ui['showEdit']);
         $this->assertSame('Edit Novelty (v1)', $ui['editLabel']);
     }
 
@@ -216,7 +218,7 @@ class NuirMahasiswaFieldStatusTest extends TestCase
         $this->assertSame('v2', $status['versionLabel']);
     }
 
-    public function test_workspace_field_ui_none_saat_nui_disetujui(): void
+    public function test_workspace_field_ui_ajukan_revisi_saat_nui_disetujui(): void
     {
         $submission = NuirSubmission::factory()->submitted()->create([
             'novelty' => str_repeat('novelty ', 15),
@@ -254,10 +256,15 @@ class NuirMahasiswaFieldStatusTest extends TestCase
 
         $ui = NuirMahasiswaFieldStatus::workspaceFieldUi($submission, $proposal, 'novelty', 'Novelty');
 
-        $this->assertSame('none', $ui['action']);
+        // Even fully approved, the student can still press Edit to propose a
+        // revision — the Save button is labelled "Ajukan Revisi" to make clear
+        // that submitting it reopens both guides' approval on this field.
+        $this->assertSame('edit', $ui['action']);
         $this->assertTrue($ui['readonly']);
-        $this->assertFalse($ui['showEdit']);
-        $this->assertSame('', $ui['saveLabel']);
+        $this->assertTrue($ui['canPersist']);
+        $this->assertTrue($ui['showEdit']);
+        $this->assertSame('Ajukan Revisi Novelty (v1)', $ui['saveLabel']);
+        $this->assertSame('Edit Novelty (v1)', $ui['editLabel']);
         $this->assertSame('v1', $ui['versionLabel']);
     }
 

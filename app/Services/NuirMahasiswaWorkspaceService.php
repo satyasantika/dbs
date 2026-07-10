@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirReference;
 use App\Models\NuirRevisionEvent;
@@ -129,10 +130,17 @@ class NuirMahasiswaWorkspaceService
                 ]);
             }
 
+            $isApprovedByGuides = $submission->isNuiFieldApprovedByGuides('title');
+
             $submission->update([
                 'title' => $value,
                 'title_saved_at' => now(),
             ]);
+
+            if ($isApprovedByGuides) {
+                $this->reopenApprovedNuiField($submission, $user, 'title');
+            }
+
             $this->maybePromoteToSubmitted($submission->fresh(), $setting);
 
             return;
@@ -147,6 +155,8 @@ class NuirMahasiswaWorkspaceService
                 $field => ucfirst($field).' tidak dapat diubah saat ini.',
             ]);
         }
+
+        $isApprovedByGuides = $submission->isNuiFieldApprovedByGuides($field);
 
         $message = NuirTextLimits::validateNuiField($value, $setting, $field);
 
@@ -163,7 +173,45 @@ class NuirMahasiswaWorkspaceService
             NuirRevisionGate::clearRejectedContentReviews($submission, $field);
         }
 
+        if ($isApprovedByGuides) {
+            $this->reopenApprovedNuiField($submission, $user, $field);
+        }
+
         $this->maybePromoteToSubmitted($submission->fresh(), $setting);
+    }
+
+    /**
+     * Mahasiswa mengajukan revisi atas elemen yang sudah disetujui kedua calon
+     * pembimbing — persetujuan lama tidak relevan lagi untuk konten yang baru,
+     * jadi dihapus supaya statusnya kembali "menunggu respons" dan kedua calon
+     * pembimbing meninjau ulang.
+     */
+    private function reopenApprovedNuiField(NuirSubmission $submission, User $user, string $field): void
+    {
+        // Judul's approval status is derived entirely from the Novelty/Urgency/
+        // Impact reviews (it has no meaningful review rows of its own), so a
+        // title-only revision must also reopen those three, otherwise the
+        // title badge would stay stuck on "Disetujui".
+        $fieldsToReopen = $field === 'title'
+            ? ['title', 'novelty', 'urgency', 'impact']
+            : [$field];
+
+        NuirContentReview::query()
+            ->where('nuir_submission_id', $submission->id)
+            ->whereIn('field', $fieldsToReopen)
+            ->delete();
+
+        $note = 'Mahasiswa mengajukan revisi setelah disetujui pembimbing; perlu ditinjau ulang oleh kedua calon pembimbing.';
+
+        foreach ($fieldsToReopen as $reopenedField) {
+            $this->revisionHistory->logNuiRevision(
+                $submission,
+                $user,
+                NuirRevisionEvent::ROLE_MAHASISWA,
+                $reopenedField,
+                $note,
+            );
+        }
     }
 
     /**
@@ -425,6 +473,7 @@ class NuirMahasiswaWorkspaceService
                 NuirRevisionEvent::TYPE_PROPOSAL_SELECTION,
                 NuirRevisionEvent::TYPE_PROPOSAL_REJECTION,
                 NuirRevisionEvent::TYPE_PROPOSAL_CANCELLATION,
+                NuirRevisionEvent::TYPE_PROPOSAL_ACCEPTANCE,
             ])
             ->where('subject', $seatKey)
             ->with(['actor', 'target'])
@@ -496,6 +545,13 @@ class NuirMahasiswaWorkspaceService
                     'actor_name' => $event->actor?->name ?? '—',
                     'actor_role' => $event->actor_role,
                     'note'       => $event->note,
+                ],
+                NuirRevisionEvent::TYPE_PROPOSAL_ACCEPTANCE => [
+                    'type'       => 'accepted',
+                    'at'         => $event->recorded_at,
+                    'guide_name' => $event->actor?->name ?? '—',
+                    'actor_name' => null,
+                    'note'       => null,
                 ],
                 default => null,
             };

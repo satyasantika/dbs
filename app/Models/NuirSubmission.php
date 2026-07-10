@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\NuirMahasiswaFieldStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -171,14 +172,50 @@ class NuirSubmission extends Model
     public function isNuiFieldEditable(string $field): bool
     {
         if ($field === 'title') {
-            return $this->isTitleSlot() || $this->isEditable() || $this->isPartialNuiEditable();
+            return $this->isTitleSlot()
+                || $this->isEditable()
+                || $this->isPartialNuiEditable()
+                || $this->isNuiFieldApprovedByGuides('title');
         }
 
         if ($this->isEditable()) {
             return true;
         }
 
-        return $this->isPartialNuiEditable() && in_array($field, $this->rejectedNuiFields(), true);
+        if ($this->isPartialNuiEditable() && in_array($field, $this->rejectedNuiFields(), true)) {
+            return true;
+        }
+
+        return $this->isNuiFieldApprovedByGuides($field);
+    }
+
+    public function activeProposal(): ?NuirProposal
+    {
+        return $this->proposals()->where('final', false)->latest('id')->first();
+    }
+
+    /**
+     * Field sudah disetujui kedua calon pembimbing (P1 & P2) yang sedang aktif
+     * pada usulan ini — mahasiswa masih boleh mengajukan revisi meski begitu,
+     * beda dari status content_ok/finalized yang merupakan tahap DBS terpisah.
+     */
+    public function isNuiFieldApprovedByGuides(string $field): bool
+    {
+        if (in_array($this->status, ['content_ok', 'finalized'], true)) {
+            return false;
+        }
+
+        $proposal = $this->activeProposal();
+
+        if (! $proposal) {
+            return false;
+        }
+
+        if ($field === 'title') {
+            return NuirMahasiswaFieldStatus::allGuidesApproveAllNui($this, $proposal);
+        }
+
+        return NuirMahasiswaFieldStatus::nuiFieldStatus($this, $proposal, $field)['key'] === NuirMahasiswaFieldStatus::KEY_APPROVED;
     }
 
     public function validatedReferenceCount(): int

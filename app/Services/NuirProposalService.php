@@ -391,8 +391,14 @@ class NuirProposalService
 
     /**
      * When a guide's seat is cancelled after they had already approved some
-     * NUI fields, those approvals must be invalidated so the student can edit
-     * the fields again for the next candidate guide to review.
+     * NUI fields, those approvals no longer mean anything (the seat is being
+     * refilled, possibly by a different candidate) — the field must go back
+     * to "menunggu respons" rather than staying stuck on "disetujui". The
+     * co-guide's approval on the same field is invalidated too (mirroring
+     * NuirAssignmentService::reviewContentAsGuide()'s rejection handling),
+     * since their sign-off was also on a pairing that's now being reopened.
+     * Deleting (not flipping to approved=false) keeps the resulting status a
+     * clean "waiting_response" instead of "revision_requested".
      */
     private function reopenNuiFieldsForCancelledSeat(NuirProposal $proposal, int $cancelledGuideId, User $actor, string $actorRole): void
     {
@@ -410,13 +416,9 @@ class NuirProposalService
 
         NuirContentReview::query()
             ->where('nuir_submission_id', $proposal->nuir_submission_id)
-            ->where('user_id', $cancelledGuideId)
+            ->whereIn('field', $approvedFields->all())
             ->where('approved', true)
-            ->update([
-                'approved' => false,
-                'note' => $note,
-                'reviewed_at' => now(),
-            ]);
+            ->delete();
 
         $submission = $proposal->submission;
 

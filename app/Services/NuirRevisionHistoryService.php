@@ -60,6 +60,24 @@ class NuirRevisionHistoryService
         );
     }
 
+    public function logProposalAcceptance(
+        NuirProposal $proposal,
+        User $actor,
+        int $guideOrder,
+    ): NuirRevisionEvent {
+        $role = $guideOrder === 1 ? NuirRevisionEvent::ROLE_GUIDE1 : NuirRevisionEvent::ROLE_GUIDE2;
+
+        return $this->record(
+            $proposal->submission,
+            $actor,
+            $role,
+            NuirRevisionEvent::TYPE_PROPOSAL_ACCEPTANCE,
+            'guide'.$guideOrder,
+            'Menyetujui seluruh elemen NUI (Judul, Novelty, Urgency, Impact).',
+            proposalId: $proposal->id,
+        );
+    }
+
     public function logDbsRevision(NuirSubmission $submission, User $actor, string $note): NuirRevisionEvent
     {
         return $this->record(
