@@ -1,4 +1,6 @@
 @php
+    use App\Support\NuirReferenceExistence;
+
     $histories = $histories ?? [];
     $revisionRounds = $revisionRounds ?? [];
     $showRevisionBadges = $showRevisionBadges ?? [];
@@ -20,6 +22,9 @@
                 false => 'danger',
                 default => 'gray',
             };
+            $isVerifiable = NuirReferenceExistence::isVerifiable($reference);
+            $invalidLinks = NuirReferenceExistence::invalidLinkFields($reference);
+            $hasInvalidLink = in_array(true, $invalidLinks, true);
         @endphp
 
         <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-950/40">
@@ -33,6 +38,9 @@
                             <x-filament::badge color="info">Revisi ke-{{ $revisionRound }}</x-filament::badge>
                         @endif
                         <x-filament::badge :color="$statusColor">{{ $statusLabel }}</x-filament::badge>
+                        <x-filament::badge :color="$hasInvalidLink ? 'danger' : ($isVerifiable ? 'success' : 'warning')">
+                            {{ $hasInvalidLink ? 'Terdeteksi link tidak valid' : ($isVerifiable ? 'Lengkap' : 'Belum lengkap') }}
+                        </x-filament::badge>
                     </div>
                     @if ($reference->indexer_name)
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ $reference->indexer_name }}</p>
@@ -42,10 +50,25 @@
 
             <div class="mt-3 grid gap-2 text-sm text-gray-700 dark:text-gray-300">
                 @if ($reference->link_ojs)
-                    <p><span class="font-medium">OJS:</span> {{ $reference->link_ojs }}</p>
+                    @include('filament.nuir-manajer.infolists.partials.reference-link-field', [
+                        'label' => 'Link OJS',
+                        'value' => $reference->link_ojs,
+                        'invalid' => $invalidLinks['link_ojs'],
+                    ])
                 @endif
                 @if ($reference->link_index)
-                    <p><span class="font-medium">Index:</span> {{ $reference->link_index }}</p>
+                    @include('filament.nuir-manajer.infolists.partials.reference-link-field', [
+                        'label' => 'Link Index',
+                        'value' => $reference->link_index,
+                        'invalid' => $invalidLinks['link_index'],
+                    ])
+                @endif
+                @if ($reference->link_drive)
+                    @include('filament.nuir-manajer.infolists.partials.reference-link-field', [
+                        'label' => 'Link Drive',
+                        'value' => $reference->link_drive,
+                        'invalid' => $invalidLinks['link_drive'],
+                    ])
                 @endif
                 @if ($reference->quote)
                     <div class="rounded-lg bg-gray-50 p-3 dark:bg-gray-900/60">
