@@ -93,11 +93,12 @@ class NuirSubmissionResource extends Resource
                     ->label('Validator')
                     ->placeholder('Belum ditugaskan')
                     ->visible(fn (): bool => ! (auth()->user()?->can('delegate nuir validator') ?? false)),
-                Tables\Columns\TextColumn::make('guide_status')
-                    ->label('Pembimbing')
-                    ->badge()
-                    ->state(fn (NuirSubmission $record): string => static::guideStatusLabel($record))
-                    ->color(fn (NuirSubmission $record): string => static::guideStatusColor($record)),
+                Tables\Columns\ViewColumn::make('approval_status')
+                    ->label('Persetujuan')
+                    ->view('filament.nuir-manajer.tables.approval-status-lines')
+                    ->viewData(fn (NuirSubmission $record): array => [
+                        'lines' => static::approvalStatusLines($record),
+                    ]),
                 Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
             ])
             ->filters([
@@ -270,55 +271,66 @@ class NuirSubmissionResource extends Resource
             : $submission->proposals()->latest('id')->first();
     }
 
-    public static function guideStatusLabel(NuirSubmission $submission): string
+    /**
+     * Baris "Persetujuan": status P1, status P2, lalu progres validasi referensi.
+     * isBothAccepted() tidak lagi ditampilkan sebagai badge tersendiri di sini —
+     * tetap dipakai sebagai syarat pengesahan pasangan pembimbing (lihat
+     * finalizeGuideBulk & ViewNuirSubmission::finalizeGuideAction()).
+     *
+     * @return list<array{label: string, color: string}>
+     */
+    public static function approvalStatusLines(NuirSubmission $submission): array
     {
         $proposal = static::latestProposal($submission);
 
-        if (! $proposal) {
-            return '—';
-        }
-
-        if ($proposal->isBothAccepted()) {
-            return 'pembimbing_ok';
-        }
-
-        $parts = [];
-
-        if ($proposal->guide1_id) {
-            $parts[] = static::guideSeatShortLabel($proposal->guide1_status).' P1';
-        }
-
-        if ($proposal->guide2_id) {
-            $parts[] = static::guideSeatShortLabel($proposal->guide2_status).' P2';
-        }
-
-        return $parts === [] ? '—' : implode(' · ', $parts);
+        return [
+            static::guideApprovalLine($proposal, 1),
+            static::guideApprovalLine($proposal, 2),
+            static::referenceValidationLine($submission),
+        ];
     }
 
-    public static function guideStatusColor(NuirSubmission $submission): string
+    /**
+     * @return array{label: string, color: string}
+     */
+    private static function guideApprovalLine(?NuirProposal $proposal, int $seat): array
     {
-        $proposal = static::latestProposal($submission);
+        $guideId = $seat === 1 ? $proposal?->guide1_id : $proposal?->guide2_id;
 
-        if (! $proposal) {
-            return 'gray';
+        if (! $guideId) {
+            return ['label' => "P{$seat}: Belum diusulkan", 'color' => 'gray'];
         }
 
-        if ($proposal->isBothAccepted()) {
-            return 'success';
-        }
+        $guide = $seat === 1 ? $proposal->guide1 : $proposal->guide2;
+        $status = $seat === 1 ? $proposal->guide1_status : $proposal->guide2_status;
+        $initial = $guide?->initial ?: $guide?->name ?? '—';
 
-        if ($proposal->guide1_status === 'rejected' || $proposal->guide2_status === 'rejected') {
-            return 'danger';
-        }
+        return [
+            'label' => "{$initial} (P{$seat}): ".static::guideSeatShortLabel($status),
+            'color' => match ($status) {
+                'accepted' => 'success',
+                'rejected' => 'danger',
+                default => 'warning',
+            },
+        ];
+    }
 
-        return 'warning';
+    /**
+     * @return array{label: string, color: string}
+     */
+    private static function referenceValidationLine(NuirSubmission $submission): array
+    {
+        return [
+            'label' => 'Referensi divalidasi: '.$submission->referenceValidationProgressLabel(),
+            'color' => NuirSubmission::referenceValidationStatusColor($submission->referenceValidationStatus()),
+        ];
     }
 
     private static function guideSeatShortLabel(?string $status): string
     {
         return match ($status) {
             'accepted' => 'ACC',
-            'rejected' => 'Ditolak',
+            'rejected' => 'Menolak',
             default => 'Menunggu',
         };
     }
