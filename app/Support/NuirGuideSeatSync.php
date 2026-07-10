@@ -5,9 +5,15 @@ namespace App\Support;
 use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\User;
+use App\Services\NuirRevisionHistoryService;
 
 class NuirGuideSeatSync
 {
+    public function __construct(
+        private NuirRevisionHistoryService $revisionHistory,
+    ) {
+    }
+
     public function guideHasApprovedAllNuiFields(NuirProposal $proposal, User $guide): bool
     {
         foreach (NuirContentReview::FIELDS as $field) {
@@ -54,6 +60,7 @@ class NuirGuideSeatSync
         $isGuide1 = $guide->id === $proposal->guide1_id;
         $statusColumn = $isGuide1 ? 'guide1_status' : 'guide2_status';
         $respondedColumn = $isGuide1 ? 'guide1_responded_at' : 'guide2_responded_at';
+        $wasAccepted = $proposal->{$statusColumn} === 'accepted';
 
         if ($proposal->{$statusColumn} === 'rejected') {
             return $proposal;
@@ -64,6 +71,10 @@ class NuirGuideSeatSync
                 $statusColumn => 'accepted',
                 $respondedColumn => now(),
             ]);
+
+            if (! $wasAccepted) {
+                $this->revisionHistory->logProposalAcceptance($proposal, $guide, $isGuide1 ? 1 : 2);
+            }
         } else {
             $proposal->update([
                 $statusColumn => 'pending',

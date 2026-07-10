@@ -17,6 +17,8 @@ class NuirRevisionEvent extends Model
 
     public const TYPE_PROPOSAL_CANCELLATION = 'proposal_cancellation';
 
+    public const TYPE_PROPOSAL_ACCEPTANCE = 'proposal_acceptance';
+
     public const TYPE_DBS_REVISION = 'dbs_revision';
 
     public const ROLE_VALIDATOR = 'validator';
@@ -79,6 +81,7 @@ class NuirRevisionEvent extends Model
             self::TYPE_PROPOSAL_SELECTION => 'Usulan '.($this->subject === 'guide1' ? 'P1' : 'P2'),
             self::TYPE_PROPOSAL_REJECTION => 'Penolakan '.strtoupper($this->subject),
             self::TYPE_PROPOSAL_CANCELLATION => 'Pembatalan '.($this->subject === 'guide1' ? 'P1' : 'P2'),
+            self::TYPE_PROPOSAL_ACCEPTANCE => 'Persetujuan '.($this->subject === 'guide1' ? 'P1' : 'P2'),
             self::TYPE_DBS_REVISION => 'NUIR (DBS)',
             default => $this->subject,
         };

@@ -247,7 +247,7 @@ class NuirMahasiswaFieldStatus
         return self::finalizeFieldStatus($submission, 'title', self::statusStored('Judul'));
     }
 
-    private static function allGuidesApproveAllNui(NuirSubmission $submission, NuirProposal $proposal): bool
+    public static function allGuidesApproveAllNui(NuirSubmission $submission, NuirProposal $proposal): bool
     {
         $roles = array_filter([
             $proposal->guide1_id ? NuirContentReview::ROLE_GUIDE1 : null,
@@ -337,7 +337,7 @@ class NuirMahasiswaFieldStatus
             ?? self::resolveFieldVersionLabel($submission, $field, $status);
 
         if ($field === 'title') {
-            return self::titleWorkspaceUi($submission, $fieldLabel, $isSaved, $versionLabel);
+            return self::titleWorkspaceUi($submission, $proposal, $fieldLabel, $isSaved, $versionLabel);
         }
 
         return self::nuiContentWorkspaceUi($submission, $field, $fieldLabel, $isSaved, $status, $versionLabel);
@@ -356,6 +356,7 @@ class NuirMahasiswaFieldStatus
      */
     private static function titleWorkspaceUi(
         NuirSubmission $submission,
+        ?NuirProposal $proposal,
         string $fieldLabel,
         bool $isSaved,
         ?string $versionLabel,
@@ -366,6 +367,16 @@ class NuirMahasiswaFieldStatus
 
         if (! $isSaved) {
             return self::uiCompose($fieldLabel, $versionLabel);
+        }
+
+        // Both candidate guides already approved (DBS-level content_ok/finalized
+        // is a separate gate, not covered here) — student can still propose a
+        // revision, which resets both guides' approval on this field.
+        if (! in_array($submission->status, ['content_ok', 'finalized'], true)
+            && $proposal !== null
+            && self::allGuidesApproveAllNui($submission, $proposal)
+        ) {
+            return self::uiApprovedRevisable($fieldLabel, $versionLabel);
         }
 
         $canPersist = $submission->isNuiFieldEditable('title');
@@ -399,7 +410,7 @@ class NuirMahasiswaFieldStatus
         ?string $versionLabel,
     ): array {
         if ($status['key'] === self::KEY_APPROVED) {
-            return self::uiNone($fieldLabel, $versionLabel);
+            return self::uiApprovedRevisable($fieldLabel, $versionLabel);
         }
 
         if ($status['key'] === self::KEY_REVISION_REQUESTED) {
@@ -410,20 +421,14 @@ class NuirMahasiswaFieldStatus
             return self::uiCompose($fieldLabel, $versionLabel);
         }
 
+        $canPersist = $submission->isNuiFieldEditable($field);
+
         return self::uiEdit(
             $fieldLabel,
-            canPersist: $submission->isNuiFieldEditable($field),
-            showEdit: self::nuiFieldShowsEditButton($status),
+            canPersist: $canPersist,
+            showEdit: $canPersist,
             versionLabel: $versionLabel,
         );
-    }
-
-    /**
-     * @param  array{key: string, label: string, color: string, versionLabel?: string|null}  $status
-     */
-    private static function nuiFieldShowsEditButton(array $status): bool
-    {
-        return ! in_array($status['key'], [self::KEY_APPROVED, self::KEY_REVISION_REQUESTED], true);
     }
 
     /**
@@ -629,6 +634,36 @@ class NuirMahasiswaFieldStatus
             'showEdit' => false,
             'saveLabel' => "Simpan Revisi {$fieldLabel}{$suffix}",
             'editLabel' => "Buat Revisi {$fieldLabel}{$suffix}",
+            'versionLabel' => $versionLabel,
+        ];
+    }
+
+    /**
+     * Field sudah disetujui kedua calon pembimbing tapi mahasiswa tetap bisa
+     * menekan Edit untuk mengajukan revisi — labelnya beda dari uiEdit() biasa
+     * supaya jelas bahwa menyimpan di sini akan membuka lagi status persetujuan.
+     *
+     * @return array{
+     *     action: 'compose'|'edit'|'revision'|'none',
+     *     readonly: bool,
+     *     canPersist: bool,
+     *     showEdit: bool,
+     *     saveLabel: string,
+     *     editLabel: string,
+     *     versionLabel?: string|null,
+     * }
+     */
+    private static function uiApprovedRevisable(string $fieldLabel, ?string $versionLabel = null): array
+    {
+        $suffix = self::versionSuffix($versionLabel);
+
+        return [
+            'action' => 'edit',
+            'readonly' => true,
+            'canPersist' => true,
+            'showEdit' => true,
+            'saveLabel' => "Ajukan Revisi {$fieldLabel}{$suffix}",
+            'editLabel' => "Edit {$fieldLabel}{$suffix}",
             'versionLabel' => $versionLabel,
         ];
     }
