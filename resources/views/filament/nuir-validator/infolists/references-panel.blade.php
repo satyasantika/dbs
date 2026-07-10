@@ -16,6 +16,8 @@
             $revisionRound = $revisionRounds[$reference->ref_order] ?? 1;
             $showRevisionBadge = $showRevisionBadges[$reference->ref_order] ?? false;
             $isVerifiable = NuirReferenceExistence::isVerifiable($reference);
+            $invalidLinks = NuirReferenceExistence::invalidLinkFields($reference);
+            $hasInvalidLink = in_array(true, $invalidLinks, true);
             $isApproved = $reference->ref_approved === true;
             $canActOnReference = $canReview && ! $isApproved;
             $canCancelApproval = $canReview && $isApproved && ! $submissionFinalized;
@@ -57,8 +59,8 @@
                                 <x-filament::badge color="info">Revisi ke-{{ $revisionRound }}</x-filament::badge>
                             @endif
                             <x-filament::badge :color="$statusColor">{{ $statusLabel }}</x-filament::badge>
-                            <x-filament::badge :color="$isVerifiable ? 'success' : 'warning'">
-                                {{ $isVerifiable ? 'Lengkap' : 'Belum lengkap' }}
+                            <x-filament::badge :color="$hasInvalidLink ? 'danger' : ($isVerifiable ? 'success' : 'warning')">
+                                {{ $hasInvalidLink ? 'Terdeteksi link tidak valid' : ($isVerifiable ? 'Lengkap' : 'Belum lengkap') }}
                             </x-filament::badge>
                         </div>
                         @if ($reference->indexer_name)
@@ -79,28 +81,26 @@
                 <div class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
                     <div class="grid gap-2 md:grid-cols-2">
                         @if ($reference->link_ojs)
-                            <div class="rounded-lg border border-gray-100 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-900/50">
-                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Link OJS</p>
-                                <a href="{{ $reference->link_ojs }}" target="_blank" rel="noopener noreferrer" class="break-all text-teal-700 hover:underline dark:text-teal-300">
-                                    {{ $reference->link_ojs }}
-                                </a>
-                            </div>
+                            @include('filament.nuir-manajer.infolists.partials.reference-link-field', [
+                                'label' => 'Link OJS',
+                                'value' => $reference->link_ojs,
+                                'invalid' => $invalidLinks['link_ojs'],
+                            ])
                         @endif
                         @if ($reference->link_index)
-                            <div class="rounded-lg border border-gray-100 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-900/50">
-                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Link Index</p>
-                                <a href="{{ $reference->link_index }}" target="_blank" rel="noopener noreferrer" class="break-all text-teal-700 hover:underline dark:text-teal-300">
-                                    {{ $reference->link_index }}
-                                </a>
-                            </div>
+                            @include('filament.nuir-manajer.infolists.partials.reference-link-field', [
+                                'label' => 'Link Index',
+                                'value' => $reference->link_index,
+                                'invalid' => $invalidLinks['link_index'],
+                            ])
                         @endif
                         @if ($reference->link_drive)
-                            <div class="rounded-lg border border-gray-100 bg-gray-50/80 p-3 dark:border-gray-800 dark:bg-gray-900/50 md:col-span-2">
-                                <p class="mb-1 text-xs font-medium uppercase tracking-wide text-gray-500">Link Drive</p>
-                                <a href="{{ $reference->link_drive }}" target="_blank" rel="noopener noreferrer" class="break-all text-teal-700 hover:underline dark:text-teal-300">
-                                    {{ $reference->link_drive }}
-                                </a>
-                            </div>
+                            @include('filament.nuir-manajer.infolists.partials.reference-link-field', [
+                                'label' => 'Link Drive',
+                                'value' => $reference->link_drive,
+                                'invalid' => $invalidLinks['link_drive'],
+                                'colSpan' => 'md:col-span-2',
+                            ])
                         @endif
                     </div>
 
