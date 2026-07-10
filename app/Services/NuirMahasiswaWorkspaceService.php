@@ -194,10 +194,13 @@ class NuirMahasiswaWorkspaceService
             ]);
         }
 
+        $linkOjs = $this->normalizeReferenceLink($data['link_ojs'] ?? null, 'Link OJS');
+        $linkIndex = $this->normalizeReferenceLink($data['link_index'] ?? null, 'Link index');
+
         $attributes = [
-            'link_ojs' => $data['link_ojs'] ?? null,
+            'link_ojs' => $linkOjs,
             'indexer_name' => $data['indexer_name'] ?? null,
-            'link_index' => $data['link_index'] ?? null,
+            'link_index' => $linkIndex,
             'link_drive' => $data['link_drive'] ?? null,
             'quote' => $data['quote'] ?? null,
             'relevance' => $data['relevance'] ?? null,
@@ -224,6 +227,23 @@ class NuirMahasiswaWorkspaceService
         );
 
         $this->maybePromoteToSubmitted($submission->fresh(), $setting);
+    }
+
+    private function normalizeReferenceLink(?string $link, string $label): ?string
+    {
+        if (blank($link)) {
+            return null;
+        }
+
+        $normalized = NuirExternalUrl::normalize($link);
+
+        if ($normalized === null) {
+            throw ValidationException::withMessages([
+                'reference' => "{$label} tidak valid.",
+            ]);
+        }
+
+        return $normalized;
     }
 
     public function saveDocumentLink(NuirSubmission $submission, User $user, ?string $link): void
