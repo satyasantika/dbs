@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GuideAllocation;
+use App\Models\NuirContentReview;
 use App\Models\NuirProposal;
 use App\Models\NuirRevisionEvent;
 use App\Models\NuirSubmission;
@@ -20,6 +21,7 @@ class NuirProposalService
     public function __construct(
         private NuirService $nuirService,
         private NuirGuideQuotaService $quotaService,
+        private NuirRevisionHistoryService $revisionHistory,
     ) {
     }
 
@@ -360,6 +362,8 @@ class NuirProposalService
             return;
         }
 
+        $cancelledGuideId = $proposal->{$guideIdColumn};
+
         $this->releaseSeatQuota($proposal, $seat);
 
         NuirRevisionEvent::create([
@@ -375,12 +379,50 @@ class NuirProposalService
             'recorded_at'        => now(),
         ]);
 
+        $this->reopenNuiFieldsForCancelledSeat($proposal, $cancelledGuideId, $actor, $actorRole);
+
         $proposal->update([
             $guideIdColumn => null,
             $statusColumn  => 'pending',
             $noteColumn    => null,
             $respondedCol  => null,
         ]);
+    }
+
+    /**
+     * When a guide's seat is cancelled after they had already approved some
+     * NUI fields, those approvals must be invalidated so the student can edit
+     * the fields again for the next candidate guide to review.
+     */
+    private function reopenNuiFieldsForCancelledSeat(NuirProposal $proposal, int $cancelledGuideId, User $actor, string $actorRole): void
+    {
+        $note = 'Usulan pembimbing dibatalkan, elemen perlu ditinjau ulang oleh calon pembimbing baru.';
+
+        $approvedFields = NuirContentReview::query()
+            ->where('nuir_submission_id', $proposal->nuir_submission_id)
+            ->where('user_id', $cancelledGuideId)
+            ->where('approved', true)
+            ->pluck('field');
+
+        if ($approvedFields->isEmpty()) {
+            return;
+        }
+
+        NuirContentReview::query()
+            ->where('nuir_submission_id', $proposal->nuir_submission_id)
+            ->where('user_id', $cancelledGuideId)
+            ->where('approved', true)
+            ->update([
+                'approved' => false,
+                'note' => $note,
+                'reviewed_at' => now(),
+            ]);
+
+        $submission = $proposal->submission;
+
+        foreach ($approvedFields as $field) {
+            $this->revisionHistory->logNuiRevision($submission, $actor, $actorRole, $field, $note);
+        }
     }
 
     public function releaseSeatQuota(NuirProposal $proposal, int $guideOrder): void

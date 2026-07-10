@@ -279,12 +279,26 @@ class NuirAssignmentService
             abort(422);
         }
 
-        NuirContentReview::query()
+        $role = $guide->id === $proposal->guide1_id
+            ? NuirContentReview::ROLE_GUIDE1
+            : NuirContentReview::ROLE_GUIDE2;
+
+        $note = 'Persetujuan dibatalkan oleh pembimbing, elemen perlu ditinjau ulang.';
+
+        $updated = NuirContentReview::query()
             ->where('nuir_submission_id', $submission->id)
             ->where('user_id', $guide->id)
             ->where('field', $field)
             ->where('approved', true)
-            ->delete();
+            ->update([
+                'approved' => false,
+                'note' => $note,
+                'reviewed_at' => now(),
+            ]);
+
+        if ($updated > 0) {
+            $this->revisionHistory->logNuiRevision($submission, $guide, $role, $field, $note);
+        }
 
         $this->guideSeatSync->syncGuideSeat($proposal, $guide);
     }
