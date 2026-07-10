@@ -637,9 +637,10 @@ class NuirManajerRoleTest extends TestCase
             ->assertSee(route('home'), false);
     }
 
-    public function test_kolom_pembimbing_menampilkan_status_kursi_atau_pembimbing_ok(): void
+    public function test_kolom_persetujuan_menampilkan_status_p1_p2_dan_referensi_divalidasi(): void
     {
-        $dosen2 = User::factory()->create()->assignRole('dosen');
+        $this->dosen->update(['initial' => 'AB']);
+        $dosen2 = User::factory()->create(['initial' => 'CD'])->assignRole('dosen');
 
         $mixed = NuirSubmission::factory()->submitted()->withNUI()->create([
             'user_id' => User::factory()->create()->assignRole('mahasiswa')->id,
@@ -668,10 +669,12 @@ class NuirManajerRoleTest extends TestCase
         $this->actingAs($this->manajer)
             ->get(NuirSubmissionResource::getUrl('index', panel: 'nuir-manajer'))
             ->assertOk()
-            ->assertSee('Pembimbing')
-            ->assertSee('Menunggu P1')
-            ->assertSee('ACC P2')
-            ->assertSee('pembimbing_ok');
+            ->assertSee('Persetujuan')
+            ->assertSee('AB (P1): Menunggu')
+            ->assertSee('CD (P2): ACC')
+            ->assertSee('AB (P1): ACC')
+            ->assertDontSee('pembimbing_ok')
+            ->assertSee('Referensi divalidasi:');
     }
 
     public function test_daftar_submission_terfilter_sesuai_kartu_dashboard(): void
