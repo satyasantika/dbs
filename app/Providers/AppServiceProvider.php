@@ -47,7 +47,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         FilamentView::registerRenderHook(
-            PanelsRenderHook::TOPBAR_START,
+            PanelsRenderHook::BODY_START,
             fn (): \Illuminate\Contracts\View\View => view('filament.impersonation-banner'),
         );
     }
