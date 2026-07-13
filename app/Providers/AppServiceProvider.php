@@ -41,16 +41,18 @@ class AppServiceProvider extends ServiceProvider
         }
         URL::forceRootUrl(config('app.url'));
 
-        // Fix Livewire asset/update routes when app is deployed in a subdirectory.
+        // Fix Livewire's script tag URL when app is deployed in a subdirectory.
         // APP_URL may include a path prefix (e.g. http://example.com/dbsmatematika).
-        // Without this, Livewire generates /livewire/update instead of /dbsmatematika/livewire/update,
-        // breaking AJAX updates (widgets never load, components can't re-render).
+        // FrontendAssets::js() reads the route's raw URI directly (bypassing
+        // URL::forceRootUrl()), so the prefix must be baked into the route itself
+        // here, otherwise the <script src> misses /dbsmatematika entirely.
+        //
+        // The update (AJAX) route is intentionally left at its default,
+        // unprefixed URI: HandleRequests::getUpdateUri() resolves it through
+        // UrlGenerator::toRoute(), which already honors forceRootUrl() above —
+        // prefixing it here too would duplicate the subpath (e.g.
+        // /dbsmatematika/dbsmatematika/livewire/update).
         if ($subPath !== '') {
-            Livewire::setUpdateRoute(function ($handle) use ($subPath) {
-                return Route::post($subPath . '/livewire/update', $handle)
-                    ->middleware('web');
-            });
-
             Livewire::setScriptRoute(function ($handle) use ($subPath) {
                 return Route::get($subPath . '/livewire/livewire.min.js', $handle);
             });
