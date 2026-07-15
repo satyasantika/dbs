@@ -155,7 +155,7 @@ class ExamRegistrationsDataTable extends DataTable
         return $this->builder()
                     ->setTableId('examregistrations-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax(url()->current())
                     //->dom('Bfrtip')
                     ->orderBy(3)
                     ->orderBy(2,'asc')

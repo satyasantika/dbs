@@ -41,7 +41,7 @@ class NuirSettingsDataTable extends DataTable
         return $this->builder()
             ->setTableId('nuir-settings-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax(url()->current())
             ->orderBy(1)
             ->selectStyleSingle()
             ->buttons([

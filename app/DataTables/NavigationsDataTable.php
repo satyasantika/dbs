@@ -46,7 +46,7 @@ class NavigationsDataTable extends DataTable
         return $this->builder()
                     ->setTableId('navigations-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax(url()->current())
                     //->dom('Bfrtip')
                     ->orderBy(1)
                     ->selectStyleSingle()

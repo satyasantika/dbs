@@ -55,7 +55,7 @@ class SelectionElementsDataTable extends DataTable
         return $this->builder()
                     ->setTableId('selectionelements-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax(url()->current())
                     //->dom('Bfrtip')
                     ->orderBy(1)
                     ->selectStyleSingle()

@@ -38,7 +38,7 @@ class NuirSubmissionsDataTable extends DataTable
         return $this->builder()
             ->setTableId('nuir-submissions-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax(url()->current())
             ->orderBy(1)
             ->selectStyleSingle()
             ->buttons([

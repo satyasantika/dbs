@@ -117,7 +117,7 @@ class ScoringDataTable extends DataTable
         return $this->builder()
                     ->setTableId('scoring-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax(url()->current())
                     //->dom('Bfrtip')
                     ->orderBy(2,'desc')
                     ->selectStyleSingle()

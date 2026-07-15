@@ -55,7 +55,7 @@ class NuirProposalsDataTable extends DataTable
         return $this->builder()
             ->setTableId('nuir-proposals-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->minifiedAjax(url()->current())
             ->orderBy(1)
             ->selectStyleSingle()
             ->buttons([
