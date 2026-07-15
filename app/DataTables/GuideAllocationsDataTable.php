@@ -57,7 +57,7 @@ class GuideAllocationsDataTable extends DataTable
         return $this->builder()
                     ->setTableId('selectionguideallocations-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax(url()->current())
                     //->dom('Bfrtip')
                     ->orderBy(1)
                     ->selectStyleSingle()

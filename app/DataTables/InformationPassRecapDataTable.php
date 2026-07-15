@@ -127,7 +127,7 @@ class InformationPassRecapDataTable extends DataTable
         return $this->builder()
                     ->setTableId('guideexaminers-table')
                     ->columns($this->getColumns())
-                    ->minifiedAjax()
+                    ->minifiedAjax(url()->current())
                     //->dom('Bfrtip')
                     // ->orderBy(1)
                     ->selectStyleSingle()
