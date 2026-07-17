@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\GuideAllocation;
+use App\Models\NuirProposal;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -80,6 +81,49 @@ class NuirGuideQuotaService
             if ($allocation->{$field} > 0) {
                 $allocation->decrement($field);
             }
+        });
+    }
+
+    /**
+     * Hitung ulang guide1_filled/guide2_filled berdasarkan jumlah usulan
+     * pending/accepted yang benar-benar aktif untuk angkatan ini, lalu
+     * simpan jika berbeda dari nilai tersimpan. Dipakai untuk memulihkan
+     * data bila terjadi kegagalan konsumsi/pelepasan kuota.
+     *
+     * @return int jumlah baris GuideAllocation yang dikoreksi
+     */
+    public function reconcile(string $yearGeneration): int
+    {
+        return DB::transaction(function () use ($yearGeneration) {
+            $corrected = 0;
+
+            $allocations = GuideAllocation::query()
+                ->where('year', (int) $yearGeneration)
+                ->where('active', true)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($allocations as $allocation) {
+                $actualGuide1Filled = NuirProposal::where('guide1_id', $allocation->user_id)
+                    ->whereIn('guide1_status', ['pending', 'accepted'])
+                    ->whereHas('submission', fn ($q) => $q->where('year_generation', $yearGeneration))
+                    ->count();
+
+                $actualGuide2Filled = NuirProposal::where('guide2_id', $allocation->user_id)
+                    ->whereIn('guide2_status', ['pending', 'accepted'])
+                    ->whereHas('submission', fn ($q) => $q->where('year_generation', $yearGeneration))
+                    ->count();
+
+                if ($allocation->guide1_filled !== $actualGuide1Filled || $allocation->guide2_filled !== $actualGuide2Filled) {
+                    $allocation->update([
+                        'guide1_filled' => $actualGuide1Filled,
+                        'guide2_filled' => $actualGuide2Filled,
+                    ]);
+                    $corrected++;
+                }
+            }
+
+            return $corrected;
         });
     }
 }
