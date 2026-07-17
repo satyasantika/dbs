@@ -158,25 +158,27 @@ Auth::routes();
 Route::get('/dashboard', [App\Http\Controllers\HomeController::class, 'index'])->name('dashboard');
 
 Route::get('/go-home', function () {
-    $user = auth()->user();
+    $options = App\Support\RolePanelDirectory::optionsForUser(auth()->user());
 
-    if ($user->hasRole('admin')) {
-        return redirect('/admin');
+    if (count($options) > 1) {
+        return redirect()->route('role.gate');
     }
 
-    if ($user->hasRole('dosen')) {
-        return redirect('/home');
-    }
-
-    if ($user->hasRole('dbs')) {
-        return redirect('/dbs');
-    }
-
-    if ($user->hasRole('mahasiswa')) {
-        return redirect('/mahasiswa');
+    if (count($options) === 1) {
+        return redirect($options[0]['url']);
     }
 
     return redirect()->route('dashboard');
 })->middleware('auth')->name('home');
+
+Route::get('/pilih-peran', function () {
+    $options = App\Support\RolePanelDirectory::optionsForUser(auth()->user());
+
+    if (count($options) < 2) {
+        return redirect()->route('home');
+    }
+
+    return view('auth.role-gate', ['options' => $options]);
+})->middleware('auth')->name('role.gate');
 
 Route::impersonate();

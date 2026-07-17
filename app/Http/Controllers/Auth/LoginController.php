@@ -26,23 +26,7 @@ class LoginController extends Controller
 
     protected function authenticated(\Illuminate\Http\Request $request, $user)
     {
-        if ($user->hasRole('admin')) {
-            return redirect('/admin');
-        }
-
-        if ($user->hasRole('dosen')) {
-            return redirect('/home');
-        }
-
-        if ($user->hasRole('manajer nuir')) {
-            return redirect('/nuir-manajer');
-        }
-
-        if ($user->hasRole('validator nuir')) {
-            return redirect('/nuir-validator');
-        }
-
-        return redirect()->route('dashboard');
+        return redirect()->route('home');
     }
 
     /**

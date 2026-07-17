@@ -11,6 +11,7 @@ class RolePanelDirectory
      * @var array<string, array{panel: string, label: string}>
      */
     private const MAP = [
+        'admin' => ['panel' => 'admin', 'label' => 'Portal Admin'],
         'dosen' => ['panel' => 'dosen', 'label' => 'Portal Dosen'],
         'mahasiswa' => ['panel' => 'mahasiswa', 'label' => 'Portal Mahasiswa'],
         'manajer nuir' => ['panel' => 'nuir-manajer', 'label' => 'Portal Manajer NUIR'],
