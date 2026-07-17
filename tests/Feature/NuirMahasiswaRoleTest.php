@@ -330,6 +330,23 @@ class NuirMahasiswaRoleTest extends TestCase
         );
     }
 
+    public function test_propose_guide_seat_mengonsumsi_kuota_p1_dan_p2(): void
+    {
+        $submission = NuirSubmission::factory()->submitted()->withNUI()->create([
+            'user_id' => $this->mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+
+        $workspace = app(NuirMahasiswaWorkspaceService::class);
+        $workspace->proposeGuideSeat($submission, $this->mahasiswa, 1, $this->dosenP1->id);
+        $workspace->proposeGuideSeat($submission, $this->mahasiswa, 2, $this->dosenP2->id);
+
+        $this->assertEquals(1, GuideAllocation::where('user_id', $this->dosenP1->id)->first()->guide1_filled);
+        $this->assertEquals(0, GuideAllocation::where('user_id', $this->dosenP1->id)->first()->guide2_filled);
+        $this->assertEquals(0, GuideAllocation::where('user_id', $this->dosenP2->id)->first()->guide1_filled);
+        $this->assertEquals(1, GuideAllocation::where('user_id', $this->dosenP2->id)->first()->guide2_filled);
+    }
+
     public function test_isi_ulang_kursi_kosong_dengan_dosen_pengganti_posisi_sama(): void
     {
         $submission = NuirSubmission::factory()->contentOk()->create([

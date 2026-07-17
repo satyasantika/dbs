@@ -68,6 +68,7 @@ class GuideQuotaRecap extends Page implements HasTable
 
         return $table
             ->query(fn (): Builder => $this->getTableQuery())
+            ->poll('15s')
             ->columns([
                 Tables\Columns\TextColumn::make('lecture.name')->label('Dosen')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('guide1_quota')->label('Kuota P1'),

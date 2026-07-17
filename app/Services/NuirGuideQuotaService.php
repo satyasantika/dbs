@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\GuideAllocation;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class NuirGuideQuotaService
@@ -39,30 +40,46 @@ class NuirGuideQuotaService
 
     public function consume(User $lecturer, int $guideOrder, string $yearGeneration): void
     {
-        $allocation = $this->allocationFor($lecturer, $yearGeneration);
+        DB::transaction(function () use ($lecturer, $guideOrder, $yearGeneration) {
+            $allocation = GuideAllocation::query()
+                ->where('user_id', $lecturer->id)
+                ->where('year', (int) $yearGeneration)
+                ->where('active', true)
+                ->lockForUpdate()
+                ->first();
 
-        if (! $allocation || ! $this->hasQuota($lecturer, $guideOrder, $yearGeneration)) {
-            throw ValidationException::withMessages([
-                $guideOrder === 1 ? 'guide1_id' : 'guide2_id' => 'Kuota pembimbing pada posisi ini sudah habis.',
-            ]);
-        }
+            $field = $guideOrder === 1 ? 'guide1_filled' : 'guide2_filled';
+            $quotaField = $guideOrder === 1 ? 'guide1_quota' : 'guide2_quota';
 
-        $field = $guideOrder === 1 ? 'guide1_filled' : 'guide2_filled';
-        $allocation->increment($field);
+            if (! $allocation || $allocation->{$field} >= $allocation->{$quotaField}) {
+                throw ValidationException::withMessages([
+                    $guideOrder === 1 ? 'guide1_id' : 'guide2_id' => 'Kuota pembimbing pada posisi ini sudah habis.',
+                ]);
+            }
+
+            $allocation->increment($field);
+        });
     }
 
     public function release(User $lecturer, int $guideOrder, string $yearGeneration): void
     {
-        $allocation = $this->allocationFor($lecturer, $yearGeneration);
+        DB::transaction(function () use ($lecturer, $guideOrder, $yearGeneration) {
+            $allocation = GuideAllocation::query()
+                ->where('user_id', $lecturer->id)
+                ->where('year', (int) $yearGeneration)
+                ->where('active', true)
+                ->lockForUpdate()
+                ->first();
 
-        if (! $allocation) {
-            return;
-        }
+            if (! $allocation) {
+                return;
+            }
 
-        $field = $guideOrder === 1 ? 'guide1_filled' : 'guide2_filled';
+            $field = $guideOrder === 1 ? 'guide1_filled' : 'guide2_filled';
 
-        if ($allocation->{$field} > 0) {
-            $allocation->decrement($field);
-        }
+            if ($allocation->{$field} > 0) {
+                $allocation->decrement($field);
+            }
+        });
     }
 }
