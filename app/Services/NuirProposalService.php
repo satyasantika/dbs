@@ -232,6 +232,8 @@ class NuirProposalService
             ]);
         }
 
+        $shouldConsumeQuota = ! $locked && $this->needsQuotaConsumption($submission, $guideId, $seat);
+
         if ($proposal === null) {
             $proposal = NuirProposal::create([
                 'nuir_submission_id' => $submission->id,
@@ -262,7 +264,7 @@ class NuirProposalService
             'recorded_at'        => now(),
         ]);
 
-        if (! $locked && $this->needsQuotaConsumption($submission, $guideId, $seat)) {
+        if ($shouldConsumeQuota) {
             $this->quotaService->consume($guide, $seat, $submission->year_generation);
         }
 
