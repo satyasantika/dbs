@@ -5,6 +5,7 @@ namespace Tests\Feature\Filament;
 use App\Filament\Mahasiswa\Pages\GuideQuotaRecap as MahasiswaGuideQuotaRecap;
 use App\Filament\NuirManajer\Pages\GuideQuotaRecap as ManajerGuideQuotaRecap;
 use App\Models\GuideExaminer;
+use App\Models\NuirProposal;
 use App\Models\NuirSetting;
 use App\Models\NuirSubmission;
 use App\Models\SelectionStage;
@@ -83,5 +84,37 @@ class GuideQuotaRecapTest extends TestCase
             ->assertActionVisible('ratify')
             ->callAction('ratify')
             ->assertHasNoActionErrors();
+    }
+
+    public function test_tombol_sinkronisasi_mengoreksi_kuota_terisi_yang_tidak_sesuai(): void
+    {
+        $manajer = User::factory()->create()->assignRole('manajer nuir');
+        $mahasiswa = User::factory()->create()->assignRole('mahasiswa');
+        $dosen = User::factory()->create(['name' => 'Dosen Sinkron'])->assignRole('dosen');
+        GuideExaminer::factory()->forStudent($mahasiswa)->create(['year_generation' => '2022']);
+        NuirSetting::factory()->create(['year_generation' => '2022', 'active' => true]);
+
+        $allocation = $this->seedGuideAllocation($dosen, '2022', guide1Quota: 5, guide2Quota: 5);
+        // Simulasikan drift: filled tersimpan 0 padahal ada usulan pending aktif.
+        $submission = NuirSubmission::factory()->contentOk()->create([
+            'user_id' => $mahasiswa->id,
+            'year_generation' => '2022',
+        ]);
+        NuirProposal::factory()->create([
+            'nuir_submission_id' => $submission->id,
+            'guide1_id' => $dosen->id,
+            'guide1_status' => 'pending',
+        ]);
+
+        $this->assertEquals(0, $allocation->fresh()->guide1_filled);
+
+        Livewire::actingAs($manajer)
+            ->test(ManajerGuideQuotaRecap::class)
+            ->set('yearGeneration', '2022')
+            ->callAction('syncQuota')
+            ->assertHasNoActionErrors();
+
+        $this->assertEquals(1, $allocation->fresh()->guide1_filled);
+        $this->assertEquals(0, $allocation->fresh()->guide2_filled);
     }
 }

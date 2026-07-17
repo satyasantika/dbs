@@ -102,6 +102,25 @@ class GuideQuotaRecap extends Page implements HasTable
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('syncQuota')
+                ->label('Sinkronisasi Kuota')
+                ->icon('heroicon-o-arrow-path')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('Sinkronisasi Sisa Kuota Pembimbing?')
+                ->modalDescription('Menghitung ulang jumlah terisi P1/P2 berdasarkan usulan yang benar-benar masih pending/accepted untuk angkatan ini. Gunakan bila ada indikasi sisa kuota tidak sesuai akibat kegagalan sistem saat pengusulan.')
+                ->modalSubmitActionLabel('Sinkronkan')
+                ->visible(fn (): bool => (auth()->user()?->can('manage nuir guide quota') ?? false) && filled($this->yearGeneration))
+                ->action(function (): void {
+                    $corrected = app(NuirGuideQuotaService::class)->reconcile($this->yearGeneration);
+
+                    Notification::make()
+                        ->success()
+                        ->title($corrected > 0
+                            ? "{$corrected} data kuota dosen disinkronkan."
+                            : 'Semua data kuota sudah sesuai, tidak ada yang dikoreksi.')
+                        ->send();
+                }),
             Action::make('ratify')
                 ->label('Pengesahan')
                 ->icon('heroicon-o-shield-check')
