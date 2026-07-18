@@ -44,7 +44,8 @@ class DbsPanelProvider extends PanelProvider
             ])
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()
-            ->maxContentWidth(MaxWidth::SevenExtraLarge)
+            ->collapsedSidebarWidth('3.5rem')
+            ->maxContentWidth(MaxWidth::Full)
             ->discoverResources(in: app_path('Filament/Dbs/Resources'), for: 'App\\Filament\\Dbs\\Resources')
             ->resources([
                 GuideAllocationResource::class,
@@ -59,6 +60,8 @@ class DbsPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Dbs/Pages'), for: 'App\\Filament\\Dbs\\Pages')
             ->pages([
                 Dashboard::class,
+                \App\Filament\Shared\Pages\EditProfile::class,
+                \App\Filament\Shared\Pages\ChangePassword::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->navigationGroups([

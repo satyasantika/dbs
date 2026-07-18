@@ -36,12 +36,15 @@ class NuirValidatorPanelProvider extends PanelProvider
             ])
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()
-            ->maxContentWidth(MaxWidth::SevenExtraLarge)
+            ->collapsedSidebarWidth('3.5rem')
+            ->maxContentWidth(MaxWidth::Full)
             ->discoverResources(in: app_path('Filament/NuirValidator/Resources'), for: 'App\\Filament\\NuirValidator\\Resources')
             ->discoverPages(in: app_path('Filament/NuirValidator/Pages'), for: 'App\\Filament\\NuirValidator\\Pages')
             ->discoverWidgets(in: app_path('Filament/NuirValidator/Widgets'), for: 'App\\Filament\\NuirValidator\\Widgets')
             ->pages([
                 Dashboard::class,
+                \App\Filament\Shared\Pages\EditProfile::class,
+                \App\Filament\Shared\Pages\ChangePassword::class,
             ])
             ->navigationGroups([
                 // Tanpa icon di level grup — menghindari icon anggota grup

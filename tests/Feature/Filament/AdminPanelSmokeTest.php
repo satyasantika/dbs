@@ -3,12 +3,8 @@
 namespace Tests\Feature\Filament;
 
 use App\Filament\Resources\ExamRegistrationResource;
-use App\Filament\Resources\GuideAllocationResource;
 use App\Filament\Resources\GuideExaminerResource;
-use App\Filament\Resources\PermissionResource;
 use App\Filament\Resources\RoleResource;
-use App\Filament\Resources\SelectionElementResource;
-use App\Filament\Resources\SelectionStageResource;
 use App\Filament\Resources\UserResource;
 use App\Models\User;
 use Tests\TestCase;
@@ -106,77 +102,10 @@ class AdminPanelSmokeTest extends TestCase
     }
 
     // ----------------------------------------------------------------
-    // Manajemen Permission
-    // Menggantikan: setting/permissions
+    // Manajemen Permission dan Manajemen Seleksi (Tahap, Elemen NUIR, Kuota
+    // Pembimbing) sengaja TIDAK terdaftar di panel admin — sudah dikelola
+    // lewat panel Manajer NUIR / Dbs. Lihat AdminPanelProvider::panel().
     // ----------------------------------------------------------------
-
-    public function test_permissions_index_accessible(): void
-    {
-        // Menggantikan GET /setting/permissions
-        $this->actingAs($this->admin)
-            ->get(PermissionResource::getUrl('index'))
-            ->assertOk();
-    }
-
-    public function test_permissions_create_accessible(): void
-    {
-        $this->actingAs($this->admin)
-            ->get(PermissionResource::getUrl('create'))
-            ->assertOk();
-    }
-
-    // ----------------------------------------------------------------
-    // Manajemen Seleksi — Tahap
-    // Menggantikan: setting/selectionstages
-    // ----------------------------------------------------------------
-
-    public function test_selection_stages_index_accessible(): void
-    {
-        // Menggantikan GET /setting/selectionstages
-        $this->actingAs($this->admin)
-            ->get(SelectionStageResource::getUrl('index'))
-            ->assertOk();
-    }
-
-    public function test_selection_stages_create_accessible(): void
-    {
-        $this->actingAs($this->admin)
-            ->get(SelectionStageResource::getUrl('create'))
-            ->assertOk();
-    }
-
-    // ----------------------------------------------------------------
-    // Manajemen Seleksi — Elemen NUIR
-    // Menggantikan: setting/selectionelements
-    // ----------------------------------------------------------------
-
-    public function test_selection_elements_index_accessible(): void
-    {
-        // Menggantikan GET /setting/selectionelements
-        $this->actingAs($this->admin)
-            ->get(SelectionElementResource::getUrl('index'))
-            ->assertOk();
-    }
-
-    // ----------------------------------------------------------------
-    // Manajemen Seleksi — Kuota Pembimbing
-    // Menggantikan: setting/selectionguideallocations
-    // ----------------------------------------------------------------
-
-    public function test_guide_allocations_index_accessible(): void
-    {
-        // Menggantikan GET /setting/selectionguideallocations
-        $this->actingAs($this->admin)
-            ->get(GuideAllocationResource::getUrl('index'))
-            ->assertOk();
-    }
-
-    public function test_guide_allocations_create_accessible(): void
-    {
-        $this->actingAs($this->admin)
-            ->get(GuideAllocationResource::getUrl('create'))
-            ->assertOk();
-    }
 
     // ----------------------------------------------------------------
     // Manajemen Ujian — Pembimbing & Penguji
