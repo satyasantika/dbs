@@ -234,7 +234,16 @@
                     ])
                 @endif
 
-                <x-filament-panels::user-menu />
+                {{-- Identity lives in the sidebar footer while it's expanded
+                     (filament.shared.sidebar-footer) — only shown up here once
+                     the sidebar is minimized, so it's never displayed twice. --}}
+                @if (filament()->hasNavigation())
+                    <div x-show="! $store.sidebar.isOpen">
+                        <x-filament-panels::user-menu />
+                    </div>
+                @else
+                    <x-filament-panels::user-menu />
+                @endif
             @endif
         </div>
 
