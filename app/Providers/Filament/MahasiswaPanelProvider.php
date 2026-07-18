@@ -43,12 +43,14 @@ class MahasiswaPanelProvider extends PanelProvider
             ])
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()
+            ->collapsedSidebarWidth('3.5rem')
             ->profile(MahasiswaEditProfile::class, isSimple: false)
-            ->maxContentWidth(MaxWidth::SevenExtraLarge)
+            ->maxContentWidth(MaxWidth::Full)
             ->discoverPages(in: app_path('Filament/Mahasiswa/Pages'), for: 'App\\Filament\\Mahasiswa\\Pages')
             ->discoverWidgets(in: app_path('Filament/Mahasiswa/Widgets'), for: 'App\\Filament\\Mahasiswa\\Widgets')
             ->pages([
                 Dashboard::class,
+                \App\Filament\Shared\Pages\EditProfile::class,
                 NuirSubmissionOverview::class,
                 CreateNuirSubmission::class,
                 EditNuirSubmission::class,

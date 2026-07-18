@@ -42,10 +42,13 @@ class DosenPanelProvider extends PanelProvider
             ])
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()
-            ->maxContentWidth(MaxWidth::SevenExtraLarge)
+            ->collapsedSidebarWidth('3.5rem')
+            ->maxContentWidth(MaxWidth::Full)
             ->discoverPages(in: app_path('Filament/Dosen/Pages'), for: 'App\\Filament\\Dosen\\Pages')
             ->pages([
                 Dashboard::class,
+                \App\Filament\Shared\Pages\EditProfile::class,
+                \App\Filament\Shared\Pages\ChangePassword::class,
                 UnscoredScoring::class,
                 Scoring::class,
                 EditScoring::class,
