@@ -15,7 +15,16 @@
         x-bind:class="
             $store.sidebar.isOpen
                 ? @js($openSidebarClasses . ' ' . 'lg:sticky')
-                : '-translate-x-full rtl:translate-x-full lg:sticky lg:translate-x-0 rtl:lg:-translate-x-0'
+                {{-- Filament defines --collapsed-sidebar-width but never actually
+                     applies it as a width anywhere upstream — without an explicit
+                     class here the collapsed rail just shrink-wraps its content
+                     instead of settling at a deliberate, narrow icon-rail size.
+                     `lg:w-[--collapsed-sidebar-width]` has no compiled Tailwind
+                     rule in this project (no local Tailwind build — see
+                     filament.shared.custom-styles) and is left here only as a
+                     marker string; the actual width rule lives in that
+                     stylesheet, matched via an attribute selector. --}}
+                : '-translate-x-full rtl:translate-x-full lg:sticky lg:w-[--collapsed-sidebar-width] lg:translate-x-0 rtl:lg:-translate-x-0'
         "
     @else
         @if (filament()->hasTopNavigation())
@@ -106,7 +115,18 @@
     </div>
 
     <nav
-        class="fi-sidebar-nav flex-grow flex flex-col gap-y-7 overflow-y-auto overflow-x-hidden px-6 py-8"
+        @if (filament()->isSidebarCollapsibleOnDesktop() && (! filament()->hasTopNavigation()))
+            {{-- Marker class only — no compiled rule of its own (see
+                 filament.shared.custom-styles, which matches it via an
+                 attribute selector). It applies symmetric padding so the
+                 collapsed icon button sits with an even margin on both
+                 sides of the narrow rail, rather than reusing the wider
+                 px-6 the expanded state uses. --}}
+            x-bind:class="$store.sidebar.isOpen ? '' : 'fi-sidebar-nav-collapsed'"
+            class="fi-sidebar-nav flex-grow flex flex-col gap-y-7 overflow-y-auto overflow-x-hidden px-6 py-8"
+        @else
+            class="fi-sidebar-nav flex-grow flex flex-col gap-y-7 overflow-y-auto overflow-x-hidden px-6 py-8"
+        @endif
         style="scrollbar-gutter: stable"
     >
         {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\View\PanelsRenderHook::SIDEBAR_NAV_START) }}
@@ -125,7 +145,7 @@
             </div>
         @endif
 
-        <ul class="fi-sidebar-nav-groups -mx-2 flex flex-col gap-y-7">
+        <ul class="fi-sidebar-nav-groups -mx-2 flex flex-col gap-y-4">
             @foreach ($navigation as $group)
                 <x-filament-panels::sidebar.group
                     :active="$group->isActive()"
