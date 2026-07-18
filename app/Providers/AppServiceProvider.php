@@ -62,5 +62,10 @@ class AppServiceProvider extends ServiceProvider
             PanelsRenderHook::BODY_START,
             fn (): \Illuminate\Contracts\View\View => view('filament.impersonation-banner'),
         );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::STYLES_AFTER,
+            fn (): \Illuminate\Contracts\View\View => view('filament.shared.custom-styles'),
+        );
     }
 }
