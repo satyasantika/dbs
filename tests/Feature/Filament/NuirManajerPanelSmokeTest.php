@@ -119,22 +119,21 @@ class NuirManajerPanelSmokeTest extends TestCase
             ->assertSee('Portal Manajer NUIR');
     }
 
-    public function test_manajer_dengan_satu_role_tidak_melihat_select_role(): void
+    public function test_manajer_dengan_satu_role_tidak_melihat_ganti_peran(): void
     {
         $this->actingAs($this->manajer)
             ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
             ->assertOk()
-            ->assertDontSee('id="role-switcher"', false);
+            ->assertDontSee('Ganti Peran');
     }
 
-    public function test_manajer_dengan_role_ganda_melihat_select_role(): void
+    public function test_manajer_dengan_role_ganda_melihat_ganti_peran(): void
     {
         $this->manajer->assignRole('dosen');
 
         $this->actingAs($this->manajer)
             ->get(ManajerDashboard::getUrl(panel: 'nuir-manajer'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
-            ->assertSeeInOrder(['Portal Dosen', 'Portal Manajer NUIR']);
+            ->assertSee('Ganti Peran');
     }
 }

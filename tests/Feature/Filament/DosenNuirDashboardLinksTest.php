@@ -141,22 +141,26 @@ class DosenNuirDashboardLinksTest extends TestCase
             ->assertSeeInOrder(['Perlu Review Judul/NUI', '1']);
     }
 
-    public function test_dosen_dengan_role_manajer_melihat_select_role_di_navbar(): void
+    public function test_dosen_dengan_role_manajer_melihat_ganti_peran_dan_opsi_role_gate(): void
     {
         $user = User::factory()->create()->assignRole(['dosen', 'manajer nuir']);
         $user->givePermissionTo('active');
 
-        // Diuji di halaman non-dashboard untuk memastikan select role muncul
-        // di navbar semua halaman panel, bukan hanya lewat widget dashboard.
+        // Diuji di halaman non-dashboard untuk memastikan Ganti Peran muncul
+        // di sidebar semua halaman panel, bukan hanya lewat widget dashboard.
         $this->actingAs($user)
             ->get(ChiefExam::getUrl(panel: 'dosen'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
+            ->assertSee('Ganti Peran');
+
+        $this->actingAs($user)
+            ->get(route('role.gate'))
+            ->assertOk()
             ->assertSee(NuirManajerDashboard::getUrl(panel: 'nuir-manajer'), false)
             ->assertSee('Portal Manajer NUIR');
     }
 
-    public function test_dosen_dengan_role_validator_melihat_select_role_di_navbar(): void
+    public function test_dosen_dengan_role_validator_melihat_ganti_peran_dan_opsi_role_gate(): void
     {
         $user = User::factory()->create()->assignRole(['dosen', 'validator nuir']);
         $user->givePermissionTo('active');
@@ -164,12 +168,16 @@ class DosenNuirDashboardLinksTest extends TestCase
         $this->actingAs($user)
             ->get(ChiefExam::getUrl(panel: 'dosen'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
+            ->assertSee('Ganti Peran');
+
+        $this->actingAs($user)
+            ->get(route('role.gate'))
+            ->assertOk()
             ->assertSee(NuirValidatorDashboard::getUrl(panel: 'nuir-validator'), false)
             ->assertSee('Portal Validator NUIR');
     }
 
-    public function test_dosen_dengan_satu_role_tidak_melihat_select_role(): void
+    public function test_dosen_dengan_satu_role_tidak_melihat_ganti_peran(): void
     {
         $user = User::factory()->create()->assignRole('dosen');
         $user->givePermissionTo('active');
@@ -177,10 +185,10 @@ class DosenNuirDashboardLinksTest extends TestCase
         $this->actingAs($user)
             ->get(ChiefExam::getUrl(panel: 'dosen'))
             ->assertOk()
-            ->assertDontSee('id="role-switcher"', false);
+            ->assertDontSee('Ganti Peran');
     }
 
-    public function test_dosen_dengan_ketiga_role_melihat_semua_opsi_select_role(): void
+    public function test_dosen_dengan_ketiga_role_melihat_semua_opsi_role_gate(): void
     {
         $user = User::factory()->create()->assignRole(['dosen', 'manajer nuir', 'validator nuir']);
         $user->givePermissionTo('active');
@@ -188,7 +196,11 @@ class DosenNuirDashboardLinksTest extends TestCase
         $this->actingAs($user)
             ->get(DosenDashboard::getUrl(panel: 'dosen'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
+            ->assertSee('Ganti Peran');
+
+        $this->actingAs($user)
+            ->get(route('role.gate'))
+            ->assertOk()
             ->assertSeeInOrder(['Portal Dosen', 'Portal Manajer NUIR', 'Portal Validator NUIR']);
     }
 

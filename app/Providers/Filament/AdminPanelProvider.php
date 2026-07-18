@@ -13,6 +13,7 @@ use App\Http\Middleware\FilamentAuthenticate as Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Pages;
 use Filament\Panel;
@@ -74,6 +75,16 @@ class AdminPanelProvider extends PanelProvider
                 // diminimize, bukan menampilkan ikon masing-masing menu.
                 NavigationGroup::make('Manajemen Pengguna'),
                 NavigationGroup::make('Manajemen Ujian')->collapsed(),
+            ])
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Edit Profil')
+                    ->icon('heroicon-o-user-circle')
+                    ->url(fn (): string => \App\Filament\Shared\Pages\EditProfile::getUrl()),
+                MenuItem::make()
+                    ->label('Ubah Password')
+                    ->icon('heroicon-o-key')
+                    ->url(fn (): string => \App\Filament\Shared\Pages\ChangePassword::getUrl()),
             ])
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
