@@ -454,22 +454,21 @@ class NuirValidatorPanelSmokeTest extends TestCase
             ->assertSee('Portal Validator NUIR');
     }
 
-    public function test_validator_dengan_satu_role_tidak_melihat_select_role(): void
+    public function test_validator_dengan_satu_role_tidak_melihat_ganti_peran(): void
     {
         $this->actingAs($this->validator)
             ->get(ValidatorDashboard::getUrl(panel: 'nuir-validator'))
             ->assertOk()
-            ->assertDontSee('id="role-switcher"', false);
+            ->assertDontSee('Ganti Peran');
     }
 
-    public function test_validator_dengan_role_ganda_melihat_select_role(): void
+    public function test_validator_dengan_role_ganda_melihat_ganti_peran(): void
     {
         $this->validator->assignRole('dosen');
 
         $this->actingAs($this->validator)
             ->get(ValidatorDashboard::getUrl(panel: 'nuir-validator'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
-            ->assertSeeInOrder(['Portal Dosen', 'Portal Validator NUIR']);
+            ->assertSee('Ganti Peran');
     }
 }

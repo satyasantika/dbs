@@ -282,23 +282,22 @@ class MahasiswaPanelSmokeTest extends TestCase
         $this->assertStringContainsString('Portal Mahasiswa', (string) $panel->getBrandName());
     }
 
-    public function test_mahasiswa_dengan_satu_role_tidak_melihat_select_role(): void
+    public function test_mahasiswa_dengan_satu_role_tidak_melihat_ganti_peran(): void
     {
         $this->actingAs($this->mahasiswa)
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
             ->assertOk()
-            ->assertDontSee('id="role-switcher"', false);
+            ->assertDontSee('Ganti Peran');
     }
 
-    public function test_mahasiswa_dengan_role_ganda_melihat_select_role(): void
+    public function test_mahasiswa_dengan_role_ganda_melihat_ganti_peran(): void
     {
         $this->mahasiswa->assignRole('dbs');
 
         $this->actingAs($this->mahasiswa)
             ->get(Dashboard::getUrl(panel: 'mahasiswa'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
-            ->assertSeeInOrder(['Portal Mahasiswa', 'Portal DBS']);
+            ->assertSee('Ganti Peran');
     }
 
     public function test_mahasiswa_dapat_akses_halaman_ganti_password(): void

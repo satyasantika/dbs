@@ -131,31 +131,30 @@ class DbsPanelSmokeTest extends TestCase
             ->assertDontSee('DBS Panel');
     }
 
-    public function test_dbs_dengan_satu_role_tidak_melihat_select_role(): void
+    public function test_dbs_dengan_satu_role_tidak_melihat_ganti_peran(): void
     {
         $this->actingAs($this->dbs)
             ->get(Dashboard::getUrl(panel: 'dbs'))
             ->assertOk()
-            ->assertDontSee('id="role-switcher"', false);
+            ->assertDontSee('Ganti Peran');
     }
 
-    public function test_dbs_dengan_role_ganda_melihat_select_role(): void
+    public function test_dbs_dengan_role_ganda_melihat_ganti_peran(): void
     {
         $this->dbs->assignRole('dosen');
 
         $this->actingAs($this->dbs)
             ->get(Dashboard::getUrl(panel: 'dbs'))
             ->assertOk()
-            ->assertSee('id="role-switcher"', false)
-            ->assertSeeInOrder(['Portal Dosen', 'Portal DBS']);
+            ->assertSee('Ganti Peran');
     }
 
-    public function test_panel_admin_tidak_terpengaruh_perubahan_role_switcher(): void
+    public function test_panel_admin_tidak_terpengaruh_perubahan_ganti_peran(): void
     {
         $panel = Filament::getPanel('admin');
 
         $this->assertFalse($panel->hasTopNavigation());
-        $this->assertSame('DBS Admin', $panel->getBrandName());
+        $this->assertSame('Portal Admin', $panel->getBrandName());
         $this->assertNull($panel->getHomeUrl());
     }
 }

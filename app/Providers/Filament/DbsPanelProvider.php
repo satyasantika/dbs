@@ -16,6 +16,7 @@ use App\Support\FilamentBrand;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
 use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -71,10 +72,16 @@ class DbsPanelProvider extends PanelProvider
                 NavigationGroup::make('Manajemen NUIR'),
                 NavigationGroup::make('Manajemen Ujian')->collapsed(),
             ])
-            ->renderHook(
-                PanelsRenderHook::GLOBAL_SEARCH_AFTER,
-                fn (): string => view('filament.shared.role-switcher')->render(),
-            )
+            ->userMenuItems([
+                MenuItem::make()
+                    ->label('Edit Profil')
+                    ->icon('heroicon-o-user-circle')
+                    ->url(fn (): string => \App\Filament\Shared\Pages\EditProfile::getUrl()),
+                MenuItem::make()
+                    ->label('Ubah Password')
+                    ->icon('heroicon-o-key')
+                    ->url(fn (): string => \App\Filament\Shared\Pages\ChangePassword::getUrl()),
+            ])
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn (): string => view('filament.shared.sidebar-footer')->render(),
