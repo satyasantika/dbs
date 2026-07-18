@@ -9,6 +9,10 @@ use Illuminate\Contracts\Support\Htmlable;
 
 class MahasiswaEditProfile extends EditProfile
 {
+    // Panel-wide default is Full (untuk halaman tabel/resource) — form
+    // password singkat ini lebih enak dibaca dibatasi lebar.
+    protected ?string $maxContentWidth = 'xl';
+
     public static function getLabel(): string
     {
         return 'Ganti Password';

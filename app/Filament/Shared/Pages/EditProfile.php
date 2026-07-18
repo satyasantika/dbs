@@ -22,6 +22,11 @@ class EditProfile extends Page implements HasForms
 
     protected static ?string $slug = 'edit-profil';
 
+    // Panel-wide default is Full (untuk halaman tabel/resource) — form
+    // singkat seperti ini lebih enak dibaca dibatasi lebar, bukan
+    // melebar selayar penuh di desktop.
+    protected ?string $maxContentWidth = 'xl';
+
     /**
      * @var array<string, mixed>
      */

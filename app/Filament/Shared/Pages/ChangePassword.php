@@ -22,6 +22,11 @@ class ChangePassword extends Page implements HasForms
 
     protected static ?string $slug = 'ubah-password';
 
+    // Panel-wide default is Full (untuk halaman tabel/resource) — form
+    // singkat seperti ini lebih enak dibaca dibatasi lebar, bukan
+    // melebar selayar penuh di desktop.
+    protected ?string $maxContentWidth = 'xl';
+
     /**
      * @var array<string, mixed>
      */
