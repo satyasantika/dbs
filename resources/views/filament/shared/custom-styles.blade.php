@@ -192,4 +192,162 @@
         color: #fff !important;
         background-color: rgba(255, 255, 255, .08) !important;
     }
+
+    /* ==========================================================
+       Page footer. Truly fixed to the viewport bottom, same dark
+       gradient as the sidebar/topbar so the three read as one
+       continuous shell around the light content area.
+
+       Fixed positioning escapes .fi-main-ctn entirely, so its `left`
+       offset has to track the sidebar's width by hand instead of
+       inheriting it from layout the way sticky would have. `.fi-main-ctn-
+       sidebar-open` is Filament's own marker (already toggled live by
+       Alpine in layout/index.blade.php) for whether the sidebar is
+       currently expanded or the narrow 3.5rem rail — reused here rather
+       than tracking that state a second time. --sidebar-width /
+       --collapsed-sidebar-width are Filament's own CSS variables (set
+       in layout/base.blade.php from ->collapsedSidebarWidth()). Below
+       the lg breakpoint the sidebar is an off-canvas drawer overlay
+       rather than something the content flows beside, so the footer
+       just spans full width there.
+
+       Height is a fixed 64px to match .fi-sidebar-footer's own rendered
+       height (sidebar-footer.blade.php) so the two footers line up.
+       Fixed height means content that would wrap to a second line just
+       gets clipped (see the credit line's mobile hide below) instead of
+       growing the footer — deliberate trade-off for a guaranteed match.
+
+       .fi-main is height-capped to the viewport (below) and scrolls
+       internally, with its own bottom padding reserving these same
+       64px so content never sits behind the footer. That capping is
+       also what keeps .fi-layout from ever exceeding 100vh — letting it
+       grow taller (which the old padding-bottom-on-flow-content
+       approach did) is what caused .fi-sidebar to visually "lift": the
+       sidebar is `position: sticky` with both `top: 0` and `bottom: 0`
+       set (inset-y-0, sidebar/index.blade.php) so it stays pinned
+       full-height, but a sticky element with both offsets releases its
+       top-pin and starts tracking the bottom offset instead once its
+       containing block's far edge comes into view — exactly what
+       scrolling to the bottom of a taller-than-100vh page triggered. */
+    .fi-page-footer {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+        height: 64px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 45%, #4f46e5 100%);
+    }
+
+    @media (min-width: 1024px) {
+        .fi-main-ctn:not(.fi-main-ctn-sidebar-open) .fi-page-footer {
+            left: var(--collapsed-sidebar-width);
+        }
+
+        .fi-main-ctn.fi-main-ctn-sidebar-open .fi-page-footer {
+            left: var(--sidebar-width);
+        }
+    }
+
+    /* .fi-main-ctn's children (topbar h-16 = 64px, then .fi-main below)
+       are left to sum to exactly 100vh instead of letting .fi-main grow
+       past its share — see the big comment above .fi-page-footer for
+       why that matters for the sidebar. */
+    .fi-main {
+        height: calc(100vh - 64px);
+        overflow-y: auto;
+        padding-bottom: 64px;
+    }
+
+    /* The one deliberate flourish: a slim gradient seam stitching the
+       footer to the same brand gradient used everywhere else, instead of
+       a flat border-top. */
+    .fi-page-footer-hairline {
+        height: 2px;
+        flex-shrink: 0;
+        background: linear-gradient(90deg, #0f172a, #1e3a8a, #4f46e5, #a855f7);
+    }
+
+    /* Fills the remaining 62px below the hairline (footer's fixed 64px
+       total) and vertically centers a single text line — no vertical
+       padding needed since height:100% + align-items already center it.
+       overflow: hidden clips rather than wraps if flex-wrap ever kicks
+       in, keeping the 64px height exact (see .fi-page-footer-credit
+       below for the deliberate narrow-screen fallback instead). */
+    .fi-page-footer-inner {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.375rem 1.5rem;
+        padding: 0 31px;
+        font-size: 0.75rem;
+        line-height: 1.25rem;
+        overflow: hidden;
+    }
+
+    @media (max-width: 640px) {
+        .fi-page-footer-credit {
+            display: none;
+        }
+    }
+
+    .fi-page-footer-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: rgba(255, 255, 255, .65);
+        white-space: nowrap;
+    }
+
+    /* Echoes the pulsing status dot on the login screen's brand badge
+       (resources/views/auth/login.blade.php, .badge-dot) — same green,
+       same rhythm — so the footer reads as a continuation of that
+       language rather than a new one. */
+    .fi-page-footer-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 9999px;
+        background: #4ade80;
+        flex-shrink: 0;
+        animation: fi-page-footer-blink 2.2s ease-in-out infinite;
+    }
+
+    @keyframes fi-page-footer-blink {
+        0%, 100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: .35;
+        }
+    }
+
+    .fi-page-footer-brand-name {
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .fi-page-footer-divider {
+        color: rgba(255, 255, 255, .3);
+    }
+
+    .fi-page-footer-credit {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        color: rgba(255, 255, 255, .55);
+    }
+
+    .fi-page-footer-credit-icon {
+        width: 1rem;
+        height: 1rem;
+        flex-shrink: 0;
+        color: rgba(255, 255, 255, .4);
+    }
 </style>

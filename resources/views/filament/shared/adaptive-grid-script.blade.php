@@ -1,17 +1,18 @@
 {{--
-    Makes ->contentGrid() tables (UserResource, RoleResource — see
-    filament.shared.custom-styles for the auto-fill column CSS) fill full
-    rows AND columns instead of just columns: measures how many card-widths
-    fit horizontally (already handled by the CSS auto-fill grid) and how
-    many card-heights fit vertically in the space between the toolbar and
-    the pagination/footer, then sets Livewire's own `tableRecordsPerPage`
-    to (columns × rows) so the fetched page is exactly a filled matrix
-    instead of a partial last row.
+    Fits ->contentGrid() tables (UserResource, RoleResource — see
+    filament.shared.custom-styles for the auto-fill column CSS) to full
+    rows AND columns instead of just columns: measures how many
+    card-widths fit horizontally (already handled by the CSS auto-fill
+    grid) and how many card-heights fit vertically in the space between
+    the toolbar and the pagination/footer, then sets Livewire's own
+    `tableRecordsPerPage` to (columns × rows) so the fetched page is
+    exactly a filled matrix instead of a partial last row. Client-side
+    approximation — depends on every card being close to the same
+    height. No effect on pages without a .fi-ta-content-grid element.
 
-    This is a client-side approximation — it depends on every card being
-    close to the same height, which holds for these two resources but
-    isn't guaranteed for arbitrary content. No effect on pages without a
-    .fi-ta-content-grid element.
+    The page footer itself is a fixed 64px (custom-styles.blade.php) —
+    no measurement/sync needed for it here, unlike an earlier version of
+    this script.
 --}}
 <script>
     (function () {
@@ -91,10 +92,14 @@
             document.querySelectorAll('.fi-ta-content-grid').forEach(fitGridToViewport);
         }
 
-        const debouncedFit = debounce(fitAllGrids, 250);
+        function runAll() {
+            fitAllGrids();
+        }
 
-        document.addEventListener('DOMContentLoaded', () => setTimeout(fitAllGrids, 50));
-        document.addEventListener('livewire:navigated', () => setTimeout(fitAllGrids, 50));
-        window.addEventListener('resize', debouncedFit);
+        const debouncedRunAll = debounce(runAll, 250);
+
+        document.addEventListener('DOMContentLoaded', () => setTimeout(runAll, 50));
+        document.addEventListener('livewire:navigated', () => setTimeout(runAll, 50));
+        window.addEventListener('resize', debouncedRunAll);
     })();
 </script>
