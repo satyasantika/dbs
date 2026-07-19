@@ -133,40 +133,60 @@ class UserResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nama')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('username')
-                    ->label('Username / NIM')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('email')
-                    ->label('Email')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('roles.name')
-                    ->label('Role')
-                    ->badge()
-                    ->separator(', '),
-                Tables\Columns\TextColumn::make('permissions.name')
-                    ->label('Izin langsung')
-                    ->badge()
-                    ->separator(', ')
-                    ->limitList(5)
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('gender')
-                    ->label('Kelamin')
-                    ->formatStateUsing(fn ($state) => match($state) {
-                        'L' => 'Laki-laki',
-                        'P' => 'Perempuan',
-                        default => '-',
-                    }),
-                Tables\Columns\TextColumn::make('created_at')
-                    ->label('Dibuat')
-                    ->date('d M Y')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja (itu cuma mengatur lebar kolom grid,
+                // tanpa Stack tabelnya tetap <table> biasa).
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('name')
+                            ->label('Nama')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('username')
+                            ->label('Username / NIM')
+                            ->searchable()
+                            ->sortable()
+                            ->badge()
+                            ->color('gray')
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\TextColumn::make('email')
+                        ->label('Email')
+                        ->searchable()
+                        ->color('gray'),
+                    Tables\Columns\TextColumn::make('roles.name')
+                        ->label('Role')
+                        ->badge()
+                        ->separator(', '),
+                    Tables\Columns\TextColumn::make('permissions.name')
+                        ->label('Izin langsung')
+                        ->badge()
+                        ->separator(', ')
+                        ->limitList(5)
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('gender')
+                            ->label('Kelamin')
+                            ->formatStateUsing(fn ($state) => match($state) {
+                                'L' => 'Laki-laki',
+                                'P' => 'Perempuan',
+                                default => '-',
+                            }),
+                        Tables\Columns\TextColumn::make('created_at')
+                            ->label('Dibuat')
+                            ->date('d M Y')
+                            ->sortable()
+                            ->color('gray')
+                            ->toggleable(isToggledHiddenByDefault: true),
+                    ]),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('roles')

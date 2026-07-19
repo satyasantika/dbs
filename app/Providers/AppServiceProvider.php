@@ -67,5 +67,15 @@ class AppServiceProvider extends ServiceProvider
             PanelsRenderHook::STYLES_AFTER,
             fn (): \Illuminate\Contracts\View\View => view('filament.shared.custom-styles'),
         );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::FOOTER,
+            fn (): \Illuminate\Contracts\View\View => view('filament.shared.page-footer'),
+        );
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::SCRIPTS_AFTER,
+            fn (): \Illuminate\Contracts\View\View => view('filament.shared.adaptive-grid-script'),
+        );
     }
 }
