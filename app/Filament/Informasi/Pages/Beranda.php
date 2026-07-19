@@ -305,11 +305,11 @@ class Beranda extends Page implements HasTable
                 'belum_lulus' => $belumLulus,
                 'belum_lulus_pct' => $total > 0 ? round($belumLulus / $total * 100, 1) : 0.0,
                 'belum_sempro' => $belumSemproIds->count(),
-                'belum_sempro_reg' => $this->countRegisteredNotPassed($belumSemproIds, examTypeId: 1),
+                'belum_sempro_reg' => $this->countUpcomingRegistrations($belumSemproIds, examTypeId: 1),
                 'akan_semhas' => $akanSemhasIds->count(),
-                'akan_semhas_reg' => $this->countRegisteredNotPassed($akanSemhasIds, examTypeId: 2),
+                'akan_semhas_reg' => $this->countUpcomingRegistrations($akanSemhasIds, examTypeId: 2),
                 'akan_sidang' => $akanSidangIds->count(),
-                'akan_sidang_reg' => $this->countRegisteredNotPassed($akanSidangIds, examTypeId: 3),
+                'akan_sidang_reg' => $this->countUpcomingRegistrations($akanSidangIds, examTypeId: 3),
             ];
         });
     }
@@ -367,11 +367,14 @@ class Beranda extends Page implements HasTable
      * pass_exam=NULL yang tersisa, user itu TETAP dikurangi dari Lulus,
      * WALAUPUN ada baris pass_exam=1 lain untuk exam_type yang sama) —
      * bukan bug, ini permintaan eksplisit supaya rumusnya konsisten &
-     * mudah ditelusuri: selama ada ExamRegistration pass_exam=NULL untuk
-     * exam_type_id terkait, dia HARUS ikut mengurangi/menambah hitungan
-     * "reg" di kategori yang sesuai. pass_exam=0 SENGAJA tidak dipakai
-     * sama sekali (lihat juga countRegisteredNotPassed()) — cuma
-     * pass_exam=1 & pass_exam=NULL yang relevan.
+     * mudah ditelusuri. pass_exam=0 SENGAJA tidak dipakai sama sekali di
+     * sini — cuma pass_exam=1 & pass_exam=NULL yang relevan buat
+     * keanggotaan bucket/kategori (Lulus/Belum Sempro/dst).
+     *
+     * CATATAN: ini beda dari anotasi "N reg" yang ditampilkan di tabel
+     * (lihat countUpcomingRegistrations()) — pass_exam TIDAK dipakai sama
+     * sekali di sana, kriterianya murni tanggal ujian (sudah lewat atau
+     * belum), bukan status kelulusan.
      *
      * @param  Collection<int, int>  $dateFilledIds
      * @return Collection<int, int>
@@ -413,13 +416,17 @@ class Beranda extends Page implements HasTable
 
     /**
      * Di antara $userIds, berapa yang punya ExamRegistration exam_type_id
-     * $examTypeId dengan pass_exam IS NULL (masih pending) — "sudah
-     * mendaftar tapi belum dinilai". pass_exam=0 sengaja tidak dihitung di
-     * sini (lihat catatan di stageDisqualifiedIds()).
+     * $examTypeId dengan exam_date MASIH AKAN DATANG (hari ini atau
+     * setelahnya) — "sudah registrasi tapi belum diujiankan". Ini murni
+     * soal apakah ujiannya SUDAH BERLANGSUNG atau belum (kriteria tanggal),
+     * BEDA dari status kelulusan (pass_exam) yang menentukan keanggotaan
+     * bucket/kategori lewat trulyPassedIds()/stageDisqualifiedIds() —
+     * anotasi "N reg" ini murni informasi tambahan di tabel, tidak
+     * memengaruhi angka Total/Lulus/Belum Sempro/dst sama sekali.
      *
      * @param  Collection<int, int>  $userIds
      */
-    private function countRegisteredNotPassed(Collection $userIds, int $examTypeId): int
+    private function countUpcomingRegistrations(Collection $userIds, int $examTypeId): int
     {
         if ($userIds->isEmpty()) {
             return 0;
@@ -427,7 +434,7 @@ class Beranda extends Page implements HasTable
 
         return ExamRegistration::whereIn('user_id', $userIds)
             ->where('exam_type_id', $examTypeId)
-            ->whereNull('pass_exam')
+            ->whereDate('exam_date', '>=', now()->toDateString())
             ->distinct('user_id')
             ->count('user_id');
     }
