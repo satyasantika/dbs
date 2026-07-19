@@ -120,7 +120,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 24px;
-            margin-bottom: 32px;
+            margin-top: 30px;
+            margin-bottom: 30px;
             flex-wrap: wrap;
         }
         .beranda-stats-pill-total {
@@ -165,7 +166,11 @@
             .beranda-stats-pill-grid { grid-template-columns: 1fr; }
         }
 
-        .beranda-section-heading { margin-bottom: 18px; }
+        {{-- margin-bottom sengaja 0 (bukan 18px seperti dulu) — elemen yang
+             mengikuti heading ini (.beranda-stats-pill, .beranda-rekap-card-outer)
+             sudah punya margin-top sendiri (30px, sesuai permintaan persis
+             30px, bukan 18+30 gara-gara dua margin numpuk). --}}
+        .beranda-section-heading { margin-bottom: 0; }
         .beranda-section-heading h2 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
         .beranda-section-heading p { font-size: 13px; color: #64748b; margin: 0; }
 
@@ -191,8 +196,9 @@
         .jadwal-box { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: .5rem; padding: .45rem .6rem; }
         .jadwal-group-label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #94a3b8; margin-bottom: .25rem; }
 
-        {{-- Waktu & Lokasi — sekarang blok PALING ATAS kartu (sebelum
-             Jenis Ujian), tanpa label & tanpa box abu-abu (bare). Class
+        {{-- Waktu & Lokasi — blok PALING ATAS kartu, tanpa label & tanpa box
+             abu-abu (bare). Badge Jenis Ujian digabung SATU BARIS di sini,
+             SETELAH lokasi (lihat Beranda::buildWaktuHtml()). Class
              exam-waktu-* (bukan jadwal-waktu-item/-icon/-sep) karena
              diemit App\Support\ExamScheduleFormat, dipakai bersama dengan
              kartu admin ExamRegistrationResource. --}}
@@ -200,11 +206,10 @@
         .jadwal-waktu-bare .exam-waktu-icon { font-size: 11px; line-height: 1; margin-right: .15rem; }
         .jadwal-waktu-bare .exam-waktu-sep { color: #cbd5e1; font-weight: 400; }
 
-        {{-- Baris 1: badge Jenis Ujian + NIM sejajar, lalu nama di baris
-             baru (biar badge tak rusak walau nama sangat panjang). --}}
-        .jadwal-badge-row { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
         {{-- max-width+ellipsis jaga-jaga nama dosen yang sangat panjang
-             supaya terpotong rapi, bukan overlap/merusak card. --}}
+             supaya terpotong rapi, bukan overlap/merusak card. Dipakai
+             badge Jenis Ujian (baris Waktu & Lokasi) & badge NIM (baris
+             Nama). --}}
         .jadwal-badge { display: inline-flex; align-items: center; max-width: 100%; padding: .15rem .5rem; border-radius: .375rem; font-size: 10.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
         {{-- Warna per jenis ujian selaras App\Enums\ExamTypeCode (dipakai juga
              di badge Filament lain): sempro=warning, semhas=info, sidang=success. --}}
@@ -214,9 +219,10 @@
         .jadwal-badge-jenis-default { background: #eef2ff; color: #4338ca; }
         .jadwal-badge-nim { background: #f1f5f9; color: #475569; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
-        {{-- Baris 2: Nama + trigger "Judul" (native <details>/<summary>,
-             tanpa JS) sejajar di baris yang sama. Judul asli disembunyikan
-             sampai trigger diklik, lalu muncul di bawahnya. --}}
+        {{-- Baris Nama (TitleCase) + badge NIM + trigger "Judul" (native
+             <details>/<summary>, tanpa JS) sejajar di baris yang sama.
+             Judul asli disembunyikan sampai trigger diklik, lalu muncul di
+             bawahnya. --}}
         .jadwal-nama-row { display: flex; align-items: baseline; flex-wrap: wrap; gap: .3rem .5rem; margin-top: .25rem; }
         .jadwal-nama { font-size: 1rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
         .jadwal-judul-toggle summary { list-style: none; cursor: pointer; }
@@ -249,6 +255,7 @@
             border: 1px solid #e2e8f0;
             box-shadow: 0 1px 4px rgba(0,0,0,.06);
             padding: 24px;
+            margin-top: 30px;
         }
         .beranda-rekap-all-heading { font-size: .8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
         .beranda-rekap-per-angkatan-heading { font-size: .8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin: 24px 0 10px; }

@@ -67,15 +67,18 @@ class Beranda extends Page implements HasTable
                 // (getStateUsing()+html(), bukan ->prefix()) supaya labelnya
                 // bisa diberi warna berbeda dari isinya. Semua kolom berdiri
                 // sendiri penuh selebar kartu (bukan sejajar horizontal lagi):
-                // waktu & lokasi PALING ATAS (sebelum jenis ujian), lalu
-                // header (badge jenis ujian+NIM, nama + trigger "Judul"),
-                // lalu tim penguji paling bawah. Judul tugas akhir sendiri
-                // digabung ke kolom header (buildJadwalHeaderHtml), bukan
-                // kolom terpisah lagi — disembunyikan di balik trigger
-                // <details>/<summary> di sebelah nama. ->space() diberi nama
-                // class custom (bukan preset 1/2/3) — lihat HasSpace::space(),
-                // default branch di stack.blade.php cuma echo string apa
-                // adanya sebagai class tambahan.
+                // waktu & lokasi PALING ATAS (badge jenis ujian digabung di
+                // baris yang sama, setelah lokasi), lalu header (nama+NIM+
+                // trigger "Judul"), lalu tim penguji paling bawah. ->space()
+                // diberi nama class custom (bukan preset 1/2/3) — lihat
+                // HasSpace::space(), default branch di stack.blade.php cuma
+                // echo string apa adanya sebagai class tambahan. Kolom
+                // header & penguji diberi ->searchable(query: ...) supaya
+                // live search bawaan Filament (satu kotak cari di atas
+                // tabel, reaktif langsung tanpa submit) bisa mencari
+                // nama/NIM mahasiswa & nama dosen penguji/pembimbing —
+                // wajib pakai closure custom karena isi kolom HTML rakitan
+                // (getStateUsing()), bukan atribut kolom DB langsung.
                 Tables\Columns\Layout\Stack::make([
                     Tables\Columns\TextColumn::make('waktu')
                         ->label('Waktu & Lokasi')
@@ -84,42 +87,53 @@ class Beranda extends Page implements HasTable
                     Tables\Columns\TextColumn::make('header')
                         ->label('Mahasiswa')
                         ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJadwalHeaderHtml($record))
-                        ->html(),
+                        ->html()
+                        ->searchable(
+                            query: function (Builder $query, string $search): Builder {
+                                return $query->whereHas('student', fn (Builder $q) => $q
+                                    ->where('name', 'like', "%{$search}%")
+                                    ->orWhere('username', 'like', "%{$search}%"));
+                            }
+                        ),
                     Tables\Columns\TextColumn::make('penguji')
                         ->label('Tim Penguji')
                         ->getStateUsing(fn (ExamRegistration $record): string => $this->buildPengujiHierarchyHtml($record))
-                        ->html(),
+                        ->html()
+                        ->searchable(
+                            query: function (Builder $query, string $search): Builder {
+                                return $query->where(function (Builder $q) use ($search) {
+                                    foreach (['examiner1', 'examiner2', 'examiner3', 'guide1', 'guide2'] as $rel) {
+                                        $q->orWhereHas($rel, fn (Builder $sq) => $sq->where('name', 'like', "%{$search}%"));
+                                    }
+                                });
+                            }
+                        ),
                 ])->space('jadwal-card-stack'),
             ])
+            ->searchPlaceholder('Cari nama/NIM mahasiswa atau nama dosen…')
             ->paginated(false)
             ->emptyStateHeading('Belum ada jadwal ujian mendatang')
             ->emptyStateIcon('heroicon-o-calendar-days');
     }
 
     /**
-     * Baris 1: badge Jenis Ujian + badge NIM sejajar horizontal. Baris 2:
-     * Nama Mahasiswa + trigger "Judul" (native <details>/<summary>, tanpa
-     * JS) sejajar di baris yang sama — judul tugas akhir sendiri
-     * disembunyikan sampai trigger diklik (lihat buildJudulToggleHtml()).
+     * Nama Mahasiswa (TitleCase) + badge NIM + trigger "Judul" (native
+     * <details>/<summary>, tanpa JS) sejajar dalam satu baris — judul
+     * tugas akhir sendiri disembunyikan sampai trigger diklik (lihat
+     * buildJudulToggleHtml()). Badge Jenis Ujian TIDAK di sini lagi,
+     * sudah digabung ke baris Waktu & Lokasi (lihat buildWaktuHtml()).
      * Semua digabung satu kolom HTML (bukan kolom Filament terpisah)
      * supaya badge tetap sejajar meski nama sangat panjang (lihat
      * .jadwal-nama di beranda.blade.php).
      */
     private function buildJadwalHeaderHtml(ExamRegistration $record): string
     {
-        $type = ExamTypeCode::tryFrom($record->exam_type_id);
-        $jenis = $type?->label() ?? $record->examtype?->name ?? '—';
-        $jenisClass = 'jadwal-badge-jenis-'.($type ? strtolower($type->name) : 'default');
-        $jenisEmoji = $type ? $type->emoji().' ' : '';
         $nim = $record->student?->username ?? '—';
         $nama = $record->student?->name ?? '—';
 
-        return '<div class="jadwal-badge-row">'
-            .'<span class="jadwal-badge '.$jenisClass.'">'.$jenisEmoji.e($jenis).'</span>'
+        return '<div class="jadwal-nama-row">'
+            .'<span class="jadwal-nama">'.e(\Illuminate\Support\Str::title($nama)).'</span>'
             .'<span class="jadwal-badge jadwal-badge-nim">'.e($nim).'</span>'
-            .'</div>'
-            .'<div class="jadwal-nama-row">'
-            .'<span class="jadwal-nama">'.e($nama).'</span>'
             .$this->buildJudulToggleHtml($record)
             .'</div>';
     }
@@ -148,17 +162,26 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * Waktu & Lokasi sekarang blok PALING ATAS kartu (sebelum Jenis
-     * Ujian), tanpa label & tanpa box abu-abu (bare). Format inti
-     * (tanggal/jam/ruang satu baris, dipisah "|", ruang berprefix "Ruang")
-     * dari App\Support\ExamScheduleFormat — dipakai bersama dengan
+     * Waktu & Lokasi blok PALING ATAS kartu, tanpa label & tanpa box
+     * abu-abu (bare). Badge Jenis Ujian digabung SATU BARIS di sini,
+     * SETELAH lokasi (bukan lagi di baris nama/NIM). Format tanggal/jam/
+     * ruang dari App\Support\ExamScheduleFormat — dipakai bersama dengan
      * ExamRegistrationResource::getCardColumns() (kartu admin + widget
-     * dashboard) supaya formatnya selalu identik di kedua tempat.
+     * dashboard) supaya formatnya selalu identik di kedua tempat; badge
+     * Jenis Ujian sendiri murni tambahan lokal Beranda, tidak ikut helper
+     * itu.
      */
     private function buildWaktuHtml(ExamRegistration $record): string
     {
+        $type = ExamTypeCode::tryFrom($record->exam_type_id);
+        $jenis = $type?->label() ?? $record->examtype?->name ?? '—';
+        $jenisClass = 'jadwal-badge-jenis-'.($type ? strtolower($type->name) : 'default');
+        $jenisEmoji = $type ? $type->emoji().' ' : '';
+
         return '<div class="jadwal-waktu-bare">'
             .\App\Support\ExamScheduleFormat::inlineHtml($record->exam_date, $record->exam_time, $record->room)
+            .'<span class="exam-waktu-sep">|</span>'
+            .'<span class="jadwal-badge '.$jenisClass.'">'.$jenisEmoji.e($jenis).'</span>'
             .'</div>';
     }
 
