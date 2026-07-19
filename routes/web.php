@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', [App\Http\Controllers\WelcomeController::class, 'index'])->name('welcome');
+// Beranda publik sekarang halaman Filament (App\Filament\Informasi\Pages\
+// Beranda, panel 'informasi', tanpa login) — redirect ke sana alih-alih
+// merender langsung di sini, supaya route('welcome') (dipakai di banyak
+// tempat lain: LogoutResponse, halaman login/role-gate/error) tetap jalan
+// tanpa perlu diubah satu per satu.
+Route::get('/', fn () => redirect(App\Filament\Informasi\Pages\Beranda::getUrl()))->name('welcome');
 Route::get('/report/revision-table/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionTablePDF'])->name('report.revision-table');
 Route::get('/report/revision-sign/{examregistration}', [App\Http\Controllers\ReportController::class, 'createRevisionSignPDF'])->name('report.revision-sign');
 

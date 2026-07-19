@@ -20,8 +20,22 @@ use Illuminate\Database\Eloquent\Model;
  * information/recap-list/{generation}/{context} TETAP ada dan tidak
  * disentuh (dipakai tests/Feature/DatatableSearchSmokeTest.php), halaman
  * ini hanya alternatif tampilan card grid dengan URL baru di panel
- * 'informasi'. Logika filter per $context sengaja disalin persis dari
- * InformationPassRecapDataTable::query() supaya hasilnya identik.
+ * 'informasi'.
+ *
+ * Aturan kategori per $context (harus sama persis dengan
+ * Beranda::rekap() supaya jumlahnya cocok):
+ * - Lulus: thesis_date terisi, walau proposal_date/seminar_date kosong.
+ * - Belum Lulus: thesis_date kosong.
+ * - Belum Sempro: proposal_date, seminar_date, thesis_date semua kosong.
+ * - Akan Semhas: proposal_date terisi, seminar_date & thesis_date kosong.
+ * - Akan Sidang: seminar_date terisi, thesis_date kosong.
+ * Kolom "Status" (badge "Sudah daftar, menunggu hasil") menandai mahasiswa
+ * yang sudah terdaftar di exam_registrations untuk jenis ujian berikutnya
+ * tapi pass_exam belum 1 — hanya tampil di 3 context "akan/belum" di atas,
+ * jumlahnya harus cocok dengan angka "* reg" di kartu rekap Beranda.
+ * Tanggal SemPro/SemHas/Sidang HANYA ditampilkan kalau ExamRegistration
+ * terkait sudah pass_exam=1 ATAU tanggal ujiannya sudah lewat — supaya
+ * tidak menampilkan tanggal ujian mendatang seolah sudah pasti/selesai.
  */
 class RecapList extends Page implements HasTable
 {
@@ -57,6 +71,8 @@ class RecapList extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $nextExamTypeId = $this->nextExamTypeIdForContext();
+
         return $table
             ->query(fn (): Builder => $this->buildQuery())
             ->contentGrid([
@@ -90,23 +106,36 @@ class RecapList extends Page implements HasTable
                             ->placeholder('—'),
                     ]),
                     Tables\Columns\Layout\Split::make([
-                        // Hanya tanggal yyyy-mm-dd — tanpa jam, tanpa format lain.
+                        // Hanya tanggal yyyy-mm-dd — tanpa jam, tanpa format lain
+                        // — dan hanya tampil kalau sudah pass_exam=1 atau
+                        // tanggal ujiannya sudah lewat (lihat shouldShowMilestoneDate()).
                         Tables\Columns\TextColumn::make('proposal_date')
                             ->label('SemPro')
-                            ->date('Y-m-d')
-                            ->placeholder('—')
-                            ->sortable(),
+                            ->getStateUsing(fn (GuideExaminer $record): ?string => $this->shouldShowMilestoneDate($record, 1)
+                                ? $record->proposal_date?->format('Y-m-d')
+                                : null)
+                            ->placeholder('—'),
                         Tables\Columns\TextColumn::make('seminar_date')
                             ->label('SemHas')
-                            ->date('Y-m-d')
-                            ->placeholder('—')
-                            ->sortable(),
+                            ->getStateUsing(fn (GuideExaminer $record): ?string => $this->shouldShowMilestoneDate($record, 2)
+                                ? $record->seminar_date?->format('Y-m-d')
+                                : null)
+                            ->placeholder('—'),
                         Tables\Columns\TextColumn::make('thesis_date')
                             ->label('Sidang')
-                            ->date('Y-m-d')
-                            ->placeholder('—')
-                            ->sortable(),
+                            ->getStateUsing(fn (GuideExaminer $record): ?string => $this->shouldShowMilestoneDate($record, 3)
+                                ? $record->thesis_date?->format('Y-m-d')
+                                : null)
+                            ->placeholder('—'),
                     ]),
+                    Tables\Columns\TextColumn::make('sudah_daftar')
+                        ->label('Status')
+                        ->getStateUsing(fn (GuideExaminer $record): ?string => ($nextExamTypeId !== null && $this->isRegisteredNotPassed($record, $nextExamTypeId))
+                            ? 'Sudah daftar, menunggu hasil'
+                            : null)
+                        ->badge()
+                        ->color('warning')
+                        ->visible($nextExamTypeId !== null),
                 ])->space(2),
             ])
             ->defaultSort('student.name')
@@ -114,65 +143,78 @@ class RecapList extends Page implements HasTable
             ->emptyStateIcon('heroicon-o-chart-bar');
     }
 
+    /**
+     * exam_type_id ujian BERIKUTNYA yang relevan untuk $context ini (dipakai
+     * kolom "Status" — badge "sudah daftar" hanya masuk akal untuk 3 context
+     * "menuju" ini). Null untuk context lain (Total/Lulus/Belum Lulus).
+     */
+    private function nextExamTypeIdForContext(): ?int
+    {
+        return match ($this->context) {
+            'Mahasiswa Belum Sempro' => 1,
+            'Mahasiswa Akan Semhas' => 2,
+            'Mahasiswa Akan Sidang' => 3,
+            default => null,
+        };
+    }
+
+    /**
+     * $record sudah punya ExamRegistration exam_type_id=$examTypeId dengan
+     * pass_exam belum 1 (0 atau null) — "sudah mendaftar tapi belum lulus/
+     * dinilai". Makan dari relasi examRegistrations yang di-eager-load di
+     * buildQuery(), bukan query baru per baris.
+     */
+    private function isRegisteredNotPassed(GuideExaminer $record, int $examTypeId): bool
+    {
+        return $record->examRegistrations
+            ->where('exam_type_id', $examTypeId)
+            ->contains(fn (ExamRegistration $registration): bool => ! $registration->pass_exam);
+    }
+
+    /**
+     * Tanggal milestone (SemPro/SemHas/Sidang) hanya ditampilkan kalau ada
+     * ExamRegistration untuk exam_type_id yang sama dengan pass_exam=1 ATAU
+     * tanggal ujiannya sudah lewat — supaya tidak menampilkan tanggal ujian
+     * mendatang seolah sudah pasti/selesai.
+     */
+    private function shouldShowMilestoneDate(GuideExaminer $record, int $examTypeId): bool
+    {
+        $today = now()->toDateString();
+
+        return $record->examRegistrations
+            ->where('exam_type_id', $examTypeId)
+            ->contains(fn (ExamRegistration $registration): bool => $registration->pass_exam
+                || ($registration->exam_date?->toDateString() < $today));
+    }
+
     private function buildQuery(): Builder
     {
         $generation = $this->generation;
 
-        // Meniru join asli (InformationPassRecapDataTable::query()): user_id
-        // ExamRegistration exam_type_id=$examTypeId & pass_exam=0, dibatasi ke
-        // mahasiswa guide_examiners angkatan ini.
-        $registeredNotPassed = fn (int $examTypeId) => ExamRegistration::query()
-            ->where('exam_type_id', $examTypeId)
-            ->where('pass_exam', 0)
-            ->whereIn('user_id', GuideExaminer::query()->where('year_generation', $generation)->pluck('user_id'))
-            ->pluck('user_id');
-
         $base = fn (): Builder => GuideExaminer::query()
-            ->with(['student', 'guide1', 'guide2'])
+            ->with(['student', 'guide1', 'guide2', 'examRegistrations'])
             ->where('year_generation', $generation);
 
-        // InformationPassRecapDataTable::query() aslinya pakai SQL UNION untuk
-        // menggabungkan dua kondisi per context. UNION dihindari di sini dan
-        // diganti kondisi OR dalam satu query — union() tidak bisa dipakai
-        // berdampingan dengan ->defaultSort()/->sortable() pada kolom relasi
-        // (student.name): MySQL menolak ORDER BY yang mereferensikan tabel
-        // hasil join ("Table ... cannot be used in ORDER BY") begitu query
-        // dasarnya berupa UNION. Hasil logisnya tetap sama.
         return match ($this->context) {
             'Mahasiswa Lulus' => $base()
-                ->whereNotNull('thesis_date')
-                ->whereNotIn('user_id', $registeredNotPassed(3)),
+                ->whereNotNull('thesis_date'),
 
             'Mahasiswa Belum Lulus' => $base()
-                ->where(fn (Builder $query) => $query
-                    ->whereNull('thesis_date')
-                    ->orWhereIn('user_id', $registeredNotPassed(3))),
+                ->whereNull('thesis_date'),
 
             'Mahasiswa Belum Sempro' => $base()
-                ->where(fn (Builder $query) => $query
-                    ->where(fn (Builder $q) => $q
-                        ->whereNull('proposal_date')
-                        ->whereNull('seminar_date')
-                        ->whereNull('thesis_date'))
-                    ->orWhereIn('user_id', $registeredNotPassed(1))),
+                ->whereNull('proposal_date')
+                ->whereNull('seminar_date')
+                ->whereNull('thesis_date'),
 
             'Mahasiswa Akan Semhas' => $base()
-                ->where(fn (Builder $query) => $query
-                    ->where(fn (Builder $q) => $q
-                        ->whereNotNull('proposal_date')
-                        ->whereNull('seminar_date')
-                        ->whereNull('thesis_date')
-                        ->whereNotIn('user_id', $registeredNotPassed(1)))
-                    ->orWhereIn('user_id', $registeredNotPassed(2))),
+                ->whereNotNull('proposal_date')
+                ->whereNull('seminar_date')
+                ->whereNull('thesis_date'),
 
             'Mahasiswa Akan Sidang' => $base()
-                ->where(fn (Builder $query) => $query
-                    ->where(fn (Builder $q) => $q
-                        ->whereNotNull('proposal_date')
-                        ->whereNotNull('seminar_date')
-                        ->whereNull('thesis_date')
-                        ->whereNotIn('user_id', $registeredNotPassed(2)))
-                    ->orWhereIn('user_id', $registeredNotPassed(3))),
+                ->whereNotNull('seminar_date')
+                ->whereNull('thesis_date'),
 
             default => $base(),
         };
