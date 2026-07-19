@@ -46,10 +46,12 @@ use Illuminate\Database\Eloquent\Model;
  * Beranda::stageDisqualifiedIds(). pass_exam=0 SENGAJA tidak dipakai sama
  * sekali di seluruh rekap ini — cuma pass_exam=1 (lulus) & pass_exam=NULL
  * (pending) yang relevan.
- * Kolom "Status" (badge "Sudah daftar, menunggu hasil") menandai mahasiswa
+ * Kolom "Status" (badge "Sudah daftar, menunggu ujian") menandai mahasiswa
  * yang sudah terdaftar di exam_registrations untuk jenis ujian berikutnya
- * dengan pass_exam IS NULL — hanya tampil di 3 context "akan/belum" di
- * atas, jumlahnya harus cocok dengan angka "* reg" di kartu rekap Beranda.
+ * dengan exam_date MASIH AKAN DATANG (belum diujiankan) — kriteria
+ * tanggal, BUKAN pass_exam (lihat isRegisteredUpcoming()) — hanya tampil
+ * di 3 context "akan/belum" di atas, jumlahnya harus cocok dengan angka
+ * "* reg" di kartu rekap Beranda (Beranda::countUpcomingRegistrations()).
  * Tanggal SemPro/SemHas/Sidang HANYA ditampilkan kalau ExamRegistration
  * terkait sudah pass_exam=1 ATAU tanggal ujiannya sudah lewat — supaya
  * tidak menampilkan tanggal ujian mendatang seolah sudah pasti/selesai.
@@ -147,8 +149,8 @@ class RecapList extends Page implements HasTable
                     ]),
                     Tables\Columns\TextColumn::make('sudah_daftar')
                         ->label('Status')
-                        ->getStateUsing(fn (GuideExaminer $record): ?string => ($nextExamTypeId !== null && $this->isRegisteredNotPassed($record, $nextExamTypeId))
-                            ? 'Sudah daftar, menunggu hasil'
+                        ->getStateUsing(fn (GuideExaminer $record): ?string => ($nextExamTypeId !== null && $this->isRegisteredUpcoming($record, $nextExamTypeId))
+                            ? 'Sudah daftar, menunggu ujian'
                             : null)
                         ->badge()
                         ->color('warning')
@@ -177,16 +179,21 @@ class RecapList extends Page implements HasTable
 
     /**
      * $record sudah punya ExamRegistration exam_type_id=$examTypeId dengan
-     * pass_exam IS NULL (masih pending) — "sudah mendaftar tapi belum
-     * dinilai". pass_exam=0 sengaja tidak dihitung (lihat catatan di
-     * Beranda::stageDisqualifiedIds()). Makan dari relasi examRegistrations
-     * yang di-eager-load di buildQuery(), bukan query baru per baris.
+     * exam_date MASIH AKAN DATANG (hari ini atau setelahnya) — "sudah
+     * mendaftar tapi belum diujiankan". Murni kriteria tanggal, BUKAN
+     * pass_exam — harus sama persis dengan
+     * Beranda::countUpcomingRegistrations() supaya jumlahnya cocok dengan
+     * angka "* reg" di kartu rekap Beranda. Makan dari relasi
+     * examRegistrations yang di-eager-load di buildQuery(), bukan query
+     * baru per baris.
      */
-    private function isRegisteredNotPassed(GuideExaminer $record, int $examTypeId): bool
+    private function isRegisteredUpcoming(GuideExaminer $record, int $examTypeId): bool
     {
+        $today = now()->toDateString();
+
         return $record->examRegistrations
             ->where('exam_type_id', $examTypeId)
-            ->contains(fn (ExamRegistration $registration): bool => is_null($registration->pass_exam));
+            ->contains(fn (ExamRegistration $registration): bool => $registration->exam_date?->toDateString() >= $today);
     }
 
     /**
