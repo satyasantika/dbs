@@ -18,6 +18,25 @@
         padding-inline-end: 30px;
     }
 
+    /* Table "card grid" mode (->contentGrid() — used by UserResource,
+       RoleResource). Filament's own grid component (support/resources/views/
+       components/grid/index.blade.php) sets column count through a
+       Tailwind arbitrary-value class (`grid-cols-[--cols-default]`) that
+       has no compiled rule here (see file header) — the container never
+       actually became a grid. Rebuilt directly with `auto-fill`/`minmax()`
+       instead of Filament's fixed per-breakpoint column counts, so cards
+       pack in by available width — wider desktops simply fit more per row
+       rather than being capped at a fixed 3 or 4 columns. 320px is a
+       common minimum card width for this kind of compact record card
+       (a few text fields + role/permission badges + a handful of action
+       icons) — enough room for badges to sit on one line without
+       cramping, narrow enough to comfortably fit 4+ per row on a
+       standard 1440px desktop. */
+    .fi-ta-content-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important;
+    }
+
     @media (min-width: 1024px) {
         .fi-sidebar[class*="lg:w-[--collapsed-sidebar-width]"] {
             width: var(--collapsed-sidebar-width);

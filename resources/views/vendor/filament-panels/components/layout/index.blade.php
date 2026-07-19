@@ -46,7 +46,7 @@
 
             <main
                 @class([
-                    'fi-main mx-auto h-full w-full ps-[31px] pe-[30px]',
+                    'fi-main mx-auto w-full flex-1 ps-[31px] pe-[30px]',
                     match ($maxContentWidth ??= (filament()->getMaxContentWidth() ?? MaxWidth::SevenExtraLarge)) {
                         MaxWidth::ExtraSmall, 'xs' => 'max-w-xs',
                         MaxWidth::Small, 'sm' => 'max-w-sm',
