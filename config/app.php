@@ -173,6 +173,7 @@ return [
         App\Providers\Filament\MahasiswaPanelProvider::class,
         App\Providers\Filament\NuirManajerPanelProvider::class,
         App\Providers\Filament\NuirValidatorPanelProvider::class,
+        App\Providers\Filament\InformasiPanelProvider::class,
         App\Providers\RouteServiceProvider::class,
         Yajra\DataTables\DataTablesServiceProvider::class,
         Lab404\Impersonate\ImpersonateServiceProvider::class,
