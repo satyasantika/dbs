@@ -355,25 +355,32 @@ class Beranda extends Page implements HasTable
 
     /**
      * user_id di antara $dateFilledIds yang punya ExamRegistration
-     * $examTypeId MASIH PENDING (pass_exam=0) — tanggal di guide_examiners
-     * cuma tanda "sudah dijadwalkan" (di-stample saat
+     * $examTypeId MASIH PENDING: pass_exam=0 DAN tanggal ujiannya BELUM
+     * LEWAT (hari ini atau setelahnya) — tanggal di guide_examiners cuma
+     * tanda "sudah dijadwalkan" (di-stample saat
      * ExamRegistrationController::store(), sebelum ujian/nilai keluar),
      * bukan "sudah lulus".
      *
      * Rumus persis (jangan diubah tanpa alasan kuat — sudah dikonfirmasi
      * eksplisit): "Sudah Lulus" = banyak thesis_date terisi untuk angkatan
      * itu DIKURANGI banyak ExamRegistration exam_type_id=3 yang masih
-     * pass_exam=0. TIDAK ada pengecualian untuk retake (kalau ada baris
-     * pass_exam=0 yang tersisa, user itu TETAP dikurangi dari Lulus,
-     * WALAUPUN ada baris pass_exam=1 lain untuk exam_type yang sama) —
-     * bukan bug, ini permintaan eksplisit supaya rumusnya konsisten &
-     * mudah ditelusuri. Kolom pass_exam cuma berisi 0 (belum lulus) atau 1
-     * (lulus) — TIDAK PERNAH benar-benar NULL di database (sempat salah
-     * duga sebelumnya, sudah dikonfirmasi ulang oleh user).
+     * pass_exam=0 DENGAN exam_date belum lewat. TIDAK ada pengecualian
+     * untuk retake (kalau ada baris pass_exam=0 & exam_date belum lewat
+     * yang tersisa, user itu TETAP dikurangi dari Lulus, WALAUPUN ada
+     * baris pass_exam=1 lain untuk exam_type yang sama) — bukan bug, ini
+     * permintaan eksplisit supaya rumusnya konsisten & mudah ditelusuri.
+     * Kolom pass_exam cuma berisi 0 (belum lulus) atau 1 (lulus) — TIDAK
+     * PERNAH benar-benar NULL di database (sempat salah duga sebelumnya,
+     * sudah dikonfirmasi ulang oleh user). ExamRegistration pass_exam=0
+     * yang tanggal ujiannya SUDAH LEWAT sengaja TIDAK dipakai sebagai
+     * penambah Belum Sempro/Akan Semhas/Akan Sidang lagi (dikonfirmasi
+     * eksplisit) — begitu tanggal ujian lewat, baris pass_exam=0 lama
+     * dianggap kedaluwarsa/akan digantikan pendaftaran baru, bukan alasan
+     * terus menggugurkan status.
      *
-     * CATATAN: ini beda dari anotasi "N reg" yang ditampilkan di tabel
-     * (lihat countUpcomingRegistrations()) — itu butuh KEDUANYA pass_exam=0
-     * DAN tanggal ujian belum lewat, bukan cuma salah satu.
+     * CATATAN: kriteria ini sekarang identik dengan anotasi "N reg" di
+     * tabel (lihat countUpcomingRegistrations()) — pass_exam=0 DAN tanggal
+     * ujian belum lewat, sama persis.
      *
      * @param  Collection<int, int>  $dateFilledIds
      * @return Collection<int, int>
@@ -387,6 +394,7 @@ class Beranda extends Page implements HasTable
         return ExamRegistration::whereIn('user_id', $dateFilledIds)
             ->where('exam_type_id', $examTypeId)
             ->where('pass_exam', 0)
+            ->whereDate('exam_date', '>=', now()->toDateString())
             ->pluck('user_id')
             ->unique()
             ->values();
