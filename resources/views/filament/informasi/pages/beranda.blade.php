@@ -122,16 +122,73 @@
         .beranda-section-heading h2 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 0 0 4px; }
         .beranda-section-heading p { font-size: 13px; color: #64748b; margin: 0; }
 
-        {{-- Daftar penguji (Jadwal Ujian): penguji biasa vs pembimbing vs
-             ketua dibedakan warna. --}}
-        .beranda-penguji-list { display: flex; flex-wrap: wrap; gap: .35rem; }
-        .beranda-penguji-badge { display: inline-flex; align-items: center; padding: .2rem .55rem; border-radius: .4rem; font-size: 11px; font-weight: 600; white-space: nowrap; }
-        .beranda-penguji-biasa { background: #f1f5f9; color: #475569; }
-        .beranda-penguji-pembimbing { background: #e0e7ff; color: #3730a3; }
-        .beranda-penguji-ketua { background: #fef3c7; color: #92400e; font-weight: 800; }
+        {{-- Kartu Jadwal Ujian Mendatang: padding vertikal tipis pada
+             kontainer luar. PENTING: bukan .fi-ta-col-wrp — itu class yang
+             sama dipakai Filament untuk MEMBUNGKUS TIAP kolom Stack secara
+             individual (header/judul/waktu-penguji masing-masing dapat
+             .fi-ta-col-wrp sendiri), jadi memberi padding di situ menumpuk
+             padding tiap kolom + gap stack di antaranya (dulu ketauan jadi
+             ~29px). Padding kartu yang sebenarnya cuma sekali per-record,
+             di div tak berclass "flex w-full flex-col gap-y-3 py-4" (lihat
+             vendor/filament/tables/resources/views/index.blade.php) —
+             ditarget lewat class Tailwind gap-y-3 yang menempel di situ. --}}
+        .jadwal-cards .fi-ta-record .gap-y-3 { padding-top: .625rem; padding-bottom: .625rem; }
+        {{-- Sama dengan gap .jadwal-body-row (Waktu Lokasi <-> Tim Penguji)
+             — ini satu-satunya sumber jarak antar Nama/Judul/baris bawah. --}}
+        .jadwal-card-stack { gap: .6rem; }
 
-        {{-- Rekap: satu Card besar membungkus statistik semua-angkatan +
-             card per-angkatan. --}}
+        {{-- Box abu-abu dipakai bersama oleh Judul/Waktu/Penguji, & label
+             kecil di atasnya juga satu sumber (dulu ada 1 versi per blok). --}}
+        .jadwal-box { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: .5rem; padding: .45rem .6rem; }
+        .jadwal-group-label { display: block; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #94a3b8; margin-bottom: .25rem; }
+
+        {{-- Baris 1: badge Jenis Ujian + NIM sejajar, lalu nama di baris
+             baru (biar badge tak rusak walau nama sangat panjang). --}}
+        .jadwal-badge-row { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem; }
+        {{-- max-width+ellipsis jaga-jaga nama dosen yang sangat panjang
+             supaya terpotong rapi, bukan overlap/merusak card. --}}
+        .jadwal-badge { display: inline-flex; align-items: center; max-width: 100%; padding: .15rem .5rem; border-radius: .375rem; font-size: 10.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+        {{-- Warna per jenis ujian selaras App\Enums\ExamTypeCode (dipakai juga
+             di badge Filament lain): sempro=warning, semhas=info, sidang=success. --}}
+        .jadwal-badge-jenis-sempro { background: #fef3c7; color: #92400e; }
+        .jadwal-badge-jenis-semhas { background: #dbeafe; color: #1d4ed8; }
+        .jadwal-badge-jenis-sidang { background: #dcfce7; color: #15803d; }
+        .jadwal-badge-jenis-default { background: #eef2ff; color: #4338ca; }
+        .jadwal-badge-nim { background: #f1f5f9; color: #475569; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .jadwal-nama { margin-top: .25rem; font-size: 1rem; font-weight: 800; color: #0f172a; line-height: 1.2; }
+
+        {{-- Baris 2: Judul Tugas Akhir — dibungkus .jadwal-box, judul italic. --}}
+        .jadwal-judul-text { margin: 0; font-size: 12px; font-style: italic; color: #475569; line-height: 1.4; }
+        .jadwal-judul-empty { color: #cbd5e1; font-style: normal; }
+
+        {{-- Baris 3: layout asimetris — kolom Waktu sempit (tak melar) +
+             kolom Penguji melar, sejajar horizontal mulai breakpoint sm
+             (640px), tumpuk vertikal di layar sempit. Keduanya dibungkus
+             .jadwal-box. --}}
+        .jadwal-body-row { display: flex; flex-direction: column; gap: .6rem; font-size: 12px; }
+        .jadwal-waktu-col { flex-shrink: 0; display: flex; flex-direction: column; color: #475569; }
+        .jadwal-waktu-list { display: flex; flex-direction: column; gap: .25rem; }
+        .jadwal-waktu-item { display: inline-flex; align-items: center; gap: .3rem; width: fit-content; white-space: nowrap; background: #fff; padding: .2rem .45rem; border-radius: .3rem; box-shadow: 0 1px 2px rgba(0,0,0,.05); font-weight: 600; }
+        .jadwal-waktu-icon { font-size: 11px; line-height: 1; flex-shrink: 0; }
+        .jadwal-penguji-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+        .jadwal-penguji-rows { display: flex; flex-direction: column; gap: .3rem; }
+
+        {{-- Hierarki penguji: Ketua sendirian di baris pertama (biru +
+             mahkota), Anggota mengalir bebas, Pembimbing selalu baris
+             sendiri. --}}
+        .jadwal-ketua-row { width: 100%; display: flex; }
+        .jadwal-anggota-row, .jadwal-pembimbing-row { width: 100%; display: flex; flex-wrap: wrap; gap: .25rem; }
+        .jadwal-badge-penguji { background: #f1f5f9; color: #475569; }
+        .jadwal-badge-pembimbing { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
+        .jadwal-badge-ketua { background: #dbeafe; color: #1d4ed8; font-weight: 800; border: 1px solid #bfdbfe; }
+
+        @media (min-width: 640px) {
+            .jadwal-body-row { flex-direction: row; gap: .9rem; }
+            .jadwal-waktu-col { width: auto; min-width: 130px; }
+        }
+
+        {{-- Rekap: satu Card besar membungkus bento grid ringkasan +
+             tabel per-angkatan. --}}
         .beranda-rekap-card-outer {
             background: #fff;
             border-radius: 20px;
@@ -140,37 +197,56 @@
             padding: 24px;
         }
         .beranda-rekap-all-heading { font-size: .8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
-        .beranda-rekap-all-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 1px;
-            background: #e2e8f0;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 24px;
+        .beranda-rekap-per-angkatan-heading { font-size: .8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin: 24px 0 10px; }
+
+        {{-- Bento grid: kartu Total (besar, ring persentase Lulus) + Lulus +
+             Belum Lulus, lalu satu baris 3 kartu kecil bottleneck (Sempro/
+             Semhas/Sidang) di bawahnya. --}}
+        .beranda-bento-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .beranda-bento-card {
+            border-radius: 16px;
+            padding: 18px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
         }
-        .beranda-rekap-all-stats .beranda-stat-item { padding: 12px 14px; }
-        .beranda-rekap-all-stats .beranda-stat-num { font-size: 1.35rem; }
+        .beranda-bento-card-total { grid-column: span 2; background: #eff6ff; border: 1px solid #dbeafe; }
+        .beranda-bento-card-lulus { grid-column: span 1; background: #f0fdf4; border: 1px solid #dcfce7; flex-direction: column; align-items: flex-start; justify-content: center; }
+        .beranda-bento-card-belum-lulus { grid-column: span 1; background: #fffbeb; border: 1px solid #fef3c7; flex-direction: column; align-items: flex-start; justify-content: center; }
+        .beranda-bento-num { font-size: 2rem; font-weight: 900; color: #0f172a; line-height: 1; }
+        .beranda-bento-label { font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
+        .beranda-bento-sub { font-size: .85rem; font-weight: 700; color: #64748b; margin-top: 4px; }
 
-        .beranda-rekap-per-angkatan-heading { font-size: .8rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; margin-bottom: 10px; }
+        {{-- Ring: dua lingkaran bertumpuk, tanpa SVG — lingkaran luar diwarnai
+             conic-gradient() (dari Beranda::ringStyle()), lingkaran dalam
+             (warna putih, sama dengan card) "melubangi" tengahnya. --}}
+        .beranda-bento-ring { position: relative; width: 92px; height: 92px; border-radius: 50%; flex-shrink: 0; }
+        .beranda-bento-ring-inner {
+            position: absolute; top: 12px; left: 12px; width: 68px; height: 68px;
+            background: #eff6ff; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .beranda-bento-ring-pct { font-size: .95rem; font-weight: 800; color: #0f172a; line-height: 1; }
+        .beranda-bento-ring-label { font-size: 9.5px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; margin-top: 2px; }
 
-        .beranda-rekap-card .fi-ta-col-wrp { padding: 1rem 1.25rem; }
-        .beranda-rekap-angkatan { font-size: 1rem; font-weight: 800; color: #0f172a; margin-bottom: .5rem; }
-        {{-- 3 kolom tetap (bukan auto-fit) supaya baris 1 & baris 2 selaras --}}
-        .beranda-rekap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
-        .beranda-rekap-row + .beranda-rekap-row { margin-top: .5rem; }
-        .beranda-rekap-metric { text-align: center; padding: .5rem; border-radius: .5rem; background: #f8fafc; }
-        .beranda-rekap-metric a { text-decoration: none; color: inherit; display: block; }
-        .beranda-rekap-metric-num { font-size: 1.1rem; font-weight: 800; color: #0f172a; }
-        .beranda-rekap-metric-pct { font-size: .8rem; font-weight: 700; color: #64748b; }
-        .beranda-rekap-metric-label { font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; margin-top: 2px; }
-        .beranda-rekap-metric-reg { font-size: 10.5px; color: #16a34a; font-weight: 700; margin-top: 2px; }
+        .beranda-bento-bottleneck-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+        .beranda-bento-mini-card { background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 12px; padding: 10px 14px; text-align: center; }
+        .beranda-bento-mini-num { font-size: 1.15rem; font-weight: 800; color: #0f172a; line-height: 1; }
+        .beranda-bento-mini-label { font-size: 10.5px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; margin-top: 3px; }
 
+        @media (max-width: 900px) {
+            .beranda-bento-grid { grid-template-columns: repeat(2, 1fr); }
+            .beranda-bento-card-total { grid-column: span 2; }
+            .beranda-bento-card-lulus, .beranda-bento-card-belum-lulus { grid-column: span 1; }
+        }
         @media (max-width: 480px) {
-            .beranda-rekap-grid { grid-template-columns: repeat(3, 1fr); gap: .35rem; }
-            .beranda-rekap-metric { padding: .35rem; }
+            .beranda-bento-grid { grid-template-columns: 1fr; }
+            .beranda-bento-card-total, .beranda-bento-card-lulus, .beranda-bento-card-belum-lulus { grid-column: span 1; }
+            .beranda-bento-bottleneck-row { grid-template-columns: 1fr; }
         }
+
+        .beranda-rekap-metric-reg { font-size: 10.5px; color: #16a34a; font-weight: 700; margin-top: 2px; display: block; }
     </style>
 
     {{-- ═══════ HERO ═══════ --}}
@@ -218,9 +294,9 @@
     {{-- ═══════ JADWAL UJIAN (card grid, semua ditampilkan) ═══════ --}}
     <div class="beranda-section-heading">
         <h2>Jadwal Ujian Mendatang</h2>
-        <p>Diurutkan berdasarkan tanggal &rsaquo; jam &rsaquo; ruang — seluruh jadwal ditampilkan, tidak dibatasi tinggi layar.</p>
+        <p>Setiap kartu menampilkan jenis ujian, mahasiswa, judul, waktu, dan para penguji — diurutkan berdasarkan tanggal &rsaquo; jam &rsaquo; ruang, seluruh jadwal ditampilkan tanpa dibatasi tinggi layar.</p>
     </div>
-    <div data-grid-fit="none" class="mb-8">
+    <div data-grid-fit="none" class="mb-8 jadwal-cards">
         {{ $this->table }}
     </div>
 
@@ -232,95 +308,124 @@
     <div class="beranda-rekap-card-outer">
         @php($all = $this->rekapSemuaAngkatan())
         <div class="beranda-rekap-all-heading">Semua Angkatan</div>
-        <div class="beranda-rekap-all-stats">
-            <div class="beranda-stat-item">
-                <div class="beranda-stat-num">{{ $all['total'] }}</div>
-                <div class="beranda-stat-label">Total</div>
+
+        {{-- ═══ Bento grid: Total (+ ring % Lulus), Lulus, Belum Lulus,
+             lalu satu baris 3 kartu kecil bottleneck (Sempro/Semhas/Sidang). ═══ --}}
+        <div class="beranda-bento-grid">
+            <div class="beranda-bento-card beranda-bento-card-total">
+                <div>
+                    <div class="beranda-bento-num">{{ $all['total'] }}</div>
+                    <div class="beranda-bento-label">Total Mahasiswa</div>
+                </div>
+                <div class="beranda-bento-ring" style="{{ $this->ringStyle($all['lulus_pct']) }}">
+                    <div class="beranda-bento-ring-inner">
+                        <span class="beranda-bento-ring-pct">{{ $all['lulus_pct'] }}%</span>
+                        <span class="beranda-bento-ring-label">Lulus</span>
+                    </div>
+                </div>
             </div>
-            <div class="beranda-stat-item">
-                <div class="beranda-stat-num">{{ $all['lulus'] }} <span class="beranda-rekap-metric-pct">({{ $all['lulus_pct'] }}%)</span></div>
-                <div class="beranda-stat-label">Lulus</div>
+            <div class="beranda-bento-card beranda-bento-card-lulus">
+                <div class="beranda-bento-num">{{ $all['lulus'] }}</div>
+                <div class="beranda-bento-label">Sudah Lulus</div>
+                <div class="beranda-bento-sub">{{ $all['lulus_pct'] }}%</div>
             </div>
-            <div class="beranda-stat-item">
-                <div class="beranda-stat-num">{{ $all['belum_lulus'] }} <span class="beranda-rekap-metric-pct">({{ $all['belum_lulus_pct'] }}%)</span></div>
-                <div class="beranda-stat-label">Belum Lulus</div>
+            <div class="beranda-bento-card beranda-bento-card-belum-lulus">
+                <div class="beranda-bento-num">{{ $all['belum_lulus'] }}</div>
+                <div class="beranda-bento-label">Belum Lulus</div>
+                <div class="beranda-bento-sub">{{ $all['belum_lulus_pct'] }}%</div>
             </div>
-            <div class="beranda-stat-item">
-                <div class="beranda-stat-num">{{ $all['belum_sempro'] }}</div>
-                <div class="beranda-stat-label">Belum Sempro</div>
+        </div>
+        <div class="beranda-bento-bottleneck-row">
+            <div class="beranda-bento-mini-card">
+                <div class="beranda-bento-mini-num">{{ $all['belum_sempro'] }}</div>
+                <div class="beranda-bento-mini-label">Belum Ujian Sempro</div>
             </div>
-            <div class="beranda-stat-item">
-                <div class="beranda-stat-num">{{ $all['akan_semhas'] }}</div>
-                <div class="beranda-stat-label">Akan Semhas</div>
+            <div class="beranda-bento-mini-card">
+                <div class="beranda-bento-mini-num">{{ $all['akan_semhas'] }}</div>
+                <div class="beranda-bento-mini-label">Belum Ujian Semhas</div>
             </div>
-            <div class="beranda-stat-item">
-                <div class="beranda-stat-num">{{ $all['akan_sidang'] }}</div>
-                <div class="beranda-stat-label">Akan Sidang</div>
+            <div class="beranda-bento-mini-card">
+                <div class="beranda-bento-mini-num">{{ $all['akan_sidang'] }}</div>
+                <div class="beranda-bento-mini-label">Belum Ujian Sidang</div>
             </div>
         </div>
 
         <div class="beranda-rekap-per-angkatan-heading">Per Angkatan</div>
-        {{-- Card grid ditulis manual (bukan Filament Table) karena datanya array
-             hasil agregasi ($this->rekap()), bukan Eloquent — kelas fi-ta-record/
-             fi-ta-content-grid dipakai persis sama seperti Filament sendiri
-             (lihat nuir-proposal-overview.blade.php untuk pola yang sama). --}}
-        <div class="fi-ta-content-grid gap-4 p-0" data-grid-fit="none">
-            @forelse ($this->rekap() as $row)
-                <div class="fi-ta-record beranda-rekap-card relative h-full rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 transition duration-75 dark:bg-white/5 dark:ring-white/10">
-                    <div class="fi-ta-col-wrp">
-                        <div class="beranda-rekap-angkatan">Angkatan {{ $row['angkatan'] }}</div>
-
-                        {{-- Baris 1: Total, Lulus, Belum Lulus (persentase dari Total) --}}
-                        <div class="beranda-rekap-grid beranda-rekap-row">
-                            <div class="beranda-rekap-metric">
-                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Total Mahasiswa']) }}">
-                                    <div class="beranda-rekap-metric-num">{{ $row['total'] }}</div>
-                                    <div class="beranda-rekap-metric-label">Total</div>
+        {{-- Table native (bukan Filament Table Builder) karena datanya array
+             hasil agregasi ($this->rekap()), bukan Eloquent — gaya mengikuti
+             resources/views/filament/dosen/pages/partials/graduation-semester-recap.blade.php
+             (border tipis, divide-y, kolom angka rata kanan). --}}
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[52rem] text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200">
+                        <th scope="col" class="px-3 py-2 text-left font-medium text-gray-500">Tahun Angkatan</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Total</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Sudah Lulus</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Lulus</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Ujian Sempro</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Ujian Semhas</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Ujian Sidang</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @forelse ($this->rekap() as $row)
+                        <tr>
+                            <th scope="row" class="px-3 py-2 text-left font-semibold text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Total Mahasiswa']) }}" class="hover:underline">
+                                    Angkatan {{ $row['angkatan'] }}
                                 </a>
-                            </div>
-                            <div class="beranda-rekap-metric">
-                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Lulus']) }}">
-                                    <div class="beranda-rekap-metric-num">{{ $row['lulus'] }} <span class="beranda-rekap-metric-pct">({{ $row['lulus_pct'] }}%)</span></div>
-                                    <div class="beranda-rekap-metric-label">Lulus</div>
+                            </th>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Total Mahasiswa']) }}" class="hover:underline">
+                                    {{ $row['total'] }}
                                 </a>
-                            </div>
-                            <div class="beranda-rekap-metric">
-                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Belum Lulus']) }}">
-                                    <div class="beranda-rekap-metric-num">{{ $row['belum_lulus'] }} <span class="beranda-rekap-metric-pct">({{ $row['belum_lulus_pct'] }}%)</span></div>
-                                    <div class="beranda-rekap-metric-label">Belum Lulus</div>
+                            </td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Lulus']) }}" class="block hover:underline">
+                                    <div>{{ $row['lulus'] }} <span class="text-gray-500 font-normal">({{ $row['lulus_pct'] }}%)</span></div>
+                                    <div class="mt-1 h-1.5 w-full min-w-[64px] rounded-full bg-gray-200">
+                                        <div class="h-1.5 rounded-full bg-green-500" style="width: {{ $row['lulus_pct'] }}%"></div>
+                                    </div>
                                 </a>
-                            </div>
-                        </div>
-
-                        {{-- Baris 2: Belum Sempro, Akan Semhas, Akan Sidang --}}
-                        <div class="beranda-rekap-grid beranda-rekap-row">
-                            <div class="beranda-rekap-metric">
-                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Belum Sempro']) }}">
-                                    <div class="beranda-rekap-metric-num">{{ $row['belum_sempro'] }}</div>
-                                    <div class="beranda-rekap-metric-label">Belum Sempro</div>
-                                    <div class="beranda-rekap-metric-reg">{{ $row['belum_sempro_reg'] }} reg</div>
+                            </td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Belum Lulus']) }}" class="hover:underline">
+                                    {{ $row['belum_lulus'] }} <span class="text-gray-500 font-normal">({{ $row['belum_lulus_pct'] }}%)</span>
                                 </a>
-                            </div>
-                            <div class="beranda-rekap-metric">
-                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Akan Semhas']) }}">
-                                    <div class="beranda-rekap-metric-num">{{ $row['akan_semhas'] }}</div>
-                                    <div class="beranda-rekap-metric-label">Akan Semhas</div>
-                                    <div class="beranda-rekap-metric-reg">{{ $row['akan_semhas_reg'] }} reg</div>
+                            </td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Belum Sempro']) }}" class="block hover:underline">
+                                    <div>{{ $row['belum_sempro'] }}</div>
+                                    @if ($row['belum_sempro_reg'] > 0)
+                                        <span class="beranda-rekap-metric-reg">{{ $row['belum_sempro_reg'] }} reg</span>
+                                    @endif
                                 </a>
-                            </div>
-                            <div class="beranda-rekap-metric">
-                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Akan Sidang']) }}">
-                                    <div class="beranda-rekap-metric-num">{{ $row['akan_sidang'] }}</div>
-                                    <div class="beranda-rekap-metric-label">Akan Sidang</div>
-                                    <div class="beranda-rekap-metric-reg">{{ $row['akan_sidang_reg'] }} reg</div>
+                            </td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Akan Semhas']) }}" class="block hover:underline">
+                                    <div>{{ $row['akan_semhas'] }}</div>
+                                    @if ($row['akan_semhas_reg'] > 0)
+                                        <span class="beranda-rekap-metric-reg">{{ $row['akan_semhas_reg'] }} reg</span>
+                                    @endif
                                 </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            @empty
-                <p class="col-span-full px-2 py-3 text-gray-500">Belum ada data angkatan.</p>
-            @endforelse
+                            </td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <a href="{{ \App\Filament\Informasi\Pages\RecapList::getUrl(['generation' => $row['angkatan'], 'context' => 'Mahasiswa Akan Sidang']) }}" class="block hover:underline">
+                                    <div>{{ $row['akan_sidang'] }}</div>
+                                    @if ($row['akan_sidang_reg'] > 0)
+                                        <span class="beranda-rekap-metric-reg">{{ $row['akan_sidang_reg'] }} reg</span>
+                                    @endif
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-3 py-3 text-gray-500">Belum ada data angkatan.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </div>
 </x-filament-panels::page>

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Informasi\Pages;
 
+use App\Enums\ExamTypeCode;
 use App\Models\ExamRegistration;
 use App\Models\GuideExaminer;
 use Carbon\Carbon;
@@ -62,50 +63,29 @@ class Beranda extends Page implements HasTable
             ->columns([
                 // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
                 // merender tiap baris sebagai card (hasColumnsLayout()), bukan
-                // cuma ->contentGrid() saja. ->prefix() dipakai di beberapa
-                // kolom karena mode card tidak menampilkan header kolom
-                // seperti tabel. Urutan field: jenis ujian, nama mahasiswa,
-                // NIM, judul, tanggal, jam, ruang, para penguji.
+                // cuma ->contentGrid() saja. 3 kolom, masing-masing HTML utuh
+                // (getStateUsing()+html(), bukan ->prefix()) karena badge+nama
+                // harus satu blok dan waktu+penguji harus satu baris flex
+                // bersama — Layout\Stack cuma bisa menumpuk vertikal antar
+                // kolom, jadi elemen yang perlu sejajar horizontal wajib
+                // digabung jadi satu kolom HTML. ->space() diberi nama class
+                // custom (bukan preset 1/2/3) — lihat HasSpace::space(),
+                // default branch di stack.blade.php cuma echo string apa
+                // adanya sebagai class tambahan.
                 Tables\Columns\Layout\Stack::make([
-                    Tables\Columns\Layout\Split::make([
-                        Tables\Columns\TextColumn::make('examtype.name')
-                            ->label('Jenis Ujian')
-                            ->badge()
-                            ->grow(false),
-                        Tables\Columns\TextColumn::make('student.name')
-                            ->label('Mahasiswa')
-                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
-                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
-                        Tables\Columns\TextColumn::make('student.username')
-                            ->label('NIM')
-                            ->badge()
-                            ->color('gray')
-                            ->grow(false),
-                    ]),
-                    Tables\Columns\TextColumn::make('title')
-                        ->label('Judul')
-                        ->wrap()
-                        ->placeholder('—')
-                        ->color('gray'),
-                    Tables\Columns\Layout\Split::make([
-                        Tables\Columns\TextColumn::make('exam_date')
-                            ->label('Tanggal')
-                            ->date('d M Y')
-                            ->prefix('Tanggal: '),
-                        Tables\Columns\TextColumn::make('exam_time')
-                            ->label('Jam')
-                            ->time('H:i')
-                            ->prefix('Jam: '),
-                        Tables\Columns\TextColumn::make('room')
-                            ->label('Ruang Ujian')
-                            ->placeholder('—')
-                            ->prefix('Ruang: '),
-                    ]),
-                    Tables\Columns\TextColumn::make('para_penguji')
-                        ->label('Para Penguji')
-                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildPengujiList($record))
+                    Tables\Columns\TextColumn::make('header')
+                        ->label('Mahasiswa')
+                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJadwalHeaderHtml($record))
                         ->html(),
-                ])->space(2),
+                    Tables\Columns\TextColumn::make('judul')
+                        ->label('Judul')
+                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJudulHtml($record))
+                        ->html(),
+                    Tables\Columns\TextColumn::make('waktu_dan_penguji')
+                        ->label('Waktu & Penguji')
+                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildWaktuDanPengujiHtml($record))
+                        ->html(),
+                ])->space('jadwal-card-stack'),
             ])
             ->paginated(false)
             ->emptyStateHeading('Belum ada jadwal ujian mendatang')
@@ -113,37 +93,137 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * Daftar penguji urut tetap 1–5 (examiner1–3, lalu guide1–2) — ketua
-     * (chief_id, di slot manapun) & pembimbing (slot 4–5) ditandai warna
-     * beda dari penguji biasa, per permintaan eksplisit di halaman publik
-     * ini (beda dari ExamRegistrationResource::buildExaminerHtml() yang
-     * cuma menandai ketua).
+     * Baris 1: badge Jenis Ujian + badge NIM sejajar horizontal. Baris 2:
+     * Nama Mahasiswa di bawahnya — digabung satu kolom HTML (bukan 3 kolom
+     * Filament terpisah) supaya badge tetap sejajar meski nama sangat
+     * panjang (lihat .jadwal-nama di beranda.blade.php).
      */
-    private function buildPengujiList(ExamRegistration $record): string
+    private function buildJadwalHeaderHtml(ExamRegistration $record): string
+    {
+        $type = ExamTypeCode::tryFrom($record->exam_type_id);
+        $jenis = $type?->label() ?? $record->examtype?->name ?? '—';
+        $jenisClass = 'jadwal-badge-jenis-'.($type ? strtolower($type->name) : 'default');
+        $jenisEmoji = $type ? $type->emoji().' ' : '';
+        $nim = $record->student?->username ?? '—';
+        $nama = $record->student?->name ?? '—';
+
+        return '<div class="jadwal-badge-row">'
+            .'<span class="jadwal-badge '.$jenisClass.'">'.$jenisEmoji.e($jenis).'</span>'
+            .'<span class="jadwal-badge jadwal-badge-nim">'.e($nim).'</span>'
+            .'</div>'
+            .'<div class="jadwal-nama">'.e($nama).'</div>';
+    }
+
+    private function buildJudulHtml(ExamRegistration $record): string
+    {
+        $judul = $record->title;
+
+        $value = filled($judul)
+            ? '<p class="jadwal-judul-text">'.e($judul).'</p>'
+            : '<p class="jadwal-judul-text jadwal-judul-empty">—</p>';
+
+        return '<div class="jadwal-judul jadwal-box"><span class="jadwal-group-label">Judul Tugas Akhir:</span>'.$value.'</div>';
+    }
+
+    /**
+     * Satu baris flex asimetris: kolom Waktu (sempit, tak melar) + kolom
+     * Penguji (melar, sisa ruang) — harus satu kolom HTML gabungan supaya
+     * keduanya bisa sejajar dalam satu baris flex (lihat .jadwal-body-row).
+     */
+    private function buildWaktuDanPengujiHtml(ExamRegistration $record): string
+    {
+        $tanggal = $record->exam_date?->translatedFormat('d M Y') ?? '—';
+        $jam = $record->exam_time ? Carbon::parse($record->exam_time)->format('H:i') : '—';
+        $ruang = $record->room ?: '—';
+
+        // Emoji, bukan <svg> heroicon — Filament men-strip tag svg lewat
+        // Str::sanitizeHtml() saat TextColumn::html() dirender (lihat
+        // ExamTypeCode::emoji() untuk penjelasan yang sama).
+        $waktu = '<div class="jadwal-waktu-col jadwal-box">'
+            .'<span class="jadwal-group-label">Waktu &amp; Lokasi:</span>'
+            .'<div class="jadwal-waktu-list">'
+            .'<span class="jadwal-waktu-item"><span class="jadwal-waktu-icon">📅</span>'.e($tanggal).'</span>'
+            .'<span class="jadwal-waktu-item"><span class="jadwal-waktu-icon">🕐</span>'.e($jam).'</span>'
+            .'<span class="jadwal-waktu-item"><span class="jadwal-waktu-icon">📍</span>'.e($ruang).'</span>'
+            .'</div>'
+            .'</div>';
+
+        return '<div class="jadwal-body-row">'.$waktu.$this->buildPengujiHierarchyHtml($record).'</div>';
+    }
+
+    /**
+     * Daftar penguji urut tetap 1–5 (examiner1–3, lalu guide1–2) dipecah
+     * jadi 3 baris terpisah: Ketua sendirian (chief_id, di slot manapun,
+     * badge biru + 👑 — cukup emoji mahkota + nama, tanpa teks "Ketua:"
+     * karena perannya sudah terwakili ikonnya), Anggota penguji lain
+     * mengalir bebas (nama polos tanpa label), lalu kedua Pembimbing
+     * selalu di baris terpisah miliknya ("Nama (P1)"/"Nama (P2)"). Kalau
+     * ketua kebetulan salah satu pembimbing, dia hanya tampil di baris
+     * Ketua (tidak dobel).
+     */
+    private function buildPengujiHierarchyHtml(ExamRegistration $record): string
     {
         $slots = [
-            ['no' => 1, 'label' => 'Penguji 1', 'id' => $record->examiner1_id, 'name' => $record->examiner1?->name, 'kind' => 'penguji'],
-            ['no' => 2, 'label' => 'Penguji 2', 'id' => $record->examiner2_id, 'name' => $record->examiner2?->name, 'kind' => 'penguji'],
-            ['no' => 3, 'label' => 'Penguji 3', 'id' => $record->examiner3_id, 'name' => $record->examiner3?->name, 'kind' => 'penguji'],
-            ['no' => 4, 'label' => 'Pembimbing 1', 'id' => $record->guide1_id, 'name' => $record->guide1?->name, 'kind' => 'pembimbing'],
-            ['no' => 5, 'label' => 'Pembimbing 2', 'id' => $record->guide2_id, 'name' => $record->guide2?->name, 'kind' => 'pembimbing'],
+            ['label' => 'Penguji 1', 'id' => $record->examiner1_id, 'name' => $record->examiner1?->name, 'kind' => 'penguji'],
+            ['label' => 'Penguji 2', 'id' => $record->examiner2_id, 'name' => $record->examiner2?->name, 'kind' => 'penguji'],
+            ['label' => 'Penguji 3', 'id' => $record->examiner3_id, 'name' => $record->examiner3?->name, 'kind' => 'penguji'],
+            ['label' => 'Pembimbing 1', 'id' => $record->guide1_id, 'name' => $record->guide1?->name, 'kind' => 'pembimbing'],
+            ['label' => 'Pembimbing 2', 'id' => $record->guide2_id, 'name' => $record->guide2?->name, 'kind' => 'pembimbing'],
         ];
 
-        $html = '<div class="beranda-penguji-list">';
+        $chief = null;
 
         foreach ($slots as $slot) {
             if (blank($slot['id'])) {
                 continue;
             }
 
-            $isChief = $record->chief_id && (int) $slot['id'] === (int) $record->chief_id;
-            $cssClass = $isChief ? 'beranda-penguji-ketua' : ($slot['kind'] === 'pembimbing' ? 'beranda-penguji-pembimbing' : 'beranda-penguji-biasa');
-            $label = $slot['label'].($isChief ? ' &middot; Ketua' : '');
+            if ($record->chief_id && (int) $slot['id'] === (int) $record->chief_id) {
+                $chief = $slot;
 
-            $html .= '<span class="beranda-penguji-badge '.$cssClass.'">'.e($label).': '.e($slot['name'] ?? '(?)').'</span>';
+                break;
+            }
         }
 
-        $html .= '</div>';
+        $anggota = '';
+        $pembimbing = '';
+
+        foreach ($slots as $slot) {
+            if (blank($slot['id']) || $slot === $chief) {
+                continue;
+            }
+
+            $name = $slot['name'] ?? '(?)';
+
+            if ($slot['kind'] === 'pembimbing') {
+                $kode = str_replace('Pembimbing ', 'P', $slot['label']); // "P1" / "P2"
+                $pembimbing .= '<span class="jadwal-badge jadwal-badge-pembimbing">'.e($name).' ('.e($kode).')</span>';
+            } else {
+                $anggota .= '<span class="jadwal-badge jadwal-badge-penguji">'.e($name).'</span>';
+            }
+        }
+
+        $html = '<div class="jadwal-penguji-col jadwal-box">';
+        $html .= '<span class="jadwal-group-label">Tim Penguji:</span>';
+        $html .= '<div class="jadwal-penguji-rows">';
+
+        if ($chief) {
+            $html .= '<div class="jadwal-ketua-row"><span class="jadwal-badge jadwal-badge-ketua">&#128081; '.e($chief['name'] ?? '(?)').'</span></div>';
+        }
+
+        if ($anggota !== '') {
+            $html .= '<div class="jadwal-anggota-row">'.$anggota.'</div>';
+        }
+
+        if ($pembimbing !== '') {
+            $html .= '<div class="jadwal-pembimbing-row">'.$pembimbing.'</div>';
+        }
+
+        if (! $chief && $anggota === '' && $pembimbing === '') {
+            $html .= '<span class="jadwal-judul-empty">—</span>';
+        }
+
+        $html .= '</div></div>';
 
         return $html;
     }
@@ -190,11 +270,18 @@ class Beranda extends Page implements HasTable
      *
      * Aturan kategori (persis empat kelompok yang saling lepas & menutup
      * seluruh Total — lihat RecapList::buildQuery() untuk filter list-nya):
-     * - Lulus: thesis_date terisi, walau proposal_date/seminar_date kosong.
+     * - Lulus: thesis_date terisi DI guide_examiners DAN ExamRegistration
+     *   sidang (exam_type_id=3) sudah pass_exam=1. thesis_date terisi saja
+     *   TIDAK cukup — tanggal sidang bisa sudah dituliskan di
+     *   guide_examiners padahal hasilnya belum/tidak lulus (pass_exam masih
+     *   null atau 0). Lihat lulusUserIds().
      * - Belum Lulus: Total - Lulus.
      * - Belum Sempro: proposal_date, seminar_date, thesis_date semua kosong.
      * - Akan Semhas: proposal_date terisi, seminar_date & thesis_date kosong.
-     * - Akan Sidang: seminar_date terisi, thesis_date kosong.
+     * - Akan Sidang: seminar_date terisi DAN belum termasuk Lulus (bukan
+     *   whereNull('thesis_date') lagi — mahasiswa yang tanggal sidangnya
+     *   sudah tertulis tapi belum pass_exam=1 tetap di sini, bukan pindah
+     *   ke Lulus).
      * "* reg" = di antara kelompok itu, berapa yang SUDAH terdaftar di
      * exam_registrations untuk jenis ujian berikutnya tapi pass_exam belum 1
      * (murni angka tambahan, tidak memindahkan mahasiswa ke kelompok lain).
@@ -211,9 +298,8 @@ class Beranda extends Page implements HasTable
         return $angkatans->map(function ($angkatan) {
             $total = GuideExaminer::where('year_generation', $angkatan)->count();
 
-            $lulus = GuideExaminer::where('year_generation', $angkatan)
-                ->whereNotNull('thesis_date')
-                ->count();
+            $lulusIds = $this->lulusUserIds($angkatan);
+            $lulus = $lulusIds->count();
 
             $belumLulus = $total - $lulus;
 
@@ -231,8 +317,9 @@ class Beranda extends Page implements HasTable
 
             $akanSidangIds = GuideExaminer::where('year_generation', $angkatan)
                 ->whereNotNull('seminar_date')
-                ->whereNull('thesis_date')
-                ->pluck('user_id');
+                ->pluck('user_id')
+                ->diff($lulusIds)
+                ->values();
 
             return [
                 'angkatan' => $angkatan,
@@ -275,6 +362,45 @@ class Beranda extends Page implements HasTable
             'akan_semhas' => (int) $rows->sum('akan_semhas'),
             'akan_sidang' => (int) $rows->sum('akan_sidang'),
         ];
+    }
+
+    /**
+     * String CSS conic-gradient() untuk ring persentase di kartu bento
+     * "Rekap Kelulusan" (beranda.blade.php) — tanpa SVG/Alpine, ring dibuat
+     * murni dari dua lingkaran bertumpuk (lihat .beranda-bento-ring{,-inner}).
+     */
+    public function ringStyle(float $pct, string $color = '#16a34a', string $track = '#e2e8f0'): string
+    {
+        $pct = max(0, min(100, $pct));
+        $pctStr = rtrim(rtrim(number_format($pct, 1, '.', ''), '0'), '.');
+
+        return "background: conic-gradient({$color} {$pctStr}%, {$track} 0)";
+    }
+
+    /**
+     * user_id yang BENAR-BENAR lulus untuk $angkatan: thesis_date terisi di
+     * guide_examiners DAN punya ExamRegistration sidang (exam_type_id=3)
+     * dengan pass_exam=1. thesis_date terisi sendirian tidak cukup —lihat
+     * catatan di rekap().
+     *
+     * @return Collection<int, int>
+     */
+    private function lulusUserIds(int|string $angkatan): Collection
+    {
+        $thesisDateIds = GuideExaminer::where('year_generation', $angkatan)
+            ->whereNotNull('thesis_date')
+            ->pluck('user_id');
+
+        if ($thesisDateIds->isEmpty()) {
+            return collect();
+        }
+
+        return ExamRegistration::whereIn('user_id', $thesisDateIds)
+            ->where('exam_type_id', 3)
+            ->where('pass_exam', 1)
+            ->pluck('user_id')
+            ->unique()
+            ->values();
     }
 
     /**
