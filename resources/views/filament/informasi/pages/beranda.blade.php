@@ -182,6 +182,25 @@
         .jadwal-badge-pembimbing { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
         .jadwal-badge-ketua { background: #dbeafe; color: #1d4ed8; font-weight: 800; border: 1px solid #bfdbfe; }
 
+        {{-- Nama dosen panjang: dulu dipotong titik tiga (nowrap+ellipsis
+             dari .jadwal-badge), sekarang badge boleh melebar ke bawah
+             (turun baris di dalam badge sendiri) supaya nama tetap utuh
+             terbaca & tidak overlap ke elemen lain. min-width:0 supaya
+             badge (flex item di baris flex-wrap) benar-benar bisa menyusut
+             mengikuti kolom, bukan memaksa kartu melebar. --}}
+        .jadwal-badge-ketua, .jadwal-badge-penguji, .jadwal-badge-pembimbing {
+            max-width: 100%;
+            min-width: 0;
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            overflow: visible;
+            text-overflow: clip;
+            line-height: 1.2;
+            padding-top: .25rem;
+            padding-bottom: .25rem;
+        }
+
         @media (min-width: 640px) {
             .jadwal-body-row { flex-direction: row; gap: .9rem; }
             .jadwal-waktu-col { width: auto; min-width: 130px; }
