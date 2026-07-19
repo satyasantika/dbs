@@ -105,8 +105,8 @@
    ExamRegistrationResource & ExamRegistrationsByDateWidget (keduanya
    reuse getCardColumns(), lihat komentar di sana). Nama file partial ini
    "student-column-styles" tapi sudah jadi lokasi CSS bersama antara
-   resource & widget (sama-sama @include partial ini), jadi ditaruh di
-   sini juga daripada disalin ulang di kedua blade view. */
+   resource & widget (sama-sama meng-include partial ini via Blade), jadi
+   ditaruh di sini juga daripada disalin ulang di kedua blade view. */
 .fi-resource-exam-registrations .exam-waktu-item {
     display: inline-flex;
     align-items: center;
