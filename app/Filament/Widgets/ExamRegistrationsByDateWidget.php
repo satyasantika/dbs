@@ -183,10 +183,21 @@ class ExamRegistrationsByDateWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
-        return ExamRegistrationResource::configureListTable(
-            $table->query(fn (): Builder => ExamRegistrationResource::getEloquentQuery()
+        // Card grid, bukan configureListTable() (tabel biasa yang dipakai
+        // ExamRegistrationResource::table() lama & masih dipakai apa adanya
+        // di tempat lain) — reuse getCardColumns()/getTableActions() milik
+        // resource itu supaya tidak duplikasi definisi kolom. Dibungkus
+        // data-grid-fit="rows" data-grid-fit-rows="2" di view widget ini
+        // (bukan mengikuti tinggi layar seperti grid lain).
+        return $table
+            ->query(fn (): Builder => ExamRegistrationResource::getEloquentQuery()
                 ->whereDate('exam_date', $this->examDate ?: now()->toDateString()))
-        )
+            ->contentGrid([
+                'default' => 1,
+            ])
+            ->columns(ExamRegistrationResource::getCardColumns())
+            ->actions(ExamRegistrationResource::getTableActions())
+            ->bulkActions([])
             ->defaultSort('exam_time', 'asc')
             ->emptyStateHeading('Tidak ada ujian pada tanggal ini')
             ->emptyStateDescription('Pilih tanggal ujian lain pada kalender untuk melihat jadwal.')

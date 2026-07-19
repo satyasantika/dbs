@@ -13,6 +13,18 @@
     The page footer itself is a fixed 64px (custom-styles.blade.php) —
     no measurement/sync needed for it here, unlike an earlier version of
     this script.
+
+    Some grids opt out of the viewport-height fit above via a
+    data-grid-fit attribute on the nearest ancestor (wrap the grid/table
+    output in a plain <div data-grid-fit="..."> in the page/widget view):
+      - data-grid-fit="none": leave tableRecordsPerPage alone entirely —
+        used with ->paginated(false) so every record renders, wrapping
+        into as many rows as needed (e.g. the public "Jadwal Ujian" grid,
+        which intentionally ignores screen height).
+      - data-grid-fit="rows" data-grid-fit-rows="N": fixed N rows
+        regardless of viewport height, columns still auto-fill by width
+        (e.g. dashboard widgets capped at 2 rows).
+    No marker present falls back to the original viewport-height fit.
 --}}
 <script>
     (function () {
@@ -48,6 +60,13 @@
         }
 
         function fitGridToViewport(grid) {
+            const marker = grid.closest('[data-grid-fit]');
+            const fitMode = marker?.dataset.gridFit ?? 'viewport';
+
+            if (fitMode === 'none') {
+                return;
+            }
+
             const firstCard = grid.querySelector(':scope > .fi-ta-record');
 
             if (!firstCard) {
@@ -61,24 +80,36 @@
             }
 
             const columns = countGridColumns(grid);
-            const cardHeight = firstCard.getBoundingClientRect().height;
 
-            if (columns < 1 || cardHeight <= 0) {
+            if (columns < 1) {
                 return;
             }
 
-            const rowGap = parseFloat(getComputedStyle(grid).rowGap) || 0;
-            const gridTop = grid.getBoundingClientRect().top;
+            let perPage;
 
-            const pagination = document.querySelector('.fi-ta-pagination');
-            const footer = document.querySelector('.fi-page-footer');
-            const reserved = (pagination?.offsetHeight ?? 0) + (footer?.offsetHeight ?? 0) + RESERVED_PX;
+            if (fitMode === 'rows') {
+                const fixedRows = parseInt(marker.dataset.gridFitRows, 10) || MIN_ROWS;
+                perPage = Math.min(MAX_PER_PAGE, columns * fixedRows);
+            } else {
+                const cardHeight = firstCard.getBoundingClientRect().height;
 
-            const availableHeight = window.innerHeight - gridTop - reserved;
-            const rowHeight = cardHeight + rowGap;
-            const rows = Math.max(MIN_ROWS, Math.floor(availableHeight / rowHeight));
+                if (cardHeight <= 0) {
+                    return;
+                }
 
-            const perPage = Math.min(MAX_PER_PAGE, columns * rows);
+                const rowGap = parseFloat(getComputedStyle(grid).rowGap) || 0;
+                const gridTop = grid.getBoundingClientRect().top;
+
+                const pagination = document.querySelector('.fi-ta-pagination');
+                const footer = document.querySelector('.fi-page-footer');
+                const reserved = (pagination?.offsetHeight ?? 0) + (footer?.offsetHeight ?? 0) + RESERVED_PX;
+
+                const availableHeight = window.innerHeight - gridTop - reserved;
+                const rowHeight = cardHeight + rowGap;
+                const rows = Math.max(MIN_ROWS, Math.floor(availableHeight / rowHeight));
+
+                perPage = Math.min(MAX_PER_PAGE, columns * rows);
+            }
 
             // $wire is a Proxy — plain properties are read directly (no
             // .get()/.set() methods); $set() is the documented API for
