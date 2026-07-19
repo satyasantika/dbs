@@ -53,35 +53,52 @@ class ChiefExam extends Page implements HasTable
                     ->where('chief_id', auth()->id())
                     ->orderByDesc('exam_date')
             )
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('Mahasiswa')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('student.username')
-                    ->label('NIM')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('examtype.name')
-                    ->label('Jenis Ujian')
-                    ->badge()
-                    ->color('primary'),
-                Tables\Columns\TextColumn::make('exam_date')
-                    ->label('Tanggal Ujian')
-                    ->date('d M Y')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('exam_time')
-                    ->label('Waktu')
-                    ->time('H:i'),
-                Tables\Columns\TextColumn::make('room')
-                    ->label('Ruang')
-                    ->placeholder('-'),
-                Tables\Columns\IconColumn::make('pass_exam')
-                    ->label('Lulus')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('student.name')
+                            ->label('Mahasiswa')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\IconColumn::make('pass_exam')
+                            ->label('Lulus')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->trueColor('success')
+                            ->falseColor('danger')
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('student.username')
+                            ->label('NIM')
+                            ->searchable(),
+                        Tables\Columns\TextColumn::make('examtype.name')
+                            ->label('Jenis Ujian')
+                            ->badge()
+                            ->color('primary'),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('exam_date')
+                            ->label('Tanggal Ujian')
+                            ->date('d M Y')
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('exam_time')
+                            ->label('Waktu')
+                            ->time('H:i'),
+                        Tables\Columns\TextColumn::make('room')
+                            ->label('Ruang')
+                            ->placeholder('-'),
+                    ]),
+                ])->space(2),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')

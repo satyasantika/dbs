@@ -104,31 +104,45 @@ class ViewChiefExam extends Page implements HasTable
                     ->where('exam_registration_id', $this->record->id)
                     ->orderBy('examiner_order')
             )
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('lecture.name')
-                    ->label('Nama')
-                    ->description(fn (ExamScore $record): ?string => filled($record->lecture?->phone) ? 'WA tersedia' : null)
-                    ->color(fn (ExamScore $record): string => blank($record->letter) ? 'danger' : 'gray')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('letter')
-                    ->label('Nilai')
-                    ->placeholder('Belum dinilai')
-                    ->badge()
-                    ->color(fn (?string $state): string => filled($state) ? 'primary' : 'danger'),
-                Tables\Columns\IconColumn::make('revision')
-                    ->label('Revisi')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-exclamation-triangle')
-                    ->falseIcon('heroicon-o-check')
-                    ->trueColor('warning')
-                    ->falseColor('success'),
-                Tables\Columns\IconColumn::make('pass_approved')
-                    ->label('Lanjutkan')
-                    ->boolean()
-                    ->trueIcon('heroicon-o-check-circle')
-                    ->falseIcon('heroicon-o-x-circle')
-                    ->trueColor('success')
-                    ->falseColor('danger'),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('lecture.name')
+                            ->label('Nama')
+                            ->description(fn (ExamScore $record): ?string => filled($record->lecture?->phone) ? 'WA tersedia' : null)
+                            ->color(fn (ExamScore $record): string => blank($record->letter) ? 'danger' : 'gray')
+                            ->searchable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold),
+                        Tables\Columns\TextColumn::make('letter')
+                            ->label('Nilai')
+                            ->placeholder('Belum dinilai')
+                            ->badge()
+                            ->color(fn (?string $state): string => filled($state) ? 'primary' : 'danger')
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\IconColumn::make('revision')
+                            ->label('Revisi')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-exclamation-triangle')
+                            ->falseIcon('heroicon-o-check')
+                            ->trueColor('warning')
+                            ->falseColor('success'),
+                        Tables\Columns\IconColumn::make('pass_approved')
+                            ->label('Lanjutkan')
+                            ->boolean()
+                            ->trueIcon('heroicon-o-check-circle')
+                            ->falseIcon('heroicon-o-x-circle')
+                            ->trueColor('success')
+                            ->falseColor('danger'),
+                    ]),
+                ])->space(2),
             ])
             ->actions([
                 Tables\Actions\Action::make('whatsapp')

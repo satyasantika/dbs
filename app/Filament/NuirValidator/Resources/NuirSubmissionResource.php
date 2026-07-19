@@ -43,30 +43,48 @@ class NuirSubmissionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('Mahasiswa')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('year_generation')->label('Angkatan')->sortable(),
-                Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->label('Status')
-                    ->badge()
-                    ->formatStateUsing(fn (string $state): string => request()->query('view') === self::DASHBOARD_VIEW_VALIDATION_COMPLETE
-                        ? 'Disetujui'
-                        : $state)
-                    ->color(fn (string $state): string => request()->query('view') === self::DASHBOARD_VIEW_VALIDATION_COMPLETE
-                        ? 'success'
-                        : 'gray'),
-                Tables\Columns\ViewColumn::make('reference_breakdown')
-                    ->label('Referensi')
-                    ->view('filament.nuir-validator.tables.reference-breakdown-badges')
-                    ->viewData(fn (NuirSubmission $record): array => [
-                        'badges' => NuirValidatorReferenceStatus::referenceBreakdownBadges($record),
-                    ])
-                    ->visible(fn (): bool => request()->query('view', self::DASHBOARD_VIEW_ASSIGNED) === self::DASHBOARD_VIEW_ASSIGNED),
-                Tables\Columns\TextColumn::make('activity_summary')
-                    ->label('Aktivitas')
-                    ->state(fn (NuirSubmission $record): string => NuirValidatorReferenceStatus::submissionActivitySummary($record))
-                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('updated_at', $direction)),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('user.name')
+                            ->label('Mahasiswa')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->formatStateUsing(fn (string $state): string => request()->query('view') === self::DASHBOARD_VIEW_VALIDATION_COMPLETE
+                                ? 'Disetujui'
+                                : $state)
+                            ->color(fn (string $state): string => request()->query('view') === self::DASHBOARD_VIEW_VALIDATION_COMPLETE
+                                ? 'success'
+                                : 'gray')
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('year_generation')->label('Angkatan')->sortable(),
+                        Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
+                    ]),
+                    Tables\Columns\ViewColumn::make('reference_breakdown')
+                        ->label('Referensi')
+                        ->view('filament.nuir-validator.tables.reference-breakdown-badges')
+                        ->viewData(fn (NuirSubmission $record): array => [
+                            'badges' => NuirValidatorReferenceStatus::referenceBreakdownBadges($record),
+                        ])
+                        ->visible(fn (): bool => request()->query('view', self::DASHBOARD_VIEW_ASSIGNED) === self::DASHBOARD_VIEW_ASSIGNED),
+                    Tables\Columns\TextColumn::make('activity_summary')
+                        ->label('Aktivitas')
+                        ->state(fn (NuirSubmission $record): string => NuirValidatorReferenceStatus::submissionActivitySummary($record))
+                        ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('updated_at', $direction)),
+                ])->space(2),
             ])
             ->actions([
                 Tables\Actions\Action::make('view')

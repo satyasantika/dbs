@@ -69,25 +69,49 @@ class GuideAllocationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('lecture.name')
-                    ->label('Dosen')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('year')
-                    ->label('Tahun')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('guide1_quota')
-                    ->label('Kuota P1'),
-                Tables\Columns\TextColumn::make('guide1_filled')
-                    ->label('Terisi P1'),
-                Tables\Columns\TextColumn::make('guide2_quota')
-                    ->label('Kuota P2'),
-                Tables\Columns\TextColumn::make('guide2_filled')
-                    ->label('Terisi P2'),
-                Tables\Columns\IconColumn::make('active')
-                    ->label('Aktif')
-                    ->boolean(),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('lecture.name')
+                            ->label('Dosen')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('year')
+                            ->label('Tahun')
+                            ->sortable()
+                            ->badge()
+                            ->color('gray'),
+                        Tables\Columns\IconColumn::make('active')
+                            ->label('Aktif')
+                            ->boolean()
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        // ->prefix() dipakai karena mode card tidak menampilkan
+                        // header kolom seperti tabel — tanpa ini angka Kuota/
+                        // Terisi jadi ambigu tanpa konteks.
+                        Tables\Columns\TextColumn::make('guide1_quota')
+                            ->label('Kuota P1')
+                            ->prefix('Kuota P1: '),
+                        Tables\Columns\TextColumn::make('guide1_filled')
+                            ->label('Terisi P1')
+                            ->prefix('Terisi P1: '),
+                        Tables\Columns\TextColumn::make('guide2_quota')
+                            ->label('Kuota P2')
+                            ->prefix('Kuota P2: '),
+                        Tables\Columns\TextColumn::make('guide2_filled')
+                            ->label('Terisi P2')
+                            ->prefix('Terisi P2: '),
+                    ]),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('year')

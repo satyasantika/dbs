@@ -51,55 +51,75 @@ class NuirSubmissionResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('user.name')->label('Mahasiswa')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('year_generation')->label('Angkatan')->sortable(),
-                Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
-                Tables\Columns\TextColumn::make('status')->label('Status')->badge(),
-                Tables\Columns\SelectColumn::make('assignment.validator_id')
-                    ->label('Validator')
-                    ->placeholder('Belum ditugaskan')
-                    ->options(fn () => app(NuirAssignmentService::class)->validators()->pluck('name', 'id'))
-                    ->getStateUsing(fn (NuirSubmission $record): ?int => $record->assignment?->validator_id)
-                    ->updateStateUsing(function (NuirSubmission $record, $state) {
-                        if (blank($state)) {
-                            return null;
-                        }
-
-                        $validator = User::find($state);
-
-                        if (! $validator) {
-                            return null;
-                        }
-
-                        try {
-                            app(NuirAssignmentService::class)->assignValidator($record, $validator, auth()->user());
-
-                            Notification::make()
-                                ->success()
-                                ->title('Validator berhasil didelegasikan.')
-                                ->send();
-                        } catch (ValidationException $exception) {
-                            Notification::make()
-                                ->danger()
-                                ->title(collect($exception->errors())->flatten()->first())
-                                ->send();
-                        }
-
-                        return $state;
-                    })
-                    ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false),
-                Tables\Columns\TextColumn::make('assignment.validator.name')
-                    ->label('Validator')
-                    ->placeholder('Belum ditugaskan')
-                    ->visible(fn (): bool => ! (auth()->user()?->can('delegate nuir validator') ?? false)),
-                Tables\Columns\ViewColumn::make('approval_status')
-                    ->label('Persetujuan')
-                    ->view('filament.nuir-manajer.tables.approval-status-lines')
-                    ->viewData(fn (NuirSubmission $record): array => [
-                        'lines' => static::approvalStatusLines($record),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('user.name')
+                            ->label('Mahasiswa')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('status')
+                            ->label('Status')
+                            ->badge()
+                            ->grow(false),
                     ]),
-                Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('year_generation')->label('Angkatan')->sortable(),
+                        Tables\Columns\TextColumn::make('version')->label('Versi')->sortable(),
+                        Tables\Columns\TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
+                    ]),
+                    Tables\Columns\SelectColumn::make('assignment.validator_id')
+                        ->label('Validator')
+                        ->placeholder('Belum ditugaskan')
+                        ->options(fn () => app(NuirAssignmentService::class)->validators()->pluck('name', 'id'))
+                        ->getStateUsing(fn (NuirSubmission $record): ?int => $record->assignment?->validator_id)
+                        ->updateStateUsing(function (NuirSubmission $record, $state) {
+                            if (blank($state)) {
+                                return null;
+                            }
+
+                            $validator = User::find($state);
+
+                            if (! $validator) {
+                                return null;
+                            }
+
+                            try {
+                                app(NuirAssignmentService::class)->assignValidator($record, $validator, auth()->user());
+
+                                Notification::make()
+                                    ->success()
+                                    ->title('Validator berhasil didelegasikan.')
+                                    ->send();
+                            } catch (ValidationException $exception) {
+                                Notification::make()
+                                    ->danger()
+                                    ->title(collect($exception->errors())->flatten()->first())
+                                    ->send();
+                            }
+
+                            return $state;
+                        })
+                        ->visible(fn (): bool => auth()->user()?->can('delegate nuir validator') ?? false),
+                    Tables\Columns\TextColumn::make('assignment.validator.name')
+                        ->label('Validator')
+                        ->placeholder('Belum ditugaskan')
+                        ->visible(fn (): bool => ! (auth()->user()?->can('delegate nuir validator') ?? false)),
+                    Tables\Columns\ViewColumn::make('approval_status')
+                        ->label('Persetujuan')
+                        ->view('filament.nuir-manajer.tables.approval-status-lines')
+                        ->viewData(fn (NuirSubmission $record): array => [
+                            'lines' => static::approvalStatusLines($record),
+                        ]),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('year_generation')

@@ -44,36 +44,53 @@ class NuirReferenceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('ref_order')
-                    ->label('Referensi')
-                    ->formatStateUsing(fn (int $state): string => '#'.$state)
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('submission.user.name')
-                    ->label('Mahasiswa')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('submission.year_generation')
-                    ->label('Angkatan')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('submission.version')
-                    ->label('Versi')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('validation_status')
-                    ->label('Status')
-                    ->state(fn (): string => match (request()->query('view')) {
-                        self::DASHBOARD_VIEW_AWAITING_REVALIDATION => 'Menunggu validasi ulang',
-                        default => 'Pending',
-                    })
-                    ->badge()
-                    ->color(fn (): string => match (request()->query('view')) {
-                        self::DASHBOARD_VIEW_AWAITING_REVALIDATION => 'warning',
-                        default => 'gray',
-                    }),
-                Tables\Columns\TextColumn::make('activity_summary')
-                    ->label('Aktivitas')
-                    ->state(fn (NuirReference $record): string => NuirValidatorReferenceStatus::referenceActivitySummary($record))
-                    ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('updated_at', $direction)),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('submission.user.name')
+                            ->label('Mahasiswa')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('ref_order')
+                            ->label('Referensi')
+                            ->formatStateUsing(fn (int $state): string => '#'.$state)
+                            ->sortable()
+                            ->badge()
+                            ->color('gray')
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('submission.year_generation')
+                            ->label('Angkatan')
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('submission.version')
+                            ->label('Versi')
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('validation_status')
+                            ->label('Status')
+                            ->state(fn (): string => match (request()->query('view')) {
+                                self::DASHBOARD_VIEW_AWAITING_REVALIDATION => 'Menunggu validasi ulang',
+                                default => 'Pending',
+                            })
+                            ->badge()
+                            ->color(fn (): string => match (request()->query('view')) {
+                                self::DASHBOARD_VIEW_AWAITING_REVALIDATION => 'warning',
+                                default => 'gray',
+                            }),
+                    ]),
+                    Tables\Columns\TextColumn::make('activity_summary')
+                        ->label('Aktivitas')
+                        ->state(fn (NuirReference $record): string => NuirValidatorReferenceStatus::referenceActivitySummary($record))
+                        ->sortable(query: fn (Builder $query, string $direction): Builder => $query->orderBy('updated_at', $direction)),
+                ])->space(2),
             ])
             ->actions([
                 Tables\Actions\Action::make('validate')

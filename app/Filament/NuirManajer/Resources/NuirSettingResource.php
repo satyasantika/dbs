@@ -41,14 +41,32 @@ class NuirSettingResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('year_generation')->label('Angkatan')->sortable(),
-                Tables\Columns\TextColumn::make('stage')->label('Tahap')->sortable(),
-                Tables\Columns\IconColumn::make('active')->label('Aktif')->boolean(),
-                Tables\Columns\TextColumn::make('min_references_approved')->label('Min Ref'),
-                Tables\Columns\TextColumn::make('max_references')->label('Max Ref'),
-                Tables\Columns\TextColumn::make('min_words_novelty')->label('Min N')->placeholder('—'),
-                Tables\Columns\TextColumn::make('max_words_novelty')->label('Max N')->placeholder('—'),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('year_generation')
+                            ->label('Angkatan')
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('stage')->label('Tahap')->sortable()->badge(),
+                        Tables\Columns\IconColumn::make('active')->label('Aktif')->boolean()->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        // ->prefix() dipakai karena mode card tidak menampilkan
+                        // header kolom seperti tabel.
+                        Tables\Columns\TextColumn::make('min_references_approved')->label('Min Ref')->prefix('Min Ref: '),
+                        Tables\Columns\TextColumn::make('max_references')->label('Max Ref')->prefix('Max Ref: '),
+                        Tables\Columns\TextColumn::make('min_words_novelty')->label('Min N')->placeholder('—')->prefix('Min N: '),
+                        Tables\Columns\TextColumn::make('max_words_novelty')->label('Max N')->placeholder('—')->prefix('Max N: '),
+                    ]),
+                ])->space(2),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
