@@ -63,15 +63,15 @@ class Beranda extends Page implements HasTable
             ->columns([
                 // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
                 // merender tiap baris sebagai card (hasColumnsLayout()), bukan
-                // cuma ->contentGrid() saja. 3 kolom, masing-masing HTML utuh
-                // (getStateUsing()+html(), bukan ->prefix()) karena badge+nama
-                // harus satu blok dan waktu+penguji harus satu baris flex
-                // bersama — Layout\Stack cuma bisa menumpuk vertikal antar
-                // kolom, jadi elemen yang perlu sejajar horizontal wajib
-                // digabung jadi satu kolom HTML. ->space() diberi nama class
-                // custom (bukan preset 1/2/3) — lihat HasSpace::space(),
-                // default branch di stack.blade.php cuma echo string apa
-                // adanya sebagai class tambahan.
+                // cuma ->contentGrid() saja. 4 kolom, masing-masing HTML utuh
+                // (getStateUsing()+html(), bukan ->prefix()) supaya labelnya
+                // bisa diberi warna berbeda dari isinya. Semua kolom berdiri
+                // sendiri penuh selebar kartu (bukan sejajar horizontal lagi):
+                // header, judul, waktu & lokasi, lalu tim penguji paling
+                // bawah. ->space() diberi nama class custom (bukan preset
+                // 1/2/3) — lihat HasSpace::space(), default branch di
+                // stack.blade.php cuma echo string apa adanya sebagai class
+                // tambahan.
                 Tables\Columns\Layout\Stack::make([
                     Tables\Columns\TextColumn::make('header')
                         ->label('Mahasiswa')
@@ -81,9 +81,13 @@ class Beranda extends Page implements HasTable
                         ->label('Judul')
                         ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJudulHtml($record))
                         ->html(),
-                    Tables\Columns\TextColumn::make('waktu_dan_penguji')
-                        ->label('Waktu & Penguji')
-                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildWaktuDanPengujiHtml($record))
+                    Tables\Columns\TextColumn::make('waktu')
+                        ->label('Waktu & Lokasi')
+                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildWaktuHtml($record))
+                        ->html(),
+                    Tables\Columns\TextColumn::make('penguji')
+                        ->label('Tim Penguji')
+                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildPengujiHierarchyHtml($record))
                         ->html(),
                 ])->space('jadwal-card-stack'),
             ])
@@ -126,11 +130,12 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * Satu baris flex asimetris: kolom Waktu (sempit, tak melar) + kolom
-     * Penguji (melar, sisa ruang) — harus satu kolom HTML gabungan supaya
-     * keduanya bisa sejajar dalam satu baris flex (lihat .jadwal-body-row).
+     * Waktu & Lokasi kolom sendiri (bukan sebaris dengan Tim Penguji lagi).
+     * Tanggal/Jam/Ruang satu baris, dipisah tanda "|" — Ruang wajib ditulis
+     * dengan kata "Ruang" di depan datanya (mis. "Ruang R122"), Tanggal &
+     * Jam tidak perlu prefix karena ikonnya sudah menjelaskan.
      */
-    private function buildWaktuDanPengujiHtml(ExamRegistration $record): string
+    private function buildWaktuHtml(ExamRegistration $record): string
     {
         $tanggal = $record->exam_date?->translatedFormat('d M Y') ?? '—';
         $jam = $record->exam_time ? Carbon::parse($record->exam_time)->format('H:i') : '—';
@@ -139,16 +144,18 @@ class Beranda extends Page implements HasTable
         // Emoji, bukan <svg> heroicon — Filament men-strip tag svg lewat
         // Str::sanitizeHtml() saat TextColumn::html() dirender (lihat
         // ExamTypeCode::emoji() untuk penjelasan yang sama).
-        $waktu = '<div class="jadwal-waktu-col jadwal-box">'
+        $sep = '<span class="jadwal-waktu-sep">|</span>';
+
+        return '<div class="jadwal-waktu-col jadwal-box">'
             .'<span class="jadwal-group-label">Waktu &amp; Lokasi:</span>'
-            .'<div class="jadwal-waktu-list">'
-            .'<span class="jadwal-waktu-item"><span class="jadwal-waktu-icon">📅</span>'.e($tanggal).'</span>'
-            .'<span class="jadwal-waktu-item"><span class="jadwal-waktu-icon">🕐</span>'.e($jam).'</span>'
-            .'<span class="jadwal-waktu-item"><span class="jadwal-waktu-icon">📍</span>'.e($ruang).'</span>'
+            .'<div class="jadwal-waktu-line">'
+            .'<span class="jadwal-waktu-icon">📅</span>'.e($tanggal)
+            .' '.$sep.' '
+            .'<span class="jadwal-waktu-icon">🕐</span>'.e($jam)
+            .' '.$sep.' '
+            .'<span class="jadwal-waktu-icon">📍</span>Ruang '.e($ruang)
             .'</div>'
             .'</div>';
-
-        return '<div class="jadwal-body-row">'.$waktu.$this->buildPengujiHierarchyHtml($record).'</div>';
     }
 
     /**

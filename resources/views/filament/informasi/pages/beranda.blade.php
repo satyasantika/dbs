@@ -133,8 +133,9 @@
              vendor/filament/tables/resources/views/index.blade.php) —
              ditarget lewat class Tailwind gap-y-3 yang menempel di situ. --}}
         .jadwal-cards .fi-ta-record .gap-y-3 { padding-top: .625rem; padding-bottom: .625rem; }
-        {{-- Sama dengan gap .jadwal-body-row (Waktu Lokasi <-> Tim Penguji)
-             — ini satu-satunya sumber jarak antar Nama/Judul/baris bawah. --}}
+        {{-- Satu-satunya sumber jarak antar 4 blok kartu (Header/Judul/
+             Waktu & Lokasi/Tim Penguji) — semuanya berdiri sendiri penuh
+             selebar kartu, tidak ada lagi yang sejajar horizontal. --}}
         .jadwal-card-stack { gap: .6rem; }
 
         {{-- Box abu-abu dipakai bersama oleh Judul/Waktu/Penguji, & label
@@ -161,16 +162,17 @@
         .jadwal-judul-text { margin: 0; font-size: 12px; font-style: italic; color: #475569; line-height: 1.4; }
         .jadwal-judul-empty { color: #cbd5e1; font-style: normal; }
 
-        {{-- Baris 3: layout asimetris — kolom Waktu sempit (tak melar) +
-             kolom Penguji melar, sejajar horizontal mulai breakpoint sm
-             (640px), tumpuk vertikal di layar sempit. Keduanya dibungkus
-             .jadwal-box. --}}
-        .jadwal-body-row { display: flex; flex-direction: column; gap: .6rem; font-size: 12px; }
-        .jadwal-waktu-col { flex-shrink: 0; display: flex; flex-direction: column; color: #475569; }
-        .jadwal-waktu-list { display: flex; flex-direction: column; gap: .25rem; }
-        .jadwal-waktu-item { display: inline-flex; align-items: center; gap: .3rem; width: fit-content; white-space: nowrap; background: #fff; padding: .2rem .45rem; border-radius: .3rem; box-shadow: 0 1px 2px rgba(0,0,0,.05); font-weight: 600; }
-        .jadwal-waktu-icon { font-size: 11px; line-height: 1; flex-shrink: 0; }
-        .jadwal-penguji-col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+        {{-- Waktu & Lokasi — kolom sendiri (bukan sebaris dengan Tim
+             Penguji lagi), dibungkus .jadwal-box. Tanggal/Jam/Ruang satu
+             baris dipisah "|", boleh wrap di layar sempit kalau kepanjangan. --}}
+        .jadwal-waktu-col { color: #475569; font-size: 12px; }
+        .jadwal-waktu-line { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; font-size: 12px; font-weight: 600; }
+        .jadwal-waktu-icon { font-size: 11px; line-height: 1; margin-right: .15rem; }
+        .jadwal-waktu-sep { color: #cbd5e1; font-weight: 400; }
+
+        {{-- Tim Penguji — kolom sendiri di paling bawah, penuh selebar
+             kartu, dibungkus .jadwal-box. --}}
+        .jadwal-penguji-col { display: flex; flex-direction: column; }
         .jadwal-penguji-rows { display: flex; flex-direction: column; gap: .3rem; }
 
         {{-- Hierarki penguji: Ketua sendirian di baris pertama (biru +
@@ -199,11 +201,6 @@
             line-height: 1.2;
             padding-top: .25rem;
             padding-bottom: .25rem;
-        }
-
-        @media (min-width: 640px) {
-            .jadwal-body-row { flex-direction: row; gap: .9rem; }
-            .jadwal-waktu-col { width: auto; min-width: 130px; }
         }
 
         {{-- Rekap: satu Card besar membungkus bento grid ringkasan +
@@ -313,7 +310,7 @@
     {{-- ═══════ JADWAL UJIAN (card grid, semua ditampilkan) ═══════ --}}
     <div class="beranda-section-heading">
         <h2>Jadwal Ujian Mendatang</h2>
-        <p>Setiap kartu menampilkan jenis ujian, mahasiswa, judul, waktu, dan para penguji — diurutkan berdasarkan tanggal &rsaquo; jam &rsaquo; ruang, seluruh jadwal ditampilkan tanpa dibatasi tinggi layar.</p>
+        <p>Setiap kartu menampilkan jenis ujian, mahasiswa, judul, waktu, dan para penguji — diurutkan berdasarkan tanggal &rsaquo; jam &rsaquo; ruang.</p>
     </div>
     <div data-grid-fit="none" class="mb-8 jadwal-cards">
         {{ $this->table }}
