@@ -365,9 +365,9 @@
                         <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Total</th>
                         <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Sudah Lulus</th>
                         <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Lulus</th>
-                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Ujian Sempro</th>
-                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Ujian Semhas</th>
-                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Ujian Sidang</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Sempro</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Akan Semhas</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Akan Sidang</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
