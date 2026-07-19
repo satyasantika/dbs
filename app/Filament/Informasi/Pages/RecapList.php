@@ -22,17 +22,23 @@ use Illuminate\Database\Eloquent\Model;
  * ini hanya alternatif tampilan card grid dengan URL baru di panel
  * 'informasi'.
  *
- * Aturan kategori per $context (harus sama persis dengan
- * Beranda::rekap() supaya jumlahnya cocok):
- * - Lulus: thesis_date terisi DI guide_examiners DAN ExamRegistration
- *   sidang (exam_type_id=3) sudah pass_exam=1 — thesis_date terisi saja
- *   tidak cukup (tanggal sidang bisa sudah tertulis padahal hasilnya
- *   belum/tidak lulus). Lihat Beranda::lulusUserIds().
- * - Belum Lulus: bukan Lulus (lihat definisi Lulus di atas).
- * - Belum Sempro: proposal_date, seminar_date, thesis_date semua kosong.
- * - Akan Semhas: proposal_date terisi, seminar_date & thesis_date kosong.
- * - Akan Sidang: seminar_date terisi DAN bukan Lulus (bukan
- *   whereNull('thesis_date') lagi, per alasan yang sama seperti Lulus).
+ * PENTING: proposal_date/seminar_date/thesis_date di guide_examiners
+ * di-stample begitu ExamRegistration didaftarkan (lihat
+ * ExamRegistrationController::store()), SEBELUM ujian/nilai keluar — jadi
+ * "tanggal terisi" TIDAK sama dengan "sudah lulus tahap itu" di KETIGA
+ * tahap. Lihat penjelasan lengkap & contoh di docblock Beranda::rekap().
+ *
+ * Aturan kategori per $context (harus sama persis dengan Beranda::rekap()
+ * supaya jumlahnya cocok — lihat applyTrulyPassed()):
+ * - Lulus: trulyPassed('thesis_date', 3).
+ * - Belum Lulus: NOT trulyPassed('thesis_date', 3).
+ * - Belum Sempro: NOT trulyPassed('proposal_date', 1).
+ * - Akan Semhas: trulyPassed('proposal_date', 1) AND NOT trulyPassed('seminar_date', 2).
+ * - Akan Sidang: trulyPassed('seminar_date', 2) AND NOT trulyPassed('thesis_date', 3).
+ * "trulyPassed" = tanggal terisi DAN tidak ter-disqualify (ada
+ * ExamRegistration exam_type=N tapi tak satupun pass_exam=1) —
+ * exclusion-based, bukan positive-requirement, supaya ExamRegistration
+ * yang terhapus/tanggal yang diisi manual tidak salah menggugurkan status.
  * Kolom "Status" (badge "Sudah daftar, menunggu hasil") menandai mahasiswa
  * yang sudah terdaftar di exam_registrations untuk jenis ujian berikutnya
  * tapi pass_exam belum 1 — hanya tampil di 3 context "akan/belum" di atas,
@@ -191,6 +197,32 @@ class RecapList extends Page implements HasTable
                 || ($registration->exam_date?->toDateString() < $today));
     }
 
+    /**
+     * Terapkan kondisi "benar-benar lulus tahap $examTypeId" ke $query —
+     * versi Builder dari Beranda::trulyPassedIds()/stageDisqualifiedIds(),
+     * pakai De Morgan supaya bisa dinegasikan ($negate) tanpa query
+     * terpisah. trulyPassedN = $dateColumn tidak null AND (tidak punya
+     * ExamRegistration exam_type=N ATAU punya yang pass_exam=1).
+     */
+    private function applyTrulyPassed(Builder $query, string $dateColumn, int $examTypeId, bool $negate = false): Builder
+    {
+        if (! $negate) {
+            return $query
+                ->whereNotNull($dateColumn)
+                ->where(fn (Builder $q) => $q
+                    ->whereDoesntHave('examRegistrations', fn (Builder $q2) => $q2->where('exam_type_id', $examTypeId))
+                    ->orWhereHas('examRegistrations', fn (Builder $q2) => $q2->where('exam_type_id', $examTypeId)->where('pass_exam', 1)));
+        }
+
+        // NOT(dateColumn terisi AND (tak punya reg ATAU ada yang pass_exam=1))
+        // = dateColumn kosong OR (punya reg exam_type=N DAN tak satupun pass_exam=1)
+        return $query->where(fn (Builder $q) => $q
+            ->whereNull($dateColumn)
+            ->orWhere(fn (Builder $q2) => $q2
+                ->whereHas('examRegistrations', fn (Builder $q3) => $q3->where('exam_type_id', $examTypeId))
+                ->whereDoesntHave('examRegistrations', fn (Builder $q3) => $q3->where('exam_type_id', $examTypeId)->where('pass_exam', 1))));
+    }
+
     private function buildQuery(): Builder
     {
         $generation = $this->generation;
@@ -199,35 +231,18 @@ class RecapList extends Page implements HasTable
             ->with(['student', 'guide1', 'guide2', 'examRegistrations'])
             ->where('year_generation', $generation);
 
-        $lulus = fn (Builder $query): Builder => $query
-            ->whereNotNull('thesis_date')
-            ->whereHas('examRegistrations', fn (Builder $q) => $q
-                ->where('exam_type_id', 3)
-                ->where('pass_exam', 1));
-
-        $belumLulus = fn (Builder $query): Builder => $query
-            ->where(fn (Builder $q) => $q
-                ->whereNull('thesis_date')
-                ->orWhereDoesntHave('examRegistrations', fn (Builder $q2) => $q2
-                    ->where('exam_type_id', 3)
-                    ->where('pass_exam', 1)));
-
         return match ($this->context) {
-            'Mahasiswa Lulus' => $lulus($base()),
+            'Mahasiswa Lulus' => $this->applyTrulyPassed($base(), 'thesis_date', 3),
 
-            'Mahasiswa Belum Lulus' => $belumLulus($base()),
+            'Mahasiswa Belum Lulus' => $this->applyTrulyPassed($base(), 'thesis_date', 3, negate: true),
 
-            'Mahasiswa Belum Sempro' => $base()
-                ->whereNull('proposal_date')
-                ->whereNull('seminar_date')
-                ->whereNull('thesis_date'),
+            'Mahasiswa Belum Sempro' => $this->applyTrulyPassed($base(), 'proposal_date', 1, negate: true),
 
-            'Mahasiswa Akan Semhas' => $base()
-                ->whereNotNull('proposal_date')
-                ->whereNull('seminar_date')
-                ->whereNull('thesis_date'),
+            'Mahasiswa Akan Semhas' => $this->applyTrulyPassed($base(), 'proposal_date', 1)
+                ->where(fn (Builder $q) => $this->applyTrulyPassed($q, 'seminar_date', 2, negate: true)),
 
-            'Mahasiswa Akan Sidang' => $belumLulus($base()->whereNotNull('seminar_date')),
+            'Mahasiswa Akan Sidang' => $this->applyTrulyPassed($base(), 'seminar_date', 2)
+                ->where(fn (Builder $q) => $this->applyTrulyPassed($q, 'thesis_date', 3, negate: true)),
 
             default => $base(),
         };
