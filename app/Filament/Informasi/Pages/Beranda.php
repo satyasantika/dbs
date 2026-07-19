@@ -252,24 +252,33 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * Disalin dari WelcomeController::index() — satu baris rekap per
-     * angkatan, dipakai kartu "Rekap Kelulusan & Ujian Skripsi" di
-     * beranda.blade.php, tautan tiap angka mengarah ke RecapList.
+     * Disalin dari WelcomeController::index() (sudah dihapus, lihat git
+     * history commit 54be7b4) — satu baris rekap per angkatan, dipakai
+     * kartu "Rekap Kelulusan & Ujian Skripsi" di beranda.blade.php, tautan
+     * tiap angka mengarah ke RecapList.
+     *
+     * PENTING: proposal_date/seminar_date/thesis_date di guide_examiners
+     * di-stample begitu ExamRegistration didaftarkan (lihat
+     * ExamRegistrationController::store()), SEBELUM ujian berlangsung/
+     * dinilai — jadi "tanggal terisi" TIDAK sama dengan "sudah lulus tahap
+     * itu" di KETIGA tahap (sempro/semhas/sidang), bukan cuma sidang.
+     * Konfirmasi lulus baru terjadi belakangan & terpisah, lewat
+     * ViewChiefExam (set pass_exam=true di ExamRegistration), tidak pernah
+     * menyentuh tanggal di guide_examiners.
      *
      * Aturan kategori (persis empat kelompok yang saling lepas & menutup
-     * seluruh Total — lihat RecapList::buildQuery() untuk filter list-nya):
-     * - Lulus: thesis_date terisi DI guide_examiners DAN ExamRegistration
-     *   sidang (exam_type_id=3) sudah pass_exam=1. thesis_date terisi saja
-     *   TIDAK cukup — tanggal sidang bisa sudah dituliskan di
-     *   guide_examiners padahal hasilnya belum/tidak lulus (pass_exam masih
-     *   null atau 0). Lihat lulusUserIds().
+     * seluruh Total lewat teleskop — lihat RecapList::buildQuery() untuk
+     * filter list-nya, harus sama persis):
+     * - Lulus: trulyPassedIds('thesis_date', examTypeId: 3).
      * - Belum Lulus: Total - Lulus.
-     * - Belum Sempro: proposal_date, seminar_date, thesis_date semua kosong.
-     * - Akan Semhas: proposal_date terisi, seminar_date & thesis_date kosong.
-     * - Akan Sidang: seminar_date terisi DAN belum termasuk Lulus (bukan
-     *   whereNull('thesis_date') lagi — mahasiswa yang tanggal sidangnya
-     *   sudah tertulis tapi belum pass_exam=1 tetap di sini, bukan pindah
-     *   ke Lulus).
+     * - Akan Sidang: trulyPassedIds('seminar_date', 2) MINUS Lulus.
+     * - Akan Semhas: trulyPassedIds('proposal_date', 1) MINUS trulyPassedIds('seminar_date', 2).
+     * - Belum Sempro: semua user di angkatan itu MINUS trulyPassedIds('proposal_date', 1).
+     * "trulyPassed" = tanggal terisi DAN tidak ter-disqualify (lihat
+     * stageDisqualifiedIds()) — exclusion-based (anggap lulus KECUALI ada
+     * bukti sebaliknya), bukan positive-requirement, supaya ExamRegistration
+     * yang terhapus atau tanggal yang diisi manual lewat GuideExaminerResource
+     * tidak salah menggugurkan status lulus.
      * "* reg" = di antara kelompok itu, berapa yang SUDAH terdaftar di
      * exam_registrations untuk jenis ujian berikutnya tapi pass_exam belum 1
      * (murni angka tambahan, tidak memindahkan mahasiswa ke kelompok lain).
@@ -285,29 +294,18 @@ class Beranda extends Page implements HasTable
 
         return $angkatans->map(function ($angkatan) {
             $total = GuideExaminer::where('year_generation', $angkatan)->count();
+            $allIds = GuideExaminer::where('year_generation', $angkatan)->pluck('user_id');
 
-            $lulusIds = $this->lulusUserIds($angkatan);
+            $trulyPassedSemproIds = $this->trulyPassedIds($angkatan, 'proposal_date', 1);
+            $trulyPassedSemhasIds = $this->trulyPassedIds($angkatan, 'seminar_date', 2);
+            $lulusIds = $this->trulyPassedIds($angkatan, 'thesis_date', 3);
+
             $lulus = $lulusIds->count();
-
             $belumLulus = $total - $lulus;
 
-            $belumSemproIds = GuideExaminer::where('year_generation', $angkatan)
-                ->whereNull('proposal_date')
-                ->whereNull('seminar_date')
-                ->whereNull('thesis_date')
-                ->pluck('user_id');
-
-            $akanSemhasIds = GuideExaminer::where('year_generation', $angkatan)
-                ->whereNotNull('proposal_date')
-                ->whereNull('seminar_date')
-                ->whereNull('thesis_date')
-                ->pluck('user_id');
-
-            $akanSidangIds = GuideExaminer::where('year_generation', $angkatan)
-                ->whereNotNull('seminar_date')
-                ->pluck('user_id')
-                ->diff($lulusIds)
-                ->values();
+            $belumSemproIds = $allIds->diff($trulyPassedSemproIds)->values();
+            $akanSemhasIds = $trulyPassedSemproIds->diff($trulyPassedSemhasIds)->values();
+            $akanSidangIds = $trulyPassedSemhasIds->diff($lulusIds)->values();
 
             return [
                 'angkatan' => $angkatan,
@@ -366,29 +364,63 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * user_id yang BENAR-BENAR lulus untuk $angkatan: thesis_date terisi di
-     * guide_examiners DAN punya ExamRegistration sidang (exam_type_id=3)
-     * dengan pass_exam=1. thesis_date terisi sendirian tidak cukup —lihat
-     * catatan di rekap().
+     * user_id di antara $dateFilledIds yang TERDAFTAR ExamRegistration
+     * untuk $examTypeId tapi TIDAK ADA satupun pass_exam=1 — tanggal di
+     * guide_examiners cuma tanda "sudah dijadwalkan" (di-stample saat
+     * ExamRegistrationController::store(), sebelum ujian/nilai keluar),
+     * bukan "sudah lulus". Kalau tidak ada ExamRegistration SAMA SEKALI
+     * (row terhapus, atau tanggal diisi manual lewat GuideExaminerResource),
+     * user itu TIDAK masuk sini — dianggap lulus (tak ada bukti
+     * sebaliknya), bukan digugurkan. Retake tertangani benar: kalau ada
+     * baris pass_exam=1 di antara beberapa percobaan, user itu ikut ke
+     * $passedIds & tersisih dari hasil diff (tidak salah gugur meski ada
+     * riwayat gagal sebelumnya).
      *
+     * @param  Collection<int, int>  $dateFilledIds
      * @return Collection<int, int>
      */
-    private function lulusUserIds(int|string $angkatan): Collection
+    private function stageDisqualifiedIds(Collection $dateFilledIds, int $examTypeId): Collection
     {
-        $thesisDateIds = GuideExaminer::where('year_generation', $angkatan)
-            ->whereNotNull('thesis_date')
-            ->pluck('user_id');
-
-        if ($thesisDateIds->isEmpty()) {
+        if ($dateFilledIds->isEmpty()) {
             return collect();
         }
 
-        return ExamRegistration::whereIn('user_id', $thesisDateIds)
-            ->where('exam_type_id', 3)
+        $registeredIds = ExamRegistration::whereIn('user_id', $dateFilledIds)
+            ->where('exam_type_id', $examTypeId)
+            ->pluck('user_id')
+            ->unique();
+
+        if ($registeredIds->isEmpty()) {
+            return collect();
+        }
+
+        $passedIds = ExamRegistration::whereIn('user_id', $registeredIds)
+            ->where('exam_type_id', $examTypeId)
             ->where('pass_exam', 1)
             ->pluck('user_id')
-            ->unique()
-            ->values();
+            ->unique();
+
+        return $registeredIds->diff($passedIds)->values();
+    }
+
+    /**
+     * user_id angkatan $angkatan yang BENAR-BENAR lulus tahap $examTypeId:
+     * $dateColumn di guide_examiners terisi DAN tidak ter-disqualify (lihat
+     * stageDisqualifiedIds()).
+     *
+     * @return Collection<int, int>
+     */
+    private function trulyPassedIds(int|string $angkatan, string $dateColumn, int $examTypeId): Collection
+    {
+        $dateFilledIds = GuideExaminer::where('year_generation', $angkatan)
+            ->whereNotNull($dateColumn)
+            ->pluck('user_id');
+
+        if ($dateFilledIds->isEmpty()) {
+            return collect();
+        }
+
+        return $dateFilledIds->diff($this->stageDisqualifiedIds($dateFilledIds, $examTypeId))->values();
     }
 
     /**
