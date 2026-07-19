@@ -385,33 +385,28 @@ class ExamRegistrationResource extends Resource
         return [
             // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
             // merender tiap baris sebagai card (hasColumnsLayout()), bukan
-            // cuma ->contentGrid() saja.
+            // cuma ->contentGrid() saja. Urutan badge->nama->waktu&lokasi
+            // meniru App\Filament\Informasi\Pages\Beranda (kartu publik
+            // "Jadwal Ujian Mendatang") — waktu & lokasi pakai
+            // App\Support\ExamScheduleFormat yang sama supaya formatnya
+            // selalu identik di kedua tempat, bukan disalin manual.
             Tables\Columns\Layout\Stack::make([
-                Tables\Columns\Layout\Split::make([
-                    Tables\Columns\ViewColumn::make('student.name')
-                        ->label('Mahasiswa')
-                        ->view('filament.tables.columns.exam-registration-student')
-                        ->searchable()
-                        ->sortable(),
-                    Tables\Columns\TextColumn::make('examtype.name')
-                        ->label('Jenis Ujian')
-                        ->badge()
-                        ->color(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->color() ?? 'gray')
-                        ->icon(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->icon())
-                        ->formatStateUsing(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->label() ?? $record->examtype?->name)
-                        ->sortable()
-                        ->grow(false),
-                ]),
-                Tables\Columns\Layout\Split::make([
-                    Tables\Columns\TextColumn::make('exam_date')
-                        ->label('Tgl Ujian')
-                        ->date('d M Y')
-                        ->sortable(),
-                    Tables\Columns\TextColumn::make('exam_time')
-                        ->label('Waktu')
-                        ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '—')
-                        ->sortable(),
-                ]),
+                Tables\Columns\TextColumn::make('examtype.name')
+                    ->label('Jenis Ujian')
+                    ->badge()
+                    ->color(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->color() ?? 'gray')
+                    ->icon(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->icon())
+                    ->formatStateUsing(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->label() ?? $record->examtype?->name)
+                    ->sortable(),
+                Tables\Columns\ViewColumn::make('student.name')
+                    ->label('Mahasiswa')
+                    ->view('filament.tables.columns.exam-registration-student')
+                    ->searchable()
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('waktu_lokasi')
+                    ->label('Waktu & Lokasi')
+                    ->getStateUsing(fn (ExamRegistration $record): string => \App\Support\ExamScheduleFormat::inlineHtml($record->exam_date, $record->exam_time, $record->room))
+                    ->html(),
                 Tables\Columns\TextColumn::make('penguji')
                     ->label('Penguji')
                     ->getStateUsing(fn (ExamRegistration $record): string => static::buildExaminerHtml($record))
