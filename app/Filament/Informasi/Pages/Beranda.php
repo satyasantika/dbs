@@ -355,20 +355,23 @@ class Beranda extends Page implements HasTable
 
     /**
      * user_id di antara $dateFilledIds yang punya ExamRegistration
-     * $examTypeId MASIH PENDING (pass_exam IS NULL) dan TIDAK ADA satupun
-     * pass_exam=1 — tanggal di guide_examiners cuma tanda "sudah
-     * dijadwalkan" (di-stample saat ExamRegistrationController::store(),
-     * sebelum ujian/nilai keluar), bukan "sudah lulus".
+     * $examTypeId MASIH PENDING (pass_exam IS NULL) — tanggal di
+     * guide_examiners cuma tanda "sudah dijadwalkan" (di-stample saat
+     * ExamRegistrationController::store(), sebelum ujian/nilai keluar),
+     * bukan "sudah lulus".
      *
-     * pass_exam=0 SENGAJA TIDAK dipakai di sini (dan di seluruh rekap ini)
-     * — cuma pass_exam=1 (lulus) dan pass_exam=NULL (masih pending) yang
-     * relevan buat kategorisasi. Kalau tidak ada ExamRegistration pending
-     * SAMA SEKALI (row terhapus, tanggal diisi manual lewat
-     * GuideExaminerResource, atau satu-satunya baris yang ada pass_exam=0),
-     * user itu TIDAK masuk sini — dianggap lulus (tak ada bukti
-     * sebaliknya), bukan digugurkan. Retake tertangani benar: kalau ada
-     * baris pass_exam=1 di antara beberapa percobaan, user itu ikut ke
-     * $passedIds & tersisih dari hasil diff.
+     * Rumus persis (jangan diubah tanpa alasan kuat — sudah dikonfirmasi
+     * eksplisit): "Sudah Lulus" = banyak thesis_date terisi untuk angkatan
+     * itu DIKURANGI banyak ExamRegistration exam_type_id=3 yang masih
+     * pass_exam=NULL. TIDAK ada pengecualian untuk retake (kalau ada baris
+     * pass_exam=NULL yang tersisa, user itu TETAP dikurangi dari Lulus,
+     * WALAUPUN ada baris pass_exam=1 lain untuk exam_type yang sama) —
+     * bukan bug, ini permintaan eksplisit supaya rumusnya konsisten &
+     * mudah ditelusuri: selama ada ExamRegistration pass_exam=NULL untuk
+     * exam_type_id terkait, dia HARUS ikut mengurangi/menambah hitungan
+     * "reg" di kategori yang sesuai. pass_exam=0 SENGAJA tidak dipakai
+     * sama sekali (lihat juga countRegisteredNotPassed()) — cuma
+     * pass_exam=1 & pass_exam=NULL yang relevan.
      *
      * @param  Collection<int, int>  $dateFilledIds
      * @return Collection<int, int>
@@ -379,29 +382,19 @@ class Beranda extends Page implements HasTable
             return collect();
         }
 
-        $pendingIds = ExamRegistration::whereIn('user_id', $dateFilledIds)
+        return ExamRegistration::whereIn('user_id', $dateFilledIds)
             ->where('exam_type_id', $examTypeId)
             ->whereNull('pass_exam')
             ->pluck('user_id')
-            ->unique();
-
-        if ($pendingIds->isEmpty()) {
-            return collect();
-        }
-
-        $passedIds = ExamRegistration::whereIn('user_id', $pendingIds)
-            ->where('exam_type_id', $examTypeId)
-            ->where('pass_exam', 1)
-            ->pluck('user_id')
-            ->unique();
-
-        return $pendingIds->diff($passedIds)->values();
+            ->unique()
+            ->values();
     }
 
     /**
      * user_id angkatan $angkatan yang BENAR-BENAR lulus tahap $examTypeId:
      * $dateColumn di guide_examiners terisi DAN tidak ter-disqualify (lihat
-     * stageDisqualifiedIds()).
+     * stageDisqualifiedIds()) — persis "count(dateColumn terisi) minus
+     * count(ExamRegistration $examTypeId pass_exam IS NULL)".
      *
      * @return Collection<int, int>
      */
