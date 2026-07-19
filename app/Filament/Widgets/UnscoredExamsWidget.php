@@ -23,21 +23,36 @@ class UnscoredExamsWidget extends BaseWidget
                     ->with(['lecture', 'registration.student', 'registration.examtype'])
                     ->whereNull('pass_approved')
             )
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('lecture.name')
-                    ->label('Penguji')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('registration.student.name')
-                    ->label('Peserta Ujian')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('registration.examtype.name')
-                    ->label('Jenis Ujian'),
-                Tables\Columns\TextColumn::make('registration.exam_date')
-                    ->label('Tanggal Ujian')
-                    ->date('d M Y')
-                    ->sortable(),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('lecture.name')
+                            ->label('Penguji')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold),
+                        Tables\Columns\TextColumn::make('registration.examtype.name')
+                            ->label('Jenis Ujian')
+                            ->badge()
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('registration.student.name')
+                            ->label('Peserta Ujian')
+                            ->searchable()
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('registration.exam_date')
+                            ->label('Tanggal Ujian')
+                            ->date('d M Y')
+                            ->sortable(),
+                    ]),
+                ])->space(2),
             ])
             ->actions([
                 Tables\Actions\Action::make('whatsapp')

@@ -362,7 +362,12 @@
 
         {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\Widgets\View\WidgetsRenderHook::TABLE_WIDGET_START, scopes: static::class) }}
 
-        {{ $this->table }}
+        {{-- data-grid-fit="rows" (adaptive-grid-script.blade.php): dua baris
+             tetap, tidak ikut tinggi layar seperti grid lain — kolom tetap
+             menyesuaikan lebar layar (CSS auto-fill, custom-styles.blade.php). --}}
+        <div data-grid-fit="rows" data-grid-fit-rows="2">
+            {{ $this->table }}
+        </div>
 
         {{ \Filament\Support\Facades\FilamentView::renderHook(\Filament\Widgets\View\WidgetsRenderHook::TABLE_WIDGET_END, scopes: static::class) }}
     </x-filament::section>
