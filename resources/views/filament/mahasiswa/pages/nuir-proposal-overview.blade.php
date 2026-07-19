@@ -38,35 +38,42 @@
                 </div>
             </x-slot>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="border-b">
-                            <th class="px-2 py-1 text-left">Dosen 1</th>
-                            <th class="px-2 py-1 text-left">Status 1</th>
-                            <th class="px-2 py-1 text-left">Catatan 1</th>
-                            <th class="px-2 py-1 text-left">Dosen 2</th>
-                            <th class="px-2 py-1 text-left">Status 2</th>
-                            <th class="px-2 py-1 text-left">Catatan 2</th>
-                            <th class="px-2 py-1 text-left">Tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($this->proposals as $proposal)
-                            <tr class="border-b">
-                                <td class="px-2 py-1">{{ $proposal->guide1?->name ?? '—' }}</td>
-                                <td class="px-2 py-1"><x-filament::badge color="gray">{{ $proposal->guide1_status }}</x-filament::badge></td>
-                                <td class="px-2 py-1">{{ $proposal->guide1_note }}</td>
-                                <td class="px-2 py-1">{{ $proposal->guide2?->name ?? '—' }}</td>
-                                <td class="px-2 py-1"><x-filament::badge color="gray">{{ $proposal->guide2_status }}</x-filament::badge></td>
-                                <td class="px-2 py-1">{{ $proposal->guide2_note }}</td>
-                                <td class="px-2 py-1"><x-nuir.human-date :date="$proposal->created_at" /></td>
-                            </tr>
-                        @empty
-                            <tr><td colspan="7" class="px-2 py-3 text-gray-500">Belum ada usulan calon pembimbing.</td></tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            {{-- Card grid, bukan <table> — mengikuti pola card yang sama dengan
+                 resource lain (contentGrid + card Filament asli), ditulis manual
+                 di sini karena halaman ini bukan komponen Table Filament
+                 (Livewire biasa dengan properti $proposals), jadi tidak bisa
+                 pakai ->contentGrid()/Layout\Stack. Kelas fi-ta-record & fi-ta-
+                 content-grid sama persis dengan yang dipakai Filament sendiri
+                 (vendor/filament/tables/resources/views/index.blade.php) supaya
+                 tampilannya identik dengan card resource lain. --}}
+            <div class="fi-ta-content-grid gap-4 p-4 sm:px-6">
+                @forelse ($this->proposals as $proposal)
+                    <div class="fi-ta-record relative h-full rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 transition duration-75 dark:bg-white/5 dark:ring-white/10">
+                        <div class="fi-ta-col-wrp flex flex-col gap-y-2 px-4 py-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-gray-950 dark:text-white">{{ $proposal->guide1?->name ?? '—' }}</span>
+                                <x-filament::badge color="gray">{{ $proposal->guide1_status }}</x-filament::badge>
+                            </div>
+                            @if ($proposal->guide1_note)
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $proposal->guide1_note }}</p>
+                            @endif
+
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-gray-950 dark:text-white">{{ $proposal->guide2?->name ?? '—' }}</span>
+                                <x-filament::badge color="gray">{{ $proposal->guide2_status }}</x-filament::badge>
+                            </div>
+                            @if ($proposal->guide2_note)
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ $proposal->guide2_note }}</p>
+                            @endif
+
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                <x-nuir.human-date :date="$proposal->created_at" />
+                            </p>
+                        </div>
+                    </div>
+                @empty
+                    <p class="col-span-full px-2 py-3 text-gray-500">Belum ada usulan calon pembimbing.</p>
+                @endforelse
             </div>
         </x-filament::section>
     </div>

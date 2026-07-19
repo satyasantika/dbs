@@ -69,22 +69,43 @@ class GuideQuotaRecap extends Page implements HasTable
         return $table
             ->query(fn (): Builder => $this->getTableQuery())
             ->poll('15s')
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('lecture.name')->label('Dosen')->searchable()->sortable(),
-                Tables\Columns\TextColumn::make('guide1_quota')->label('Kuota P1'),
-                Tables\Columns\TextColumn::make('guide1_filled')->label('Terisi P1'),
-                Tables\Columns\TextColumn::make('sisa_p1')
-                    ->label('Sisa P1')
-                    ->state(fn (GuideAllocation $record) => $quotaService->remainingQuota($record->lecture, 1, (string) $this->yearGeneration))
-                    ->badge()
-                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
-                Tables\Columns\TextColumn::make('guide2_quota')->label('Kuota P2'),
-                Tables\Columns\TextColumn::make('guide2_filled')->label('Terisi P2'),
-                Tables\Columns\TextColumn::make('sisa_p2')
-                    ->label('Sisa P2')
-                    ->state(fn (GuideAllocation $record) => $quotaService->remainingQuota($record->lecture, 2, (string) $this->yearGeneration))
-                    ->badge()
-                    ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\TextColumn::make('lecture.name')
+                        ->label('Dosen')
+                        ->searchable()
+                        ->sortable()
+                        ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                        ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                    Tables\Columns\Layout\Split::make([
+                        // ->prefix() dipakai karena mode card tidak menampilkan
+                        // header kolom seperti tabel.
+                        Tables\Columns\TextColumn::make('guide1_quota')->label('Kuota P1')->prefix('Kuota P1: '),
+                        Tables\Columns\TextColumn::make('guide1_filled')->label('Terisi P1')->prefix('Terisi P1: '),
+                        Tables\Columns\TextColumn::make('sisa_p1')
+                            ->label('Sisa P1')
+                            ->state(fn (GuideAllocation $record) => $quotaService->remainingQuota($record->lecture, 1, (string) $this->yearGeneration))
+                            ->badge()
+                            ->prefix('Sisa P1: ')
+                            ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('guide2_quota')->label('Kuota P2')->prefix('Kuota P2: '),
+                        Tables\Columns\TextColumn::make('guide2_filled')->label('Terisi P2')->prefix('Terisi P2: '),
+                        Tables\Columns\TextColumn::make('sisa_p2')
+                            ->label('Sisa P2')
+                            ->state(fn (GuideAllocation $record) => $quotaService->remainingQuota($record->lecture, 2, (string) $this->yearGeneration))
+                            ->badge()
+                            ->prefix('Sisa P2: ')
+                            ->color(fn ($state) => $state > 0 ? 'success' : 'danger'),
+                    ]),
+                ])->space(2),
             ])
             ->defaultSort('lecture.name')
             ->emptyStateHeading('Belum ada kuota pembimbing untuk angkatan ini');
