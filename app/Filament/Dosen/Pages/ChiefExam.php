@@ -84,7 +84,9 @@ class ChiefExam extends Page implements HasTable
                         Tables\Columns\TextColumn::make('examtype.name')
                             ->label('Jenis Ujian')
                             ->badge()
-                            ->color('primary'),
+                            ->color(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->color() ?? 'gray')
+                            ->icon(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->icon())
+                            ->formatStateUsing(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->label() ?? $record->examtype?->name),
                     ]),
                     Tables\Columns\Layout\Split::make([
                         Tables\Columns\TextColumn::make('exam_date')

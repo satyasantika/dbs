@@ -109,6 +109,9 @@ class SetScoringToExaminerResource extends Resource
                         Tables\Columns\TextColumn::make('examtype.name')
                             ->label('Ujian')
                             ->badge()
+                            ->color(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->color() ?? 'gray')
+                            ->icon(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->icon())
+                            ->formatStateUsing(fn (ExamRegistration $record) => \App\Enums\ExamTypeCode::tryFrom($record->exam_type_id)?->label() ?? $record->examtype?->name)
                             ->sortable()
                             ->grow(false),
                     ]),

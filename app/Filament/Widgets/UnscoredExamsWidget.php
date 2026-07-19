@@ -40,6 +40,9 @@ class UnscoredExamsWidget extends BaseWidget
                         Tables\Columns\TextColumn::make('registration.examtype.name')
                             ->label('Jenis Ujian')
                             ->badge()
+                            ->color(fn (ExamScore $record) => \App\Enums\ExamTypeCode::tryFrom($record->registration?->exam_type_id)?->color() ?? 'gray')
+                            ->icon(fn (ExamScore $record) => \App\Enums\ExamTypeCode::tryFrom($record->registration?->exam_type_id)?->icon())
+                            ->formatStateUsing(fn (ExamScore $record) => \App\Enums\ExamTypeCode::tryFrom($record->registration?->exam_type_id)?->label() ?? $record->registration?->examtype?->name)
                             ->grow(false),
                     ]),
                     Tables\Columns\Layout\Split::make([
