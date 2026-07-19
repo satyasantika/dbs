@@ -159,14 +159,13 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * Daftar penguji urut tetap 1–5 (examiner1–3, lalu guide1–2) dipecah
-     * jadi 3 baris terpisah: Ketua sendirian (chief_id, di slot manapun,
-     * badge biru + 👑 — cukup emoji mahkota + nama, tanpa teks "Ketua:"
-     * karena perannya sudah terwakili ikonnya), Anggota penguji lain
-     * mengalir bebas (nama polos tanpa label), lalu kedua Pembimbing
-     * selalu di baris terpisah miliknya ("Nama (P1)"/"Nama (P2)"). Kalau
-     * ketua kebetulan salah satu pembimbing, dia hanya tampil di baris
-     * Ketua (tidak dobel).
+     * Daftar penguji tanpa badge — list teks polos, nomor urut tetap 1-5
+     * mengikuti posisi slot (Penguji 1-3 = 1-3, Pembimbing 1-2 = 4-5),
+     * warna & ukuran font mengikuti peran (biru=ketua, hijau=pembimbing,
+     * abu²=penguji biasa). Ketua (chief_id, di slot manapun) ditandai
+     * emoji mahkota di AKHIR baris, bukan badge terpisah — kalau ketua
+     * kebetulan salah satu pembimbing, baris itu dapat mahkota SEKALIGUS
+     * suffix "(P1)"/"(P2)" (tidak ditampilkan dua kali di baris lain).
      */
     private function buildPengujiHierarchyHtml(ExamRegistration $record): string
     {
@@ -178,61 +177,43 @@ class Beranda extends Page implements HasTable
             ['label' => 'Pembimbing 2', 'id' => $record->guide2_id, 'name' => $record->guide2?->name, 'kind' => 'pembimbing'],
         ];
 
-        $chief = null;
+        $items = '';
 
-        foreach ($slots as $slot) {
+        foreach ($slots as $i => $slot) {
             if (blank($slot['id'])) {
                 continue;
             }
 
-            if ($record->chief_id && (int) $slot['id'] === (int) $record->chief_id) {
-                $chief = $slot;
-
-                break;
-            }
-        }
-
-        $anggota = '';
-        $pembimbing = '';
-
-        foreach ($slots as $slot) {
-            if (blank($slot['id']) || $slot === $chief) {
-                continue;
-            }
-
+            $urutan = $i + 1;
+            $isChief = $record->chief_id && (int) $slot['id'] === (int) $record->chief_id;
             $name = $slot['name'] ?? '(?)';
+
+            $suffix = '';
 
             if ($slot['kind'] === 'pembimbing') {
                 $kode = str_replace('Pembimbing ', 'P', $slot['label']); // "P1" / "P2"
-                $pembimbing .= '<span class="jadwal-badge jadwal-badge-pembimbing">'.e($name).' ('.e($kode).')</span>';
-            } else {
-                $anggota .= '<span class="jadwal-badge jadwal-badge-penguji">'.e($name).'</span>';
+                $suffix .= ' ('.e($kode).')';
             }
+
+            if ($isChief) {
+                $suffix .= ' &#128081;';
+            }
+
+            $cssClass = $isChief
+                ? 'jadwal-penguji-item-ketua'
+                : ($slot['kind'] === 'pembimbing' ? 'jadwal-penguji-item-pembimbing' : 'jadwal-penguji-item-penguji');
+
+            $items .= '<div class="jadwal-penguji-item '.$cssClass.'">'.$urutan.'. '.e($name).$suffix.'</div>';
         }
 
-        $html = '<div class="jadwal-penguji-col jadwal-box">';
-        $html .= '<span class="jadwal-group-label">Tim Penguji:</span>';
-        $html .= '<div class="jadwal-penguji-rows">';
-
-        if ($chief) {
-            $html .= '<div class="jadwal-ketua-row"><span class="jadwal-badge jadwal-badge-ketua">&#128081; '.e($chief['name'] ?? '(?)').'</span></div>';
+        if ($items === '') {
+            $items = '<span class="jadwal-judul-empty">—</span>';
         }
 
-        if ($anggota !== '') {
-            $html .= '<div class="jadwal-anggota-row">'.$anggota.'</div>';
-        }
-
-        if ($pembimbing !== '') {
-            $html .= '<div class="jadwal-pembimbing-row">'.$pembimbing.'</div>';
-        }
-
-        if (! $chief && $anggota === '' && $pembimbing === '') {
-            $html .= '<span class="jadwal-judul-empty">—</span>';
-        }
-
-        $html .= '</div></div>';
-
-        return $html;
+        return '<div class="jadwal-penguji-col jadwal-box">'
+            .'<span class="jadwal-group-label">Tim Penguji:</span>'
+            .'<div class="jadwal-penguji-list">'.$items.'</div>'
+            .'</div>';
     }
 
     private function jadwalUjianQuery(): Builder

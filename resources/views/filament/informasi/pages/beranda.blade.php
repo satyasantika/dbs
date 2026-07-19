@@ -173,35 +173,18 @@
         {{-- Tim Penguji — kolom sendiri di paling bawah, penuh selebar
              kartu, dibungkus .jadwal-box. --}}
         .jadwal-penguji-col { display: flex; flex-direction: column; }
-        .jadwal-penguji-rows { display: flex; flex-direction: column; gap: .3rem; }
 
-        {{-- Hierarki penguji: Ketua sendirian di baris pertama (biru +
-             mahkota), Anggota mengalir bebas, Pembimbing selalu baris
-             sendiri. --}}
-        .jadwal-ketua-row { width: 100%; display: flex; }
-        .jadwal-anggota-row, .jadwal-pembimbing-row { width: 100%; display: flex; flex-wrap: wrap; gap: .25rem; }
-        .jadwal-badge-penguji { background: #f1f5f9; color: #475569; }
-        .jadwal-badge-pembimbing { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
-        .jadwal-badge-ketua { background: #dbeafe; color: #1d4ed8; font-weight: 800; border: 1px solid #bfdbfe; }
-
-        {{-- Nama dosen panjang: dulu dipotong titik tiga (nowrap+ellipsis
-             dari .jadwal-badge), sekarang badge boleh melebar ke bawah
-             (turun baris di dalam badge sendiri) supaya nama tetap utuh
-             terbaca & tidak overlap ke elemen lain. min-width:0 supaya
-             badge (flex item di baris flex-wrap) benar-benar bisa menyusut
-             mengikuti kolom, bukan memaksa kartu melebar. --}}
-        .jadwal-badge-ketua, .jadwal-badge-penguji, .jadwal-badge-pembimbing {
-            max-width: 100%;
-            min-width: 0;
-            white-space: normal;
-            word-break: break-word;
-            overflow-wrap: break-word;
-            overflow: visible;
-            text-overflow: clip;
-            line-height: 1.2;
-            padding-top: .25rem;
-            padding-bottom: .25rem;
-        }
+        {{-- List teks polos (tanpa badge/pill), nomor urut 1-5 ditulis
+             manual di PHP (bukan <ol> — supaya nomornya tetap sesuai
+             posisi slot walau ada yang kosong dilewati, bukan dihitung
+             ulang). Warna beda per peran, ukuran sama seperti badge lama.
+             Teks bebas wrap alami (tanpa nowrap) jadi nama panjang aman
+             tanpa perlu trik overflow/ellipsis lagi. --}}
+        .jadwal-penguji-list { display: flex; flex-direction: column; gap: .2rem; }
+        .jadwal-penguji-item { font-size: 10.5px; font-weight: 700; line-height: 1.35; }
+        .jadwal-penguji-item-penguji { color: #475569; }
+        .jadwal-penguji-item-pembimbing { color: #047857; }
+        .jadwal-penguji-item-ketua { color: #1d4ed8; font-weight: 800; }
 
         {{-- Rekap: satu Card besar membungkus bento grid ringkasan +
              tabel per-angkatan. --}}
