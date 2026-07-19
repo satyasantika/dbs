@@ -358,6 +358,18 @@ class ExamRegistrationResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // ->recordUrl(null): matikan link "klik di mana saja di kartu
+            // untuk edit" bawaan Filament (ListRecords::table() otomatis
+            // set recordUrl ke halaman edit). Kombinasi recordUrl + banyak
+            // kolom Stack sebagai leaf Column ternyata bikin Filament
+            // render <a> pembungkus berulang per kolom (bukan sekali per
+            // baris) di card-grid mode — HTML rusak & layout kartu
+            // berantakan di /admin/exam-registrations. Beranda (halaman
+            // publik) punya struktur Stack yang sama tapi TIDAK kena karena
+            // table di sana tidak pernah punya recordUrl sama sekali.
+            // Navigasi ke edit tetap 1 klik lewat tombol EditAction di
+            // getTableActions().
+            ->recordUrl(null)
             ->contentGrid([
                 'default' => 1,
             ])
@@ -493,6 +505,12 @@ class ExamRegistrationResource extends Resource
     public static function getTableActions(): array
     {
         return [
+                // Ganti "klik di mana saja di kartu" (recordUrl, dimatikan
+                // di table() — lihat komentar di sana) dengan tombol edit
+                // eksplisit supaya navigasi ke halaman edit tetap 1 klik.
+                Tables\Actions\EditAction::make()
+                    ->iconButton()
+                    ->tooltip('Edit Pendaftaran Ujian'),
                 Tables\Actions\Action::make('set_examiners')
                     ->label('Set ke penguji')
                     ->icon('heroicon-o-user-plus')
