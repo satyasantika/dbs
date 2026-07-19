@@ -171,21 +171,13 @@ class UserResource extends Resource
                         ->separator(', ')
                         ->limitList(5)
                         ->toggleable(isToggledHiddenByDefault: true),
-                    Tables\Columns\Layout\Split::make([
-                        Tables\Columns\TextColumn::make('gender')
-                            ->label('Kelamin')
-                            ->formatStateUsing(fn ($state) => match($state) {
-                                'L' => 'Laki-laki',
-                                'P' => 'Perempuan',
-                                default => '-',
-                            }),
-                        Tables\Columns\TextColumn::make('created_at')
-                            ->label('Dibuat')
-                            ->date('d M Y')
-                            ->sortable()
-                            ->color('gray')
-                            ->toggleable(isToggledHiddenByDefault: true),
-                    ]),
+                    Tables\Columns\TextColumn::make('gender')
+                        ->label('Kelamin')
+                        ->formatStateUsing(fn ($state) => match($state) {
+                            'L' => 'Laki-laki',
+                            'P' => 'Perempuan',
+                            default => '-',
+                        }),
                 ])->space(2),
             ])
             ->filters([
