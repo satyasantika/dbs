@@ -63,27 +63,27 @@ class Beranda extends Page implements HasTable
             ->columns([
                 // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
                 // merender tiap baris sebagai card (hasColumnsLayout()), bukan
-                // cuma ->contentGrid() saja. 4 kolom, masing-masing HTML utuh
+                // cuma ->contentGrid() saja. Tiap kolom HTML utuh
                 // (getStateUsing()+html(), bukan ->prefix()) supaya labelnya
                 // bisa diberi warna berbeda dari isinya. Semua kolom berdiri
                 // sendiri penuh selebar kartu (bukan sejajar horizontal lagi):
-                // header, judul, waktu & lokasi, lalu tim penguji paling
-                // bawah. ->space() diberi nama class custom (bukan preset
-                // 1/2/3) — lihat HasSpace::space(), default branch di
-                // stack.blade.php cuma echo string apa adanya sebagai class
-                // tambahan.
+                // waktu & lokasi PALING ATAS (sebelum jenis ujian), lalu
+                // header (badge jenis ujian+NIM, nama + trigger "Judul"),
+                // lalu tim penguji paling bawah. Judul tugas akhir sendiri
+                // digabung ke kolom header (buildJadwalHeaderHtml), bukan
+                // kolom terpisah lagi — disembunyikan di balik trigger
+                // <details>/<summary> di sebelah nama. ->space() diberi nama
+                // class custom (bukan preset 1/2/3) — lihat HasSpace::space(),
+                // default branch di stack.blade.php cuma echo string apa
+                // adanya sebagai class tambahan.
                 Tables\Columns\Layout\Stack::make([
-                    Tables\Columns\TextColumn::make('header')
-                        ->label('Mahasiswa')
-                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJadwalHeaderHtml($record))
-                        ->html(),
-                    Tables\Columns\TextColumn::make('judul')
-                        ->label('Judul')
-                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJudulHtml($record))
-                        ->html(),
                     Tables\Columns\TextColumn::make('waktu')
                         ->label('Waktu & Lokasi')
                         ->getStateUsing(fn (ExamRegistration $record): string => $this->buildWaktuHtml($record))
+                        ->html(),
+                    Tables\Columns\TextColumn::make('header')
+                        ->label('Mahasiswa')
+                        ->getStateUsing(fn (ExamRegistration $record): string => $this->buildJadwalHeaderHtml($record))
                         ->html(),
                     Tables\Columns\TextColumn::make('penguji')
                         ->label('Tim Penguji')
@@ -98,9 +98,12 @@ class Beranda extends Page implements HasTable
 
     /**
      * Baris 1: badge Jenis Ujian + badge NIM sejajar horizontal. Baris 2:
-     * Nama Mahasiswa di bawahnya — digabung satu kolom HTML (bukan 3 kolom
-     * Filament terpisah) supaya badge tetap sejajar meski nama sangat
-     * panjang (lihat .jadwal-nama di beranda.blade.php).
+     * Nama Mahasiswa + trigger "Judul" (native <details>/<summary>, tanpa
+     * JS) sejajar di baris yang sama — judul tugas akhir sendiri
+     * disembunyikan sampai trigger diklik (lihat buildJudulToggleHtml()).
+     * Semua digabung satu kolom HTML (bukan kolom Filament terpisah)
+     * supaya badge tetap sejajar meski nama sangat panjang (lihat
+     * .jadwal-nama di beranda.blade.php).
      */
     private function buildJadwalHeaderHtml(ExamRegistration $record): string
     {
@@ -115,47 +118,60 @@ class Beranda extends Page implements HasTable
             .'<span class="jadwal-badge '.$jenisClass.'">'.$jenisEmoji.e($jenis).'</span>'
             .'<span class="jadwal-badge jadwal-badge-nim">'.e($nim).'</span>'
             .'</div>'
-            .'<div class="jadwal-nama">'.e($nama).'</div>';
+            .'<div class="jadwal-nama-row">'
+            .'<span class="jadwal-nama">'.e($nama).'</span>'
+            .$this->buildJudulToggleHtml($record)
+            .'</div>';
     }
 
-    private function buildJudulHtml(ExamRegistration $record): string
+    /**
+     * Trigger "Judul" bergaya label (.jadwal-group-label, sama seperti
+     * label lain di kartu ini) yang membuka/menutup judul tugas akhir —
+     * pakai <details>/<summary> native HTML (bukan Alpine/Livewire, karena
+     * ini dirender lewat TextColumn::html() yang disaring
+     * Str::sanitizeHtml(); atribut non-standar semacam x-data kemungkinan
+     * disaring, sedangkan <details>/<summary> ada di daftar elemen aman
+     * Symfony HtmlSanitizer jadi lolos apa adanya).
+     */
+    private function buildJudulToggleHtml(ExamRegistration $record): string
     {
         $judul = $record->title;
 
         $value = filled($judul)
-            ? '<p class="jadwal-judul-text">'.e($judul).'</p>'
-            : '<p class="jadwal-judul-text jadwal-judul-empty">—</p>';
+            ? e($judul)
+            : '<span class="jadwal-judul-empty">—</span>';
 
-        return '<div class="jadwal-judul jadwal-box"><span class="jadwal-group-label">Judul Tugas Akhir:</span>'.$value.'</div>';
+        return '<details class="jadwal-judul-toggle">'
+            .'<summary class="jadwal-group-label jadwal-judul-trigger">Judul</summary>'
+            .'<p class="jadwal-judul-text">'.$value.'</p>'
+            .'</details>';
     }
 
     /**
-     * Waktu & Lokasi kolom sendiri (bukan sebaris dengan Tim Penguji lagi).
-     * Format inti (tanggal/jam/ruang satu baris, dipisah "|", ruang
-     * berprefix "Ruang") dari App\Support\ExamScheduleFormat — dipakai
-     * bersama dengan ExamRegistrationResource::getCardColumns() (kartu
-     * admin + widget dashboard) supaya formatnya selalu identik di kedua
-     * tempat. Box+label di sini murni chrome milik Beranda, tidak ikut
-     * dipakai di sisi admin.
+     * Waktu & Lokasi sekarang blok PALING ATAS kartu (sebelum Jenis
+     * Ujian), tanpa label & tanpa box abu-abu (bare). Format inti
+     * (tanggal/jam/ruang satu baris, dipisah "|", ruang berprefix "Ruang")
+     * dari App\Support\ExamScheduleFormat — dipakai bersama dengan
+     * ExamRegistrationResource::getCardColumns() (kartu admin + widget
+     * dashboard) supaya formatnya selalu identik di kedua tempat.
      */
     private function buildWaktuHtml(ExamRegistration $record): string
     {
-        return '<div class="jadwal-waktu-col jadwal-box">'
-            .'<span class="jadwal-group-label">Waktu &amp; Lokasi:</span>'
-            .'<div class="jadwal-waktu-line">'
+        return '<div class="jadwal-waktu-bare">'
             .\App\Support\ExamScheduleFormat::inlineHtml($record->exam_date, $record->exam_time, $record->room)
-            .'</div>'
             .'</div>';
     }
 
     /**
      * Daftar penguji tanpa badge — list teks polos, nomor urut tetap 1-5
      * mengikuti posisi slot (Penguji 1-3 = 1-3, Pembimbing 1-2 = 4-5),
-     * warna & ukuran font mengikuti peran (biru=ketua, hijau=pembimbing,
-     * abu²=penguji biasa). Ketua (chief_id, di slot manapun) ditandai
-     * emoji mahkota di AKHIR baris, bukan badge terpisah — kalau ketua
-     * kebetulan salah satu pembimbing, baris itu dapat mahkota SEKALIGUS
-     * suffix "(P1)"/"(P2)" (tidak ditampilkan dua kali di baris lain).
+     * warna & berat huruf SERAGAM untuk semua peran (tidak bold, tidak
+     * dibedakan biru/hijau lagi) — ketua/pembimbing tetap bisa dikenali
+     * lewat suffix mahkota/"(P1)"/"(P2)", bukan lewat warna. Ketua
+     * (chief_id, di slot manapun) ditandai emoji mahkota di AKHIR baris,
+     * bukan badge terpisah — kalau ketua kebetulan salah satu pembimbing,
+     * baris itu dapat mahkota SEKALIGUS suffix "(P1)"/"(P2)" (tidak
+     * ditampilkan dua kali di baris lain).
      */
     private function buildPengujiHierarchyHtml(ExamRegistration $record): string
     {
@@ -189,11 +205,7 @@ class Beranda extends Page implements HasTable
                 $suffix .= ' &#128081;';
             }
 
-            $cssClass = $isChief
-                ? 'jadwal-penguji-item-ketua'
-                : ($slot['kind'] === 'pembimbing' ? 'jadwal-penguji-item-pembimbing' : 'jadwal-penguji-item-penguji');
-
-            $items .= '<div class="jadwal-penguji-item '.$cssClass.'">'.$urutan.'. '.e($name).$suffix.'</div>';
+            $items .= '<div class="jadwal-penguji-item">'.$urutan.'. '.e($name).$suffix.'</div>';
         }
 
         if ($items === '') {
@@ -351,6 +363,49 @@ class Beranda extends Page implements HasTable
         $pctStr = rtrim(rtrim(number_format($pct, 1, '.', ''), '0'), '.');
 
         return "background: conic-gradient({$color} {$pctStr}%, {$track} 0)";
+    }
+
+    /**
+     * Porsi Belum Sempro/Akan Semhas/Akan Sidang dari $all
+     * (rekapSemuaAngkatan()), persentase dihitung terhadap GABUNGAN
+     * ketiganya (bukan terhadap Total Mahasiswa) — dipakai bareng oleh
+     * donutStyle() (gradient) & legenda teks di kartu bento "Belum Lulus"
+     * supaya angka yang digambar & ditulis tidak pernah beda.
+     *
+     * @param  array{belum_sempro: int, akan_semhas: int, akan_sidang: int}  $all
+     * @return array{sempro: array{count: int, pct: float}, semhas: array{count: int, pct: float}, sidang: array{count: int, pct: float}}
+     */
+    public function bottleneckShares(array $all): array
+    {
+        $total = $all['belum_sempro'] + $all['akan_semhas'] + $all['akan_sidang'];
+
+        $pct = fn (int $count): float => $total > 0 ? round($count / $total * 100, 1) : 0.0;
+
+        return [
+            'sempro' => ['count' => $all['belum_sempro'], 'pct' => $pct($all['belum_sempro'])],
+            'semhas' => ['count' => $all['akan_semhas'], 'pct' => $pct($all['akan_semhas'])],
+            'sidang' => ['count' => $all['akan_sidang'], 'pct' => $pct($all['akan_sidang'])],
+        ];
+    }
+
+    /**
+     * String CSS conic-gradient() 3-porsi (hard-stop, teknik yang sama
+     * seperti ringStyle() tapi diulang per-slice) untuk donat bottleneck —
+     * warna selaras dot di .beranda-stats-pill (sempro=amber, semhas=biru,
+     * sidang=hijau).
+     *
+     * @param  array{sempro: array{count: int, pct: float}, semhas: array{count: int, pct: float}, sidang: array{count: int, pct: float}}  $shares
+     */
+    public function bottleneckDonutStyle(array $shares): string
+    {
+        if (($shares['sempro']['count'] + $shares['semhas']['count'] + $shares['sidang']['count']) <= 0) {
+            return 'background: #e2e8f0';
+        }
+
+        $stop1 = $shares['sempro']['pct'];
+        $stop2 = $stop1 + $shares['semhas']['pct'];
+
+        return "background: conic-gradient(#f59e0b 0%, #f59e0b {$stop1}%, #2563eb {$stop1}%, #2563eb {$stop2}%, #10b981 {$stop2}%, #10b981 100%)";
     }
 
     /**
