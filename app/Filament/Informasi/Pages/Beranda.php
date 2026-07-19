@@ -354,17 +354,21 @@ class Beranda extends Page implements HasTable
     }
 
     /**
-     * user_id di antara $dateFilledIds yang TERDAFTAR ExamRegistration
-     * untuk $examTypeId tapi TIDAK ADA satupun pass_exam=1 — tanggal di
-     * guide_examiners cuma tanda "sudah dijadwalkan" (di-stample saat
-     * ExamRegistrationController::store(), sebelum ujian/nilai keluar),
-     * bukan "sudah lulus". Kalau tidak ada ExamRegistration SAMA SEKALI
-     * (row terhapus, atau tanggal diisi manual lewat GuideExaminerResource),
+     * user_id di antara $dateFilledIds yang punya ExamRegistration
+     * $examTypeId MASIH PENDING (pass_exam IS NULL) dan TIDAK ADA satupun
+     * pass_exam=1 — tanggal di guide_examiners cuma tanda "sudah
+     * dijadwalkan" (di-stample saat ExamRegistrationController::store(),
+     * sebelum ujian/nilai keluar), bukan "sudah lulus".
+     *
+     * pass_exam=0 SENGAJA TIDAK dipakai di sini (dan di seluruh rekap ini)
+     * — cuma pass_exam=1 (lulus) dan pass_exam=NULL (masih pending) yang
+     * relevan buat kategorisasi. Kalau tidak ada ExamRegistration pending
+     * SAMA SEKALI (row terhapus, tanggal diisi manual lewat
+     * GuideExaminerResource, atau satu-satunya baris yang ada pass_exam=0),
      * user itu TIDAK masuk sini — dianggap lulus (tak ada bukti
      * sebaliknya), bukan digugurkan. Retake tertangani benar: kalau ada
      * baris pass_exam=1 di antara beberapa percobaan, user itu ikut ke
-     * $passedIds & tersisih dari hasil diff (tidak salah gugur meski ada
-     * riwayat gagal sebelumnya).
+     * $passedIds & tersisih dari hasil diff.
      *
      * @param  Collection<int, int>  $dateFilledIds
      * @return Collection<int, int>
@@ -375,22 +379,23 @@ class Beranda extends Page implements HasTable
             return collect();
         }
 
-        $registeredIds = ExamRegistration::whereIn('user_id', $dateFilledIds)
+        $pendingIds = ExamRegistration::whereIn('user_id', $dateFilledIds)
             ->where('exam_type_id', $examTypeId)
+            ->whereNull('pass_exam')
             ->pluck('user_id')
             ->unique();
 
-        if ($registeredIds->isEmpty()) {
+        if ($pendingIds->isEmpty()) {
             return collect();
         }
 
-        $passedIds = ExamRegistration::whereIn('user_id', $registeredIds)
+        $passedIds = ExamRegistration::whereIn('user_id', $pendingIds)
             ->where('exam_type_id', $examTypeId)
             ->where('pass_exam', 1)
             ->pluck('user_id')
             ->unique();
 
-        return $registeredIds->diff($passedIds)->values();
+        return $pendingIds->diff($passedIds)->values();
     }
 
     /**
@@ -415,8 +420,9 @@ class Beranda extends Page implements HasTable
 
     /**
      * Di antara $userIds, berapa yang punya ExamRegistration exam_type_id
-     * $examTypeId dengan pass_exam belum 1 (0 atau null) — "sudah mendaftar
-     * tapi belum lulus/dinilai".
+     * $examTypeId dengan pass_exam IS NULL (masih pending) — "sudah
+     * mendaftar tapi belum dinilai". pass_exam=0 sengaja tidak dihitung di
+     * sini (lihat catatan di stageDisqualifiedIds()).
      *
      * @param  Collection<int, int>  $userIds
      */
@@ -428,9 +434,7 @@ class Beranda extends Page implements HasTable
 
         return ExamRegistration::whereIn('user_id', $userIds)
             ->where('exam_type_id', $examTypeId)
-            ->where(fn (Builder $query) => $query
-                ->whereNull('pass_exam')
-                ->orWhere('pass_exam', '!=', 1))
+            ->whereNull('pass_exam')
             ->distinct('user_id')
             ->count('user_id');
     }

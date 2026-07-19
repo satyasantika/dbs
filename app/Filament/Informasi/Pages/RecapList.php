@@ -36,13 +36,16 @@ use Illuminate\Database\Eloquent\Model;
  * - Akan Semhas: trulyPassed('proposal_date', 1) AND NOT trulyPassed('seminar_date', 2).
  * - Akan Sidang: trulyPassed('seminar_date', 2) AND NOT trulyPassed('thesis_date', 3).
  * "trulyPassed" = tanggal terisi DAN tidak ter-disqualify (ada
- * ExamRegistration exam_type=N tapi tak satupun pass_exam=1) —
- * exclusion-based, bukan positive-requirement, supaya ExamRegistration
- * yang terhapus/tanggal yang diisi manual tidak salah menggugurkan status.
+ * ExamRegistration exam_type=N yang PENDING/pass_exam IS NULL, tak satupun
+ * pass_exam=1) — exclusion-based, bukan positive-requirement, supaya
+ * ExamRegistration yang terhapus/tanggal yang diisi manual tidak salah
+ * menggugurkan status. pass_exam=0 SENGAJA tidak dipakai sama sekali di
+ * seluruh rekap ini — cuma pass_exam=1 (lulus) & pass_exam=NULL (pending)
+ * yang relevan.
  * Kolom "Status" (badge "Sudah daftar, menunggu hasil") menandai mahasiswa
  * yang sudah terdaftar di exam_registrations untuk jenis ujian berikutnya
- * tapi pass_exam belum 1 — hanya tampil di 3 context "akan/belum" di atas,
- * jumlahnya harus cocok dengan angka "* reg" di kartu rekap Beranda.
+ * dengan pass_exam IS NULL — hanya tampil di 3 context "akan/belum" di
+ * atas, jumlahnya harus cocok dengan angka "* reg" di kartu rekap Beranda.
  * Tanggal SemPro/SemHas/Sidang HANYA ditampilkan kalau ExamRegistration
  * terkait sudah pass_exam=1 ATAU tanggal ujiannya sudah lewat — supaya
  * tidak menampilkan tanggal ujian mendatang seolah sudah pasti/selesai.
@@ -170,15 +173,16 @@ class RecapList extends Page implements HasTable
 
     /**
      * $record sudah punya ExamRegistration exam_type_id=$examTypeId dengan
-     * pass_exam belum 1 (0 atau null) — "sudah mendaftar tapi belum lulus/
-     * dinilai". Makan dari relasi examRegistrations yang di-eager-load di
-     * buildQuery(), bukan query baru per baris.
+     * pass_exam IS NULL (masih pending) — "sudah mendaftar tapi belum
+     * dinilai". pass_exam=0 sengaja tidak dihitung (lihat catatan di
+     * Beranda::stageDisqualifiedIds()). Makan dari relasi examRegistrations
+     * yang di-eager-load di buildQuery(), bukan query baru per baris.
      */
     private function isRegisteredNotPassed(GuideExaminer $record, int $examTypeId): bool
     {
         return $record->examRegistrations
             ->where('exam_type_id', $examTypeId)
-            ->contains(fn (ExamRegistration $registration): bool => ! $registration->pass_exam);
+            ->contains(fn (ExamRegistration $registration): bool => is_null($registration->pass_exam));
     }
 
     /**
@@ -202,7 +206,9 @@ class RecapList extends Page implements HasTable
      * versi Builder dari Beranda::trulyPassedIds()/stageDisqualifiedIds(),
      * pakai De Morgan supaya bisa dinegasikan ($negate) tanpa query
      * terpisah. trulyPassedN = $dateColumn tidak null AND (tidak punya
-     * ExamRegistration exam_type=N ATAU punya yang pass_exam=1).
+     * ExamRegistration exam_type=N yang PENDING/pass_exam IS NULL ATAU
+     * punya yang pass_exam=1). pass_exam=0 sengaja tidak dipakai di query
+     * ini sama sekali — lihat catatan di Beranda::stageDisqualifiedIds().
      */
     private function applyTrulyPassed(Builder $query, string $dateColumn, int $examTypeId, bool $negate = false): Builder
     {
@@ -210,16 +216,16 @@ class RecapList extends Page implements HasTable
             return $query
                 ->whereNotNull($dateColumn)
                 ->where(fn (Builder $q) => $q
-                    ->whereDoesntHave('examRegistrations', fn (Builder $q2) => $q2->where('exam_type_id', $examTypeId))
+                    ->whereDoesntHave('examRegistrations', fn (Builder $q2) => $q2->where('exam_type_id', $examTypeId)->whereNull('pass_exam'))
                     ->orWhereHas('examRegistrations', fn (Builder $q2) => $q2->where('exam_type_id', $examTypeId)->where('pass_exam', 1)));
         }
 
-        // NOT(dateColumn terisi AND (tak punya reg ATAU ada yang pass_exam=1))
-        // = dateColumn kosong OR (punya reg exam_type=N DAN tak satupun pass_exam=1)
+        // NOT(dateColumn terisi AND (tak punya reg pending ATAU ada yang pass_exam=1))
+        // = dateColumn kosong OR (punya reg pending exam_type=N DAN tak satupun pass_exam=1)
         return $query->where(fn (Builder $q) => $q
             ->whereNull($dateColumn)
             ->orWhere(fn (Builder $q2) => $q2
-                ->whereHas('examRegistrations', fn (Builder $q3) => $q3->where('exam_type_id', $examTypeId))
+                ->whereHas('examRegistrations', fn (Builder $q3) => $q3->where('exam_type_id', $examTypeId)->whereNull('pass_exam'))
                 ->whereDoesntHave('examRegistrations', fn (Builder $q3) => $q3->where('exam_type_id', $examTypeId)->where('pass_exam', 1))));
     }
 
