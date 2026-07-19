@@ -355,26 +355,25 @@ class Beranda extends Page implements HasTable
 
     /**
      * user_id di antara $dateFilledIds yang punya ExamRegistration
-     * $examTypeId MASIH PENDING (pass_exam IS NULL) — tanggal di
-     * guide_examiners cuma tanda "sudah dijadwalkan" (di-stample saat
+     * $examTypeId MASIH PENDING (pass_exam=0) — tanggal di guide_examiners
+     * cuma tanda "sudah dijadwalkan" (di-stample saat
      * ExamRegistrationController::store(), sebelum ujian/nilai keluar),
      * bukan "sudah lulus".
      *
      * Rumus persis (jangan diubah tanpa alasan kuat — sudah dikonfirmasi
      * eksplisit): "Sudah Lulus" = banyak thesis_date terisi untuk angkatan
      * itu DIKURANGI banyak ExamRegistration exam_type_id=3 yang masih
-     * pass_exam=NULL. TIDAK ada pengecualian untuk retake (kalau ada baris
-     * pass_exam=NULL yang tersisa, user itu TETAP dikurangi dari Lulus,
+     * pass_exam=0. TIDAK ada pengecualian untuk retake (kalau ada baris
+     * pass_exam=0 yang tersisa, user itu TETAP dikurangi dari Lulus,
      * WALAUPUN ada baris pass_exam=1 lain untuk exam_type yang sama) —
      * bukan bug, ini permintaan eksplisit supaya rumusnya konsisten &
-     * mudah ditelusuri. pass_exam=0 SENGAJA tidak dipakai sama sekali di
-     * sini — cuma pass_exam=1 & pass_exam=NULL yang relevan buat
-     * keanggotaan bucket/kategori (Lulus/Belum Sempro/dst).
+     * mudah ditelusuri. Kolom pass_exam cuma berisi 0 (belum lulus) atau 1
+     * (lulus) — TIDAK PERNAH benar-benar NULL di database (sempat salah
+     * duga sebelumnya, sudah dikonfirmasi ulang oleh user).
      *
      * CATATAN: ini beda dari anotasi "N reg" yang ditampilkan di tabel
-     * (lihat countUpcomingRegistrations()) — pass_exam TIDAK dipakai sama
-     * sekali di sana, kriterianya murni tanggal ujian (sudah lewat atau
-     * belum), bukan status kelulusan.
+     * (lihat countUpcomingRegistrations()) — itu butuh KEDUANYA pass_exam=0
+     * DAN tanggal ujian belum lewat, bukan cuma salah satu.
      *
      * @param  Collection<int, int>  $dateFilledIds
      * @return Collection<int, int>
@@ -387,7 +386,7 @@ class Beranda extends Page implements HasTable
 
         return ExamRegistration::whereIn('user_id', $dateFilledIds)
             ->where('exam_type_id', $examTypeId)
-            ->whereNull('pass_exam')
+            ->where('pass_exam', 0)
             ->pluck('user_id')
             ->unique()
             ->values();
@@ -397,7 +396,7 @@ class Beranda extends Page implements HasTable
      * user_id angkatan $angkatan yang BENAR-BENAR lulus tahap $examTypeId:
      * $dateColumn di guide_examiners terisi DAN tidak ter-disqualify (lihat
      * stageDisqualifiedIds()) — persis "count(dateColumn terisi) minus
-     * count(ExamRegistration $examTypeId pass_exam IS NULL)".
+     * count(ExamRegistration $examTypeId pass_exam=0)".
      *
      * @return Collection<int, int>
      */
@@ -416,13 +415,15 @@ class Beranda extends Page implements HasTable
 
     /**
      * Di antara $userIds, berapa yang punya ExamRegistration exam_type_id
-     * $examTypeId dengan exam_date MASIH AKAN DATANG (hari ini atau
-     * setelahnya) — "sudah registrasi tapi belum diujiankan". Ini murni
-     * soal apakah ujiannya SUDAH BERLANGSUNG atau belum (kriteria tanggal),
-     * BEDA dari status kelulusan (pass_exam) yang menentukan keanggotaan
-     * bucket/kategori lewat trulyPassedIds()/stageDisqualifiedIds() —
-     * anotasi "N reg" ini murni informasi tambahan di tabel, tidak
-     * memengaruhi angka Total/Lulus/Belum Sempro/dst sama sekali.
+     * $examTypeId dengan pass_exam MASIH 0 DAN exam_date MASIH AKAN DATANG
+     * (hari ini atau setelahnya) — "sudah registrasi tapi belum
+     * diujiankan". Kedua syarat wajib sekaligus: begitu pass_exam jadi 1,
+     * user itu otomatis lepas dari bucket (lewat stageDisqualifiedIds())
+     * DAN dari hitungan reg ini. $userIds sendiri sudah scoped ke anggota
+     * bucket (belum sempro/akan semhas/akan sidang) lewat
+     * stageDisqualifiedIds() yang juga pakai pass_exam=0 — anotasi "N reg"
+     * ini murni informasi tambahan di tabel, tidak memengaruhi angka
+     * Total/Lulus/Belum Sempro/dst sama sekali.
      *
      * @param  Collection<int, int>  $userIds
      */
@@ -434,6 +435,7 @@ class Beranda extends Page implements HasTable
 
         return ExamRegistration::whereIn('user_id', $userIds)
             ->where('exam_type_id', $examTypeId)
+            ->where('pass_exam', 0)
             ->whereDate('exam_date', '>=', now()->toDateString())
             ->distinct('user_id')
             ->count('user_id');
