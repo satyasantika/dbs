@@ -24,11 +24,15 @@ use Illuminate\Database\Eloquent\Model;
  *
  * Aturan kategori per $context (harus sama persis dengan
  * Beranda::rekap() supaya jumlahnya cocok):
- * - Lulus: thesis_date terisi, walau proposal_date/seminar_date kosong.
- * - Belum Lulus: thesis_date kosong.
+ * - Lulus: thesis_date terisi DI guide_examiners DAN ExamRegistration
+ *   sidang (exam_type_id=3) sudah pass_exam=1 — thesis_date terisi saja
+ *   tidak cukup (tanggal sidang bisa sudah tertulis padahal hasilnya
+ *   belum/tidak lulus). Lihat Beranda::lulusUserIds().
+ * - Belum Lulus: bukan Lulus (lihat definisi Lulus di atas).
  * - Belum Sempro: proposal_date, seminar_date, thesis_date semua kosong.
  * - Akan Semhas: proposal_date terisi, seminar_date & thesis_date kosong.
- * - Akan Sidang: seminar_date terisi, thesis_date kosong.
+ * - Akan Sidang: seminar_date terisi DAN bukan Lulus (bukan
+ *   whereNull('thesis_date') lagi, per alasan yang sama seperti Lulus).
  * Kolom "Status" (badge "Sudah daftar, menunggu hasil") menandai mahasiswa
  * yang sudah terdaftar di exam_registrations untuk jenis ujian berikutnya
  * tapi pass_exam belum 1 — hanya tampil di 3 context "akan/belum" di atas,
@@ -195,12 +199,23 @@ class RecapList extends Page implements HasTable
             ->with(['student', 'guide1', 'guide2', 'examRegistrations'])
             ->where('year_generation', $generation);
 
-        return match ($this->context) {
-            'Mahasiswa Lulus' => $base()
-                ->whereNotNull('thesis_date'),
+        $lulus = fn (Builder $query): Builder => $query
+            ->whereNotNull('thesis_date')
+            ->whereHas('examRegistrations', fn (Builder $q) => $q
+                ->where('exam_type_id', 3)
+                ->where('pass_exam', 1));
 
-            'Mahasiswa Belum Lulus' => $base()
-                ->whereNull('thesis_date'),
+        $belumLulus = fn (Builder $query): Builder => $query
+            ->where(fn (Builder $q) => $q
+                ->whereNull('thesis_date')
+                ->orWhereDoesntHave('examRegistrations', fn (Builder $q2) => $q2
+                    ->where('exam_type_id', 3)
+                    ->where('pass_exam', 1)));
+
+        return match ($this->context) {
+            'Mahasiswa Lulus' => $lulus($base()),
+
+            'Mahasiswa Belum Lulus' => $belumLulus($base()),
 
             'Mahasiswa Belum Sempro' => $base()
                 ->whereNull('proposal_date')
@@ -212,9 +227,7 @@ class RecapList extends Page implements HasTable
                 ->whereNull('seminar_date')
                 ->whereNull('thesis_date'),
 
-            'Mahasiswa Akan Sidang' => $base()
-                ->whereNotNull('seminar_date')
-                ->whereNull('thesis_date'),
+            'Mahasiswa Akan Sidang' => $belumLulus($base()->whereNotNull('seminar_date')),
 
             default => $base(),
         };
