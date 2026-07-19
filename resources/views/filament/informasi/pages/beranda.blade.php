@@ -164,11 +164,14 @@
 
         {{-- Waktu & Lokasi — kolom sendiri (bukan sebaris dengan Tim
              Penguji lagi), dibungkus .jadwal-box. Tanggal/Jam/Ruang satu
-             baris dipisah "|", boleh wrap di layar sempit kalau kepanjangan. --}}
+             baris dipisah "|", boleh wrap di layar sempit kalau kepanjangan.
+             Class exam-waktu-* (bukan jadwal-waktu-item/-icon/-sep) karena
+             diemit App\Support\ExamScheduleFormat, dipakai bersama dengan
+             kartu admin ExamRegistrationResource. --}}
         .jadwal-waktu-col { color: #475569; font-size: 12px; }
         .jadwal-waktu-line { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; font-size: 12px; font-weight: 600; }
-        .jadwal-waktu-icon { font-size: 11px; line-height: 1; margin-right: .15rem; }
-        .jadwal-waktu-sep { color: #cbd5e1; font-weight: 400; }
+        .jadwal-waktu-line .exam-waktu-icon { font-size: 11px; line-height: 1; margin-right: .15rem; }
+        .jadwal-waktu-line .exam-waktu-sep { color: #cbd5e1; font-weight: 400; }
 
         {{-- Tim Penguji — kolom sendiri di paling bawah, penuh selebar
              kartu, dibungkus .jadwal-box. --}}

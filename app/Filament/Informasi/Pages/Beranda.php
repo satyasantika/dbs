@@ -131,29 +131,19 @@ class Beranda extends Page implements HasTable
 
     /**
      * Waktu & Lokasi kolom sendiri (bukan sebaris dengan Tim Penguji lagi).
-     * Tanggal/Jam/Ruang satu baris, dipisah tanda "|" — Ruang wajib ditulis
-     * dengan kata "Ruang" di depan datanya (mis. "Ruang R122"), Tanggal &
-     * Jam tidak perlu prefix karena ikonnya sudah menjelaskan.
+     * Format inti (tanggal/jam/ruang satu baris, dipisah "|", ruang
+     * berprefix "Ruang") dari App\Support\ExamScheduleFormat — dipakai
+     * bersama dengan ExamRegistrationResource::getCardColumns() (kartu
+     * admin + widget dashboard) supaya formatnya selalu identik di kedua
+     * tempat. Box+label di sini murni chrome milik Beranda, tidak ikut
+     * dipakai di sisi admin.
      */
     private function buildWaktuHtml(ExamRegistration $record): string
     {
-        $tanggal = $record->exam_date?->translatedFormat('d M Y') ?? '—';
-        $jam = $record->exam_time ? Carbon::parse($record->exam_time)->format('H:i') : '—';
-        $ruang = $record->room ?: '—';
-
-        // Emoji, bukan <svg> heroicon — Filament men-strip tag svg lewat
-        // Str::sanitizeHtml() saat TextColumn::html() dirender (lihat
-        // ExamTypeCode::emoji() untuk penjelasan yang sama).
-        $sep = '<span class="jadwal-waktu-sep">|</span>';
-
         return '<div class="jadwal-waktu-col jadwal-box">'
             .'<span class="jadwal-group-label">Waktu &amp; Lokasi:</span>'
             .'<div class="jadwal-waktu-line">'
-            .'<span class="jadwal-waktu-icon">📅</span>'.e($tanggal)
-            .' '.$sep.' '
-            .'<span class="jadwal-waktu-icon">🕐</span>'.e($jam)
-            .' '.$sep.' '
-            .'<span class="jadwal-waktu-icon">📍</span>Ruang '.e($ruang)
+            .\App\Support\ExamScheduleFormat::inlineHtml($record->exam_date, $record->exam_time, $record->room)
             .'</div>'
             .'</div>';
     }

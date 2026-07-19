@@ -100,3 +100,30 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+/* Waktu & Lokasi (App\Support\ExamScheduleFormat) — dipakai di kartu
+   ExamRegistrationResource & ExamRegistrationsByDateWidget (keduanya
+   reuse getCardColumns(), lihat komentar di sana). Nama file partial ini
+   "student-column-styles" tapi sudah jadi lokasi CSS bersama antara
+   resource & widget (sama-sama @include partial ini), jadi ditaruh di
+   sini juga daripada disalin ulang di kedua blade view. */
+.fi-resource-exam-registrations .exam-waktu-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: rgb(55 65 81);
+}
+
+.dark .fi-resource-exam-registrations .exam-waktu-item {
+    color: rgb(209 213 219);
+}
+
+.fi-resource-exam-registrations .exam-waktu-icon {
+    font-size: 0.6875rem;
+}
+
+.fi-resource-exam-registrations .exam-waktu-sep {
+    color: rgb(156 163 175);
+    margin: 0 0.1rem;
+}
