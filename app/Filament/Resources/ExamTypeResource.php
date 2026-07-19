@@ -49,20 +49,38 @@ class ExamTypeResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->label('Nama')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('code')
-                    ->label('Kode')
-                    ->searchable(),
-                Tables\Columns\IconColumn::make('active')
-                    ->label('Aktif')
-                    ->boolean(),
-                Tables\Columns\TextColumn::make('formitems_count')
-                    ->label('Item Form')
-                    ->counts('formitems'),
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('name')
+                            ->label('Nama')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\IconColumn::make('active')
+                            ->label('Aktif')
+                            ->boolean()
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('code')
+                            ->label('Kode')
+                            ->searchable()
+                            ->color('gray'),
+                        Tables\Columns\TextColumn::make('formitems_count')
+                            ->label('Item Form')
+                            ->counts('formitems')
+                            ->badge()
+                            ->color('gray'),
+                    ]),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('active')

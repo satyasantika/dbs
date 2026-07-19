@@ -74,42 +74,57 @@ class ReadyExamResultsResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('Nama')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('examtype.name')
-                    ->label('Jenis ujian')
-                    ->badge()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('registration_order')
-                    ->label('Ke')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('exam_schedule')
-                    ->label('Tanggal & waktu ujian')
-                    ->getStateUsing(function (ExamRegistration $record): string {
-                        $date = $record->exam_date?->translatedFormat('d M Y') ?? '—';
-                        $time = $record->exam_time
-                            ? \Carbon\Carbon::parse($record->exam_time)->format('H:i')
-                            : '—';
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('student.name')
+                            ->label('Nama')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('examtype.name')
+                            ->label('Jenis ujian')
+                            ->badge()
+                            ->sortable()
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('registration_order')
+                            ->label('Ke')
+                            ->sortable(),
+                        Tables\Columns\TextColumn::make('room')
+                            ->label('Ruang')
+                            ->formatStateUsing(fn ($state) => match ($state) {
+                                '1' => 'Ruang Ujian 1',
+                                '2' => 'Ruang Ujian 2',
+                                '3' => 'Ruang Ujian 3',
+                                '4' => 'Ruang Ujian 4',
+                                default => $state ?: '—',
+                            }),
+                    ]),
+                    Tables\Columns\TextColumn::make('exam_schedule')
+                        ->label('Tanggal & waktu ujian')
+                        ->getStateUsing(function (ExamRegistration $record): string {
+                            $date = $record->exam_date?->translatedFormat('d M Y') ?? '—';
+                            $time = $record->exam_time
+                                ? \Carbon\Carbon::parse($record->exam_time)->format('H:i')
+                                : '—';
 
-                        return "{$date}, {$time}";
-                    }),
-                Tables\Columns\TextColumn::make('room')
-                    ->label('Ruang')
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        '1' => 'Ruang Ujian 1',
-                        '2' => 'Ruang Ujian 2',
-                        '3' => 'Ruang Ujian 3',
-                        '4' => 'Ruang Ujian 4',
-                        default => $state ?: '—',
-                    }),
-                Tables\Columns\TextColumn::make('pass_exam')
-                    ->label('Lulus')
-                    ->getStateUsing(fn (ExamRegistration $record): string => ExamRegistrationResource::buildPassSendHtml($record))
-                    ->html()
-                    ->sortable(false),
+                            return "{$date}, {$time}";
+                        }),
+                    Tables\Columns\TextColumn::make('pass_exam')
+                        ->label('Lulus')
+                        ->getStateUsing(fn (ExamRegistration $record): string => ExamRegistrationResource::buildPassSendHtml($record))
+                        ->html()
+                        ->sortable(false),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('exam_type_id')
