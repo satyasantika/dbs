@@ -297,48 +297,65 @@ class GuideExaminerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('Mahasiswa')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('year_generation')
-                    ->label('Angkatan')
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('guide1.name')
-                    ->label('Pembimbing 1')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('guide2.name')
-                    ->label('Pembimbing 2')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('jadwal_ujian')
-                    ->label('Jadwal Ujian')
-                    ->getStateUsing(function (GuideExaminer $record): ?string {
-                        $schedule = static::buildExamScheduleHtml($record);
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('student.name')
+                            ->label('Mahasiswa')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('year_generation')
+                            ->label('Angkatan')
+                            ->badge()
+                            ->color('gray')
+                            ->sortable()
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('guide1.name')
+                            ->label('Pembimbing 1')
+                            ->searchable(),
+                        Tables\Columns\TextColumn::make('guide2.name')
+                            ->label('Pembimbing 2')
+                            ->searchable(),
+                    ]),
+                    Tables\Columns\TextColumn::make('jadwal_ujian')
+                        ->label('Jadwal Ujian')
+                        ->getStateUsing(function (GuideExaminer $record): ?string {
+                            $schedule = static::buildExamScheduleHtml($record);
 
-                        return filled($schedule) ? $schedule : null;
-                    })
-                    ->html()
-                    ->wrap()
-                    ->placeholder('—'),
-                Tables\Columns\TextColumn::make('proposal_date')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('seminar_date')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('thesis_date')
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('examiner1.name')
-                    ->label('Penguji 1')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('examiner2.name')
-                    ->label('Penguji 2')
-                    ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('examiner3.name')
-                    ->label('Penguji 3')
-                    ->toggleable(isToggledHiddenByDefault: true),
+                            return filled($schedule) ? $schedule : null;
+                        })
+                        ->html()
+                        ->wrap()
+                        ->placeholder('—'),
+                    Tables\Columns\TextColumn::make('proposal_date')
+                        ->sortable()
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\TextColumn::make('seminar_date')
+                        ->sortable()
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\TextColumn::make('thesis_date')
+                        ->sortable()
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\TextColumn::make('examiner1.name')
+                        ->label('Penguji 1')
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\TextColumn::make('examiner2.name')
+                        ->label('Penguji 2')
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    Tables\Columns\TextColumn::make('examiner3.name')
+                        ->label('Penguji 3')
+                        ->toggleable(isToggledHiddenByDefault: true),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('year_generation')

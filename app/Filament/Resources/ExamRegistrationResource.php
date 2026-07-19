@@ -349,9 +349,21 @@ class ExamRegistrationResource extends Resource
         ]);
     }
 
+    // table() (halaman daftar resource ini) pakai getCardColumns() — card
+    // grid, khusus dipakai di sini. configureListTable()/getTableColumns()
+    // TIDAK diubah ke mode card karena keduanya dipakai ulang oleh
+    // ExamRegistrationsByDateWidget (tabel ringkas per-tanggal di dashboard)
+    // yang punya CSS `<td>`-nya sendiri dan tetap harus tampil sebagai tabel
+    // biasa, bukan card.
     public static function table(Table $table): Table
     {
-        return static::configureListTable($table)
+        return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
+            ->columns(static::getCardColumns())
+            ->actions(static::getTableActions())
+            ->bulkActions([])
             ->filters(static::getTableFilters())
             ->filtersLayout(Tables\Enums\FiltersLayout::AboveContentCollapsible)
             ->defaultSort('exam_date', 'desc');
@@ -363,6 +375,61 @@ class ExamRegistrationResource extends Resource
             ->columns(static::getTableColumns())
             ->actions(static::getTableActions())
             ->bulkActions([]);
+    }
+
+    /**
+     * @return array<int, Tables\Columns\Column>
+     */
+    public static function getCardColumns(): array
+    {
+        return [
+            // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+            // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+            // cuma ->contentGrid() saja.
+            Tables\Columns\Layout\Stack::make([
+                Tables\Columns\Layout\Split::make([
+                    Tables\Columns\ViewColumn::make('student.name')
+                        ->label('Mahasiswa')
+                        ->view('filament.tables.columns.exam-registration-student')
+                        ->searchable()
+                        ->sortable(),
+                    Tables\Columns\TextColumn::make('examtype.name')
+                        ->label('Jenis Ujian')
+                        ->badge()
+                        ->sortable()
+                        ->grow(false),
+                ]),
+                Tables\Columns\Layout\Split::make([
+                    Tables\Columns\TextColumn::make('exam_date')
+                        ->label('Tgl Ujian')
+                        ->date('d M Y')
+                        ->sortable(),
+                    Tables\Columns\TextColumn::make('exam_time')
+                        ->label('Waktu')
+                        ->formatStateUsing(fn ($state) => $state ? \Carbon\Carbon::parse($state)->format('H:i') : '—')
+                        ->sortable(),
+                ]),
+                Tables\Columns\TextColumn::make('penguji')
+                    ->label('Penguji')
+                    ->getStateUsing(fn (ExamRegistration $record): string => static::buildExaminerHtml($record))
+                    ->html()
+                    ->sortable(false)
+                    ->searchable(
+                        query: function (Builder $query, string $search): Builder {
+                            return $query->where(function ($q) use ($search) {
+                                foreach (['examiner1', 'examiner2', 'examiner3', 'guide1', 'guide2'] as $rel) {
+                                    $q->orWhereHas($rel, fn ($sq) => $sq->where('name', 'like', "%{$search}%"));
+                                }
+                            });
+                        }
+                    ),
+                Tables\Columns\TextColumn::make('pass_exam')
+                    ->label('Lulus')
+                    ->getStateUsing(fn (ExamRegistration $record): string => static::buildPassSendHtml($record))
+                    ->html()
+                    ->sortable(false),
+            ])->space(2),
+        ];
     }
 
     /**

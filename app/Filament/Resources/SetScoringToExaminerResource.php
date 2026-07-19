@@ -91,40 +91,53 @@ class SetScoringToExaminerResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->contentGrid([
+                'default' => 1,
+            ])
             ->columns([
-                Tables\Columns\TextColumn::make('student.name')
-                    ->label('Peserta Ujian')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('examtype.name')
-                    ->label('Ujian')
-                    ->badge()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('exam_schedule')
-                    ->label('Waktu')
-                    ->getStateUsing(function (ExamRegistration $record): string {
-                        $date = $record->exam_date?->translatedFormat('d M Y') ?? '—';
-                        $time = $record->exam_time
-                            ? \Carbon\Carbon::parse($record->exam_time)->format('H:i')
-                            : '—';
+                // Dibungkus Layout\Stack — ini yang membuat Filament benar-benar
+                // merender tiap baris sebagai card (hasColumnsLayout()), bukan
+                // cuma ->contentGrid() saja.
+                Tables\Columns\Layout\Stack::make([
+                    Tables\Columns\Layout\Split::make([
+                        Tables\Columns\TextColumn::make('student.name')
+                            ->label('Peserta Ujian')
+                            ->searchable()
+                            ->sortable()
+                            ->weight(\Filament\Support\Enums\FontWeight::Bold)
+                            ->size(Tables\Columns\TextColumn\TextColumnSize::Large),
+                        Tables\Columns\TextColumn::make('examtype.name')
+                            ->label('Ujian')
+                            ->badge()
+                            ->sortable()
+                            ->grow(false),
+                    ]),
+                    Tables\Columns\TextColumn::make('exam_schedule')
+                        ->label('Waktu')
+                        ->getStateUsing(function (ExamRegistration $record): string {
+                            $date = $record->exam_date?->translatedFormat('d M Y') ?? '—';
+                            $time = $record->exam_time
+                                ? \Carbon\Carbon::parse($record->exam_time)->format('H:i')
+                                : '—';
 
-                        return "{$date} {$time}";
-                    }),
-                Tables\Columns\TextColumn::make('penguji')
-                    ->label('Penguji')
-                    ->getStateUsing(fn (ExamRegistration $record): string => ExamRegistrationResource::buildExaminerHtml($record))
-                    ->html()
-                    ->wrap()
-                    ->sortable(false)
-                    ->searchable(
-                        query: function (Builder $query, string $search): Builder {
-                            return $query->where(function ($q) use ($search) {
-                                foreach (['examiner1', 'examiner2', 'examiner3', 'guide1', 'guide2'] as $rel) {
-                                    $q->orWhereHas($rel, fn ($sq) => $sq->where('name', 'like', "%{$search}%"));
-                                }
-                            });
-                        }
-                    ),
+                            return "{$date} {$time}";
+                        }),
+                    Tables\Columns\TextColumn::make('penguji')
+                        ->label('Penguji')
+                        ->getStateUsing(fn (ExamRegistration $record): string => ExamRegistrationResource::buildExaminerHtml($record))
+                        ->html()
+                        ->wrap()
+                        ->sortable(false)
+                        ->searchable(
+                            query: function (Builder $query, string $search): Builder {
+                                return $query->where(function ($q) use ($search) {
+                                    foreach (['examiner1', 'examiner2', 'examiner3', 'guide1', 'guide2'] as $rel) {
+                                        $q->orWhereHas($rel, fn ($sq) => $sq->where('name', 'like', "%{$search}%"));
+                                    }
+                                });
+                            }
+                        ),
+                ])->space(2),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('exam_type_id')
