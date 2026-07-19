@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Informasi\Pages\Beranda;
 use App\Filament\Informasi\Pages\RecapList;
 use App\Support\FilamentBrand;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -33,7 +34,7 @@ class InformasiPanelProvider extends PanelProvider
             ->path('informasi')
             ->login(false)
             ->brandName(fn () => FilamentBrand::withHomeIcon('Informasi Publik'))
-            ->homeUrl(fn () => route('welcome'))
+            ->homeUrl(fn () => Beranda::getUrl())
             ->colors([
                 'primary' => Color::Sky,
             ])
@@ -42,6 +43,7 @@ class InformasiPanelProvider extends PanelProvider
             ->maxContentWidth(MaxWidth::Full)
             ->discoverPages(in: app_path('Filament/Informasi/Pages'), for: 'App\\Filament\\Informasi\\Pages')
             ->pages([
+                Beranda::class,
                 RecapList::class,
             ])
             ->middleware([

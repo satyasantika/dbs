@@ -12,8 +12,11 @@ class ExampleTest extends TestCase
      */
     public function test_the_application_returns_a_successful_response(): void
     {
+        // '/' redirects to the public Filament Beranda page (App\Filament\
+        // Informasi\Pages\Beranda) — see routes/web.php.
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        $response->assertRedirect();
+        $this->get($response->headers->get('Location'))->assertOk();
     }
 }
