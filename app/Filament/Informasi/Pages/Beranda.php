@@ -376,6 +376,86 @@ class Beranda extends Page implements HasTable
     }
 
     /**
+     * Rata-rata lama masa studi & IPK gabungan SELURUH angkatan, dihitung
+     * hanya dari mahasiswa yang BENAR-BENAR lulus (trulyPassedIds(...,
+     * examTypeId: 3), sama persis dengan yang dipakai rekap() —
+     * count_lulus di sini WAJIB sama dengan rekapSemuaAngkatan()['lulus'].
+     *
+     * Formula durasi identik dengan AcademicSemester::studyDuration()
+     * (1 September tahun angkatan → thesis_date), hanya direpresentasikan
+     * sebagai jumlah bulan dulu (diffInMonths) supaya bisa dirata-rata,
+     * baru diformat ulang jadi "X tahun Y bulan" di akhir —
+     * AcademicSemester::studyDuration() sendiri tidak disentuh.
+     *
+     * IPK diambil dari ExamRegistration exam_type_id=3 (Sidang) DENGAN
+     * pass_exam=1 — persis registrasi yang sama yang menentukan status
+     * lulus, bukan dari sempro/semhas walau kolom ipk tidak dibatasi per
+     * exam_type di validasi form. whereNotNull('ipk') mengecualikan
+     * mahasiswa lulus yang tidak diisi IPK-nya; count_ipk dikembalikan
+     * eksplisit supaya Blade bisa menampilkan keterangan "dari N mhs"
+     * kalau count_ipk < count_lulus (tidak menyamarkan data parsial
+     * sebagai rata-rata penuh).
+     *
+     * @return array{count_lulus: int, avg_duration_label: ?string, count_ipk: int, avg_ipk: ?float}
+     */
+    public function graduationAverages(): array
+    {
+        $angkatans = GuideExaminer::where('year_generation', '>=', 2019)
+            ->distinct()
+            ->pluck('year_generation');
+
+        $allGraduatedUserIds = collect();
+        $totalMonths = 0;
+        $durationCount = 0;
+
+        foreach ($angkatans as $angkatan) {
+            $lulusIds = $this->trulyPassedIds($angkatan, 'thesis_date', 3);
+
+            if ($lulusIds->isEmpty()) {
+                continue;
+            }
+
+            $allGraduatedUserIds = $allGraduatedUserIds->merge($lulusIds);
+
+            $entryDate = Carbon::createFromDate((int) $angkatan, 9, 1)->startOfDay();
+
+            GuideExaminer::where('year_generation', $angkatan)
+                ->whereIn('user_id', $lulusIds)
+                ->whereNotNull('thesis_date')
+                ->get(['thesis_date'])
+                ->each(function ($record) use ($entryDate, &$totalMonths, &$durationCount) {
+                    $totalMonths += $entryDate->diffInMonths($record->thesis_date);
+                    $durationCount++;
+                });
+        }
+
+        $allGraduatedUserIds = $allGraduatedUserIds->unique()->values();
+
+        $avgDurationLabel = null;
+
+        if ($durationCount > 0) {
+            $avgMonths = (int) round($totalMonths / $durationCount);
+            $avgDurationLabel = intdiv($avgMonths, 12).' tahun '.($avgMonths % 12).' bulan';
+        }
+
+        $ipkStats = $allGraduatedUserIds->isNotEmpty()
+            ? ExamRegistration::where('exam_type_id', 3)
+                ->where('pass_exam', 1)
+                ->whereIn('user_id', $allGraduatedUserIds)
+                ->whereNotNull('ipk')
+                ->selectRaw('COUNT(*) as cnt, AVG(ipk) as avg_ipk')
+                ->first()
+            : null;
+
+        return [
+            'count_lulus' => $allGraduatedUserIds->count(),
+            'avg_duration_label' => $avgDurationLabel,
+            'count_ipk' => (int) ($ipkStats->cnt ?? 0),
+            'avg_ipk' => $ipkStats && $ipkStats->avg_ipk !== null ? round((float) $ipkStats->avg_ipk, 2) : null,
+        ];
+    }
+
+    /**
      * String CSS conic-gradient() untuk ring persentase di kartu bento
      * "Rekap Kelulusan" (beranda.blade.php) — tanpa SVG/Alpine, ring dibuat
      * murni dari dua lingkaran bertumpuk (lihat .beranda-bento-ring{,-inner}).

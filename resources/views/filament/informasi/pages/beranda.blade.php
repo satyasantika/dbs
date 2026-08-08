@@ -273,7 +273,7 @@
              gabungan ketiganya lewat Beranda::bottleneckShares() supaya
              angka yang digambar (bottleneckDonutStyle()) & yang ditulis di
              legenda selalu sama. --}}
-        .beranda-bento-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+        .beranda-bento-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
         .beranda-bento-card {
             border-radius: 16px;
             padding: 18px 20px;
@@ -284,6 +284,10 @@
         }
         .beranda-bento-card-total { background: #eff6ff; border: 1px solid #dbeafe; }
         .beranda-bento-card-belum-lulus { background: #fffbeb; border: 1px solid #fef3c7; }
+        .beranda-bento-card-rerata { background: #f0fdf4; border: 1px solid #dcfce7; }
+        .beranda-bento-num-sm { font-size: 1.35rem; }
+        .beranda-bento-rerata-stat { display: flex; flex-direction: column; }
+        .beranda-bento-rerata-divider { height: 1px; background: #dcfce7; margin: 0; }
         .beranda-bento-num { font-size: 2rem; font-weight: 900; color: #0f172a; line-height: 1; }
         .beranda-bento-label { font-size: 11.5px; color: #64748b; margin-top: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
         .beranda-bento-sub-inline { font-size: 10.5px; font-weight: 700; text-transform: none; letter-spacing: 0; color: #92400e; margin-left: 4px; }
@@ -331,6 +335,10 @@
         .beranda-bento-donut-legend-label { color: #475569; font-weight: 600; flex: 1; }
         .beranda-bento-donut-legend-value { color: #0f172a; font-weight: 800; }
         .beranda-bento-donut-legend-value small { color: #94a3b8; font-weight: 600; }
+
+        @media (max-width: 980px) {
+            .beranda-bento-grid { grid-template-columns: repeat(2, 1fr); }
+        }
 
         @media (max-width: 720px) {
             .beranda-bento-grid { grid-template-columns: 1fr; }
@@ -423,6 +431,7 @@
              angkatan ($all = Beranda::rekapSemuaAngkatan(),
              $shares = Beranda::bottleneckShares($all)). ═══ --}}
         @php($shares = $this->bottleneckShares($all))
+        @php($averages = $this->graduationAverages())
         <div class="beranda-bento-grid">
             <div class="beranda-bento-card beranda-bento-card-total">
                 <div class="beranda-bento-total-main">
@@ -469,6 +478,24 @@
                                 <span class="beranda-bento-donut-legend-value">{{ $shares['sidang']['count'] }} <small>({{ $shares['sidang']['pct'] }}%)</small></span>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+            <div class="beranda-bento-card beranda-bento-card-rerata">
+                <div class="beranda-bento-rerata-stat">
+                    <div class="beranda-bento-num beranda-bento-num-sm">{{ $averages['avg_duration_label'] ?? '—' }}</div>
+                    <div class="beranda-bento-label">Rata-rata Lama Studi</div>
+                </div>
+                <div class="beranda-bento-rerata-divider"></div>
+                <div class="beranda-bento-rerata-stat">
+                    <div class="beranda-bento-num beranda-bento-num-sm">
+                        {{ $averages['avg_ipk'] !== null ? number_format($averages['avg_ipk'], 2) : '—' }}
+                    </div>
+                    <div class="beranda-bento-label">
+                        Rata-rata IPK
+                        @if ($averages['avg_ipk'] !== null && $averages['count_ipk'] < $averages['count_lulus'])
+                            <span class="beranda-bento-sub-inline">dari {{ $averages['count_ipk'] }} mhs</span>
+                        @endif
                     </div>
                 </div>
             </div>
