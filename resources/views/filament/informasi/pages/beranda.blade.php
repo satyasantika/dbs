@@ -346,6 +346,7 @@
         }
 
         .beranda-rekap-metric-reg { font-size: 10.5px; color: #16a34a; font-weight: 700; margin-top: 2px; display: block; }
+        .beranda-rekap-metric-note { font-size: 10.5px; color: #6b7280; font-weight: 700; margin-top: 2px; display: block; }
     </style>
 
     {{-- ═══════ HERO ═══════ --}}
@@ -507,7 +508,7 @@
              resources/views/filament/dosen/pages/partials/graduation-semester-recap.blade.php
              (border tipis, divide-y, kolom angka rata kanan). --}}
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[52rem] text-sm">
+            <table class="w-full min-w-[62rem] text-sm">
                 <thead>
                     <tr class="border-b border-gray-200">
                         <th scope="col" class="px-3 py-2 text-left font-medium text-gray-500">Tahun Angkatan</th>
@@ -517,6 +518,8 @@
                         <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Belum Sempro</th>
                         <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Akan Semhas</th>
                         <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Akan Sidang</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Rata-rata Studi</th>
+                        <th scope="col" class="px-3 py-2 text-right font-medium text-gray-500">Rata-rata IPK</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -569,10 +572,17 @@
                                     @endif
                                 </a>
                             </td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">{{ $row['avg_duration_label'] ?? '—' }}</td>
+                            <td class="px-3 py-2 text-right tabular-nums text-gray-950">
+                                <div>{{ $row['avg_ipk'] !== null ? number_format($row['avg_ipk'], 2) : '—' }}</div>
+                                @if ($row['avg_ipk'] !== null && $row['count_ipk'] < $row['lulus'])
+                                    <span class="beranda-rekap-metric-note">dari {{ $row['count_ipk'] }}</span>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-3 py-3 text-gray-500">Belum ada data angkatan.</td>
+                            <td colspan="9" class="px-3 py-3 text-gray-500">Belum ada data angkatan.</td>
                         </tr>
                     @endforelse
                 </tbody>
