@@ -32,6 +32,13 @@ class Beranda extends Page implements HasTable
 
     protected static string $view = 'filament.informasi.pages.beranda';
 
+    /**
+     * Memoisasi rekap() per-request — dipanggil dua kali per page load
+     * (rekapSemuaAngkatan() & langsung di tabel Blade), tanpa ini query
+     * baru graduationStatsForAngkatan() ikut berjalan dua kali.
+     */
+    private ?Collection $rekapCache = null;
+
     public static function getUrl(array $parameters = [], bool $isAbsolute = true, ?string $panel = null, ?Model $tenant = null): string
     {
         return parent::getUrl($parameters, $isAbsolute, $panel ?? 'informasi', $tenant);
@@ -308,16 +315,20 @@ class Beranda extends Page implements HasTable
      * exam_registrations untuk jenis ujian berikutnya tapi pass_exam belum 1
      * (murni angka tambahan, tidak memindahkan mahasiswa ke kelompok lain).
      *
-     * @return Collection<int, array{angkatan: int|string, total: int, lulus: int, lulus_pct: float, belum_lulus: int, belum_lulus_pct: float, belum_sempro: int, belum_sempro_reg: int, akan_semhas: int, akan_semhas_reg: int, akan_sidang: int, akan_sidang_reg: int}>
+     * @return Collection<int, array{angkatan: int|string, total: int, lulus: int, lulus_pct: float, belum_lulus: int, belum_lulus_pct: float, belum_sempro: int, belum_sempro_reg: int, akan_semhas: int, akan_semhas_reg: int, akan_sidang: int, akan_sidang_reg: int, avg_duration_label: ?string, count_ipk: int, avg_ipk: ?float}>
      */
     public function rekap(): Collection
     {
+        if ($this->rekapCache !== null) {
+            return $this->rekapCache;
+        }
+
         $angkatans = GuideExaminer::where('year_generation', '>=', 2019)
             ->distinct()
             ->orderBy('year_generation')
             ->pluck('year_generation');
 
-        return $angkatans->map(function ($angkatan) {
+        return $this->rekapCache = $angkatans->map(function ($angkatan) {
             $total = GuideExaminer::where('year_generation', $angkatan)->count();
             $allIds = GuideExaminer::where('year_generation', $angkatan)->pluck('user_id');
 
@@ -332,6 +343,8 @@ class Beranda extends Page implements HasTable
             $akanSemhasIds = $trulyPassedSemproIds->diff($trulyPassedSemhasIds)->values();
             $akanSidangIds = $trulyPassedSemhasIds->diff($lulusIds)->values();
 
+            $gradStats = $this->graduationStatsForAngkatan($angkatan, $lulusIds);
+
             return [
                 'angkatan' => $angkatan,
                 'total' => $total,
@@ -345,6 +358,9 @@ class Beranda extends Page implements HasTable
                 'akan_semhas_reg' => $this->countUpcomingRegistrations($akanSemhasIds, examTypeId: 2),
                 'akan_sidang' => $akanSidangIds->count(),
                 'akan_sidang_reg' => $this->countUpcomingRegistrations($akanSidangIds, examTypeId: 3),
+                'avg_duration_label' => $this->formatDurationLabel($gradStats['total_months'], $gradStats['duration_count']),
+                'count_ipk' => $gradStats['ipk_count'],
+                'avg_ipk' => $this->formatAvgIpk($gradStats['ipk_sum'], $gradStats['ipk_count']),
             ];
         });
     }
@@ -407,6 +423,8 @@ class Beranda extends Page implements HasTable
         $allGraduatedUserIds = collect();
         $totalMonths = 0;
         $durationCount = 0;
+        $ipkSum = 0.0;
+        $ipkCount = 0;
 
         foreach ($angkatans as $angkatan) {
             $lulusIds = $this->trulyPassedIds($angkatan, 'thesis_date', 3);
@@ -417,42 +435,82 @@ class Beranda extends Page implements HasTable
 
             $allGraduatedUserIds = $allGraduatedUserIds->merge($lulusIds);
 
-            $entryDate = Carbon::createFromDate((int) $angkatan, 9, 1)->startOfDay();
-
-            GuideExaminer::where('year_generation', $angkatan)
-                ->whereIn('user_id', $lulusIds)
-                ->whereNotNull('thesis_date')
-                ->get(['thesis_date'])
-                ->each(function ($record) use ($entryDate, &$totalMonths, &$durationCount) {
-                    $totalMonths += $entryDate->diffInMonths($record->thesis_date);
-                    $durationCount++;
-                });
+            $stats = $this->graduationStatsForAngkatan($angkatan, $lulusIds);
+            $totalMonths += $stats['total_months'];
+            $durationCount += $stats['duration_count'];
+            $ipkSum += $stats['ipk_sum'];
+            $ipkCount += $stats['ipk_count'];
         }
 
         $allGraduatedUserIds = $allGraduatedUserIds->unique()->values();
 
-        $avgDurationLabel = null;
-
-        if ($durationCount > 0) {
-            $avgMonths = (int) round($totalMonths / $durationCount);
-            $avgDurationLabel = intdiv($avgMonths, 12).' tahun '.($avgMonths % 12).' bulan';
-        }
-
-        $ipkStats = $allGraduatedUserIds->isNotEmpty()
-            ? ExamRegistration::where('exam_type_id', 3)
-                ->where('pass_exam', 1)
-                ->whereIn('user_id', $allGraduatedUserIds)
-                ->whereNotNull('ipk')
-                ->selectRaw('COUNT(*) as cnt, AVG(ipk) as avg_ipk')
-                ->first()
-            : null;
-
         return [
             'count_lulus' => $allGraduatedUserIds->count(),
-            'avg_duration_label' => $avgDurationLabel,
-            'count_ipk' => (int) ($ipkStats->cnt ?? 0),
-            'avg_ipk' => $ipkStats && $ipkStats->avg_ipk !== null ? round((float) $ipkStats->avg_ipk, 2) : null,
+            'avg_duration_label' => $this->formatDurationLabel($totalMonths, $durationCount),
+            'count_ipk' => $ipkCount,
+            'avg_ipk' => $this->formatAvgIpk($ipkSum, $ipkCount),
         ];
+    }
+
+    /**
+     * Agregat MENTAH (belum diformat/dirata-rata) lama studi & IPK untuk
+     * satu angkatan, dipakai bersama oleh graduationAverages() (dijumlah
+     * lintas angkatan dulu sebelum diformat, supaya rata-rata gabungan
+     * tetap tertimbang benar — bukan rata-rata dari rata-rata) dan
+     * rekap() (diformat langsung per baris). SUM (bukan AVG) dipakai
+     * supaya bisa dijumlah lintas-angkatan tanpa error rata-rata ganda.
+     *
+     * @param  Collection<int, int>  $lulusIds
+     * @return array{total_months: int, duration_count: int, ipk_sum: float, ipk_count: int}
+     */
+    private function graduationStatsForAngkatan(int|string $angkatan, Collection $lulusIds): array
+    {
+        if ($lulusIds->isEmpty()) {
+            return ['total_months' => 0, 'duration_count' => 0, 'ipk_sum' => 0.0, 'ipk_count' => 0];
+        }
+
+        $entryDate = Carbon::createFromDate((int) $angkatan, 9, 1)->startOfDay();
+        $totalMonths = 0;
+        $durationCount = 0;
+
+        GuideExaminer::where('year_generation', $angkatan)
+            ->whereIn('user_id', $lulusIds)
+            ->whereNotNull('thesis_date')
+            ->get(['thesis_date'])
+            ->each(function ($record) use ($entryDate, &$totalMonths, &$durationCount) {
+                $totalMonths += $entryDate->diffInMonths($record->thesis_date);
+                $durationCount++;
+            });
+
+        $ipkStats = ExamRegistration::where('exam_type_id', 3)
+            ->where('pass_exam', 1)
+            ->whereIn('user_id', $lulusIds)
+            ->whereNotNull('ipk')
+            ->selectRaw('COUNT(*) as cnt, SUM(ipk) as sum_ipk')
+            ->first();
+
+        return [
+            'total_months' => $totalMonths,
+            'duration_count' => $durationCount,
+            'ipk_sum' => (float) ($ipkStats->sum_ipk ?? 0.0),
+            'ipk_count' => (int) ($ipkStats->cnt ?? 0),
+        ];
+    }
+
+    private function formatDurationLabel(int $totalMonths, int $count): ?string
+    {
+        if ($count === 0) {
+            return null;
+        }
+
+        $avgMonths = (int) round($totalMonths / $count);
+
+        return intdiv($avgMonths, 12).' tahun '.($avgMonths % 12).' bulan';
+    }
+
+    private function formatAvgIpk(float $sum, int $count): ?float
+    {
+        return $count > 0 ? round($sum / $count, 2) : null;
     }
 
     /**
