@@ -41,6 +41,9 @@ class AdminPanelProvider extends PanelProvider
             ->brandName('Portal Admin')
             ->colors([
                 'primary' => Color::Blue,
+                'proposal' => Color::Sky,
+                'hasil' => Color::Teal,
+                'sidang' => Color::Violet,
             ])
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()

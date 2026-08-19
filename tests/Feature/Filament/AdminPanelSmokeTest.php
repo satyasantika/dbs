@@ -140,11 +140,11 @@ class AdminPanelSmokeTest extends TestCase
             ->assertOk();
     }
 
-    public function test_exam_registrations_create_accessible(): void
+    public function test_exam_registrations_create_is_disabled(): void
     {
         $this->actingAs($this->admin)
             ->get(ExamRegistrationResource::getUrl('create'))
-            ->assertOk();
+            ->assertForbidden();
     }
 
     // ----------------------------------------------------------------
