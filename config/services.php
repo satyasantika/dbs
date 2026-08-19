@@ -31,4 +31,11 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'sintesys' => [
+        'url' => env('SINTESYS_URL', 'https://api-sintesys.unsil.io/api/akademik/tugas_akhir'),
+        'kode_prodi' => env('SINTESYS_KODE_PRODI', '2151'),
+        'token' => env('SINTESYS_TOKEN'),
+        'timeout' => (int) env('SINTESYS_TIMEOUT', 120),
+    ],
+
 ];
