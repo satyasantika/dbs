@@ -41,6 +41,11 @@ class ExamRegistrationResource extends Resource
         return 'access exam/registration/lists';
     }
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         $migrateChiefWhenSlotChanges = function (?string $state, Forms\Set $set, Forms\Get $get, ?string $old): void {
