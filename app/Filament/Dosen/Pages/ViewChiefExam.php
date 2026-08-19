@@ -5,7 +5,6 @@ namespace App\Filament\Dosen\Pages;
 use App\Models\ExamRegistration;
 use App\Models\ExamScore;
 use Filament\Actions\Action;
-use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Tables;
 use Filament\Tables\Concerns\InteractsWithTable;
@@ -60,33 +59,9 @@ class ViewChiefExam extends Page implements HasTable
                 ->label('Finalisasi Kelulusan')
                 ->icon('heroicon-o-check-badge')
                 ->color('success')
-                ->requiresConfirmation()
-                ->modalHeading('Finalisasi kelulusan ujian')
-                ->modalDescription('Pastikan semua penguji sudah memberikan penilaian dan persetujuan lanjut.')
-                ->visible(fn (): bool => ! $this->record->pass_exam)
+                ->visible(false)
                 ->action(function (): void {
-                    $approvedCount = ExamScore::query()
-                        ->where('exam_registration_id', $this->record->id)
-                        ->where('pass_approved', true)
-                        ->count();
-
-                    if ($approvedCount < 5) {
-                        Notification::make()
-                            ->title('Tidak bisa finalisasi')
-                            ->body('Masih ada nilai yang belum terinput atau belum disetujui lanjut.')
-                            ->warning()
-                            ->send();
-
-                        return;
-                    }
-
-                    $this->record->update(['pass_exam' => true]);
-
-                    Notification::make()
-                        ->title('Mahasiswa layak dilanjutkan')
-                        ->body('Mahasiswa '.strtoupper($this->record->student?->name ?? '').' telah layak dilanjutkan.')
-                        ->success()
-                        ->send();
+                    abort(403, 'Kelulusan hanya dapat diubah melalui sinkronisasi Sintesys.');
                 }),
             Action::make('back')
                 ->label('Kembali')

@@ -113,8 +113,8 @@ class Scoring extends Page implements HasTable
             ->actionsAlignment('start')
             ->actions([
                 Tables\Actions\Action::make('score')
-                    ->label('Nilai')
-                    ->icon('heroicon-o-pencil-square')
+                    ->label('Lihat')
+                    ->icon('heroicon-o-eye')
                     ->color('primary')
                     ->url(fn (ExamScore $record): string => EditScoring::archiveEditUrl($record)),
                 Tables\Actions\Action::make('file')

@@ -57,6 +57,8 @@ class EditExamRegistration extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        unset($data['grade'], $data['letter'], $data['pass_exam']);
+
         return app(ExamRegistrationExaminerSync::class)->resolveChiefIdForSave($this->record, $data);
     }
 

@@ -14,9 +14,7 @@ use App\Filament\Resources\ExamRegistrationResource;
 use App\Http\Controllers\Controller;
 use App\Services\Examination\ExamScoreUpdater;
 use App\Services\Examination\ScoringFormPresenter;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class ScoreController extends Controller
 {
@@ -78,47 +76,7 @@ class ScoreController extends Controller
 
     public function update(Request $request, ExamScore $scoring, ExamScoreUpdater $updater, ScoringFormPresenter $presenter)
     {
-        if ($scoring->user_id != Auth::id() && ! auth()->user()->can('force edit score')) {
-            return to_route('scoring.index');
-        }
-
-        $returnUrl = $this->scoringReturnUrl($request);
-
-        if (auth()->user()->hasRole('dosen')) {
-            $scoring->refresh();
-
-            $examRegistration = ExamRegistration::query()->findOrFail($scoring->exam_registration_id);
-            $examStartAt = Carbon::parse(
-                $examRegistration->exam_date->format('Y-m-d').' '.trim((string) $examRegistration->exam_time)
-            );
-
-            if ($presenter->isDosenScoringEditBlocked($scoring, $examRegistration, $examStartAt)) {
-                return redirect($returnUrl)
-                    ->with('warning', 'Penilaian sudah dikunci dan tidak dapat diubah.');
-            }
-        }
-
-        $validated = $request->validate([
-            'revision' => ['required', 'in:0,1,2'],
-            'revision_note' => ['nullable', 'string'],
-        ]);
-
-        if (in_array((int) $validated['revision'], [1, 2], true) && blank($request->input('revision_note'))) {
-            throw ValidationException::withMessages([
-                'revision_note' => 'Catatan revisi wajib diisi jika mahasiswa perlu revisi.',
-            ]);
-        }
-
-        $payload = $request->all();
-        if ((int) $validated['revision'] === 0) {
-            $payload['revision_note'] = null;
-        }
-
-        $studentName = strtoupper($scoring->registration?->student?->name ?? 'MAHASISWA');
-        $updater->update($scoring, $payload);
-
-        return redirect($returnUrl)
-            ->with('success', 'data penilaian '.$studentName.' telah diperbarui');
+        abort(403, 'Nilai hanya dapat diubah melalui sinkronisasi Sintesys.');
     }
 
     private function scoringReturnUrl(Request $request): string

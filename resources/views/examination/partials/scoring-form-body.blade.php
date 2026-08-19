@@ -239,22 +239,25 @@
                 href="{{ $returnUrl }}"
                 color="gray"
             >
-                Batal
+                {{ $formDisabled ? 'Kembali' : 'Batal' }}
             </x-filament::button>
 
-            <x-filament::button
-                type="submit"
-                id="saveBtn"
-                icon="heroicon-m-check"
-                :disabled="$formDisabled"
-            >
-                {{ $saveButtonLabel }}
-            </x-filament::button>
+            @unless ($formDisabled)
+                <x-filament::button
+                    type="submit"
+                    id="saveBtn"
+                    icon="heroicon-m-check"
+                >
+                    {{ $saveButtonLabel }}
+                </x-filament::button>
+            @endunless
         @else
-            <a href="{{ $returnUrl }}" class="btn btn-outline-secondary btn-sm">Batal</a>
-            <button type="submit" class="dbs-save-btn" id="saveBtn" @disabled($formDisabled)>
-                {{ $saveButtonLabel }}
-            </button>
+            <a href="{{ $returnUrl }}" class="btn btn-outline-secondary btn-sm">{{ $formDisabled ? 'Kembali' : 'Batal' }}</a>
+            @unless ($formDisabled)
+                <button type="submit" class="dbs-save-btn" id="saveBtn">
+                    {{ $saveButtonLabel }}
+                </button>
+            @endunless
         @endif
     </div>
 </form>

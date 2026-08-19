@@ -132,7 +132,7 @@ class ExamRegistrationFactory extends Factory
     public function fullyScored(?float $grade = null): static
     {
         return $this->afterCreating(function (ExamRegistration $registration) use ($grade) {
-            $updater = app(ExamScoreUpdater::class);
+            $updater = app(ExamScoreUpdater::class)->allowSintesysWrite();
 
             foreach ($registration->fresh()->examScores as $score) {
                 $finalGrade = $grade ?? fake()->randomFloat(2, 75, 95);
@@ -144,7 +144,7 @@ class ExamRegistrationFactory extends Factory
     public function partiallyScored(): static
     {
         return $this->afterCreating(function (ExamRegistration $registration) {
-            $updater = app(ExamScoreUpdater::class);
+            $updater = app(ExamScoreUpdater::class)->allowSintesysWrite();
             $scores = $registration->fresh()->examScores;
 
             if ($scores->count() <= 1) {

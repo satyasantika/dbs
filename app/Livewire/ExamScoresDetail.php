@@ -8,7 +8,6 @@ use App\Services\Examination\ExamRegistrationExaminerSync;
 use App\Services\Examination\ExamScoreUpdater;
 use App\Services\Examination\ScoringFormPresenter;
 use App\Support\ExaminerSlotSelectOptions;
-use Carbon\Carbon;
 use Filament\Notifications\Notification;
 use Livewire\Component;
 
@@ -89,72 +88,17 @@ class ExamScoresDetail extends Component
 
     public function unlockScoringEdit(int $scoreId, ScoringFormPresenter $presenter): void
     {
-        $record = ExamRegistration::findOrFail($this->recordId);
-        $score = ExamScore::query()
-            ->where('exam_registration_id', $record->id)
-            ->findOrFail($scoreId);
-
-        $examStartAt = Carbon::parse(
-            $record->exam_date->format('Y-m-d').' '.trim((string) $record->exam_time)
-        );
-
-        if (! $presenter->isDosenScoringTimeLocked($score, $examStartAt)) {
-            Notification::make()
-                ->warning()
-                ->title('Penilaian tidak dikunci')
-                ->body('Hanya penilaian yang sudah dikunci yang dapat dibuka untuk diedit.')
-                ->send();
-
-            return;
-        }
-
-        $score->update(['scoring_edit_unlocked_at' => now()]);
-
-        Notification::make()
-            ->success()
-            ->title('Edit penilaian dibuka')
-            ->body(($score->lecture?->name ?: 'Penguji').' dapat mengubah nilai hingga submit ulang.')
-            ->send();
+        abort(403, 'Nilai hanya dapat diubah melalui sinkronisasi Sintesys.');
     }
 
     public function lockScoringEdit(int $scoreId, ScoringFormPresenter $presenter): void
     {
-        $record = ExamRegistration::findOrFail($this->recordId);
-        $score = ExamScore::query()
-            ->where('exam_registration_id', $record->id)
-            ->findOrFail($scoreId);
-
-        if (! $presenter->isDosenScoringEditUnlocked($score)) {
-            Notification::make()
-                ->warning()
-                ->title('Penilaian tidak terbuka')
-                ->body('Hanya penilaian yang sedang dibuka yang dapat dikunci kembali.')
-                ->send();
-
-            return;
-        }
-
-        $score->update(['scoring_edit_unlocked_at' => null]);
-
-        Notification::make()
-            ->success()
-            ->title('Edit penilaian dikunci')
-            ->body(($score->lecture?->name ?: 'Penguji').' tidak dapat mengubah nilai lagi.')
-            ->send();
+        abort(403, 'Nilai hanya dapat diubah melalui sinkronisasi Sintesys.');
     }
 
     public function openGradeEdit(int $scoreId): void
     {
-        $this->closeReplaceModal();
-        $this->closeScoreActions();
-
-        $score = ExamScore::query()
-            ->where('exam_registration_id', $this->recordId)
-            ->findOrFail($scoreId);
-
-        $this->editingScoreId = $scoreId;
-        $this->editingGrade = $score->grade !== null ? (string) (int) round($score->grade) : '';
-        $this->resetErrorBag('editingGrade');
+        abort(403, 'Nilai hanya dapat diubah melalui sinkronisasi Sintesys.');
     }
 
     public function closeGradeEdit(): void
@@ -167,25 +111,7 @@ class ExamScoresDetail extends Component
 
     public function saveGrade(ExamScoreUpdater $updater): void
     {
-        $this->validate([
-            'editingGrade' => ['required', 'integer', 'min:0', 'max:100'],
-        ], [], [
-            'editingGrade' => 'nilai',
-        ]);
-
-        $score = ExamScore::query()
-            ->where('exam_registration_id', $this->recordId)
-            ->findOrFail($this->editingScoreId);
-
-        $updater->applyAdminFinalGrade($score, (int) $this->editingGrade);
-
-        Notification::make()
-            ->success()
-            ->title('Nilai diperbarui')
-            ->body('Nilai akhir dan score01–score05 penguji telah disesuaikan.')
-            ->send();
-
-        $this->closeGradeEdit();
+        abort(403, 'Nilai hanya dapat diubah melalui sinkronisasi Sintesys.');
     }
 
     public function render()
