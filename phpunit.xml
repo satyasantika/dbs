@@ -26,5 +26,8 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="SINTESYS_URL" value="https://api-sintesys.unsil.io/api/akademik/tugas_akhir"/>
+        <env name="SINTESYS_KODE_PRODI" value="2151"/>
+        <env name="SINTESYS_TOKEN" value="testing-sintesys-token"/>
     </php>
 </phpunit>
