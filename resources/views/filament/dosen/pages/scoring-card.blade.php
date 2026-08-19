@@ -72,11 +72,11 @@
             </dd>
         </div>
 
-        @if ($record->revision && filled($record->revision_note))
+        @if (filled($record->revision_note))
             <div class="flex items-start justify-between gap-3">
                 <dt class="shrink-0 text-gray-500 dark:text-gray-400">Catatan</dt>
                 <dd class="min-w-0 break-words text-right font-medium text-gray-950 dark:text-white">
-                    {{ \Illuminate\Support\Str::limit($record->revision_note, 80) }}
+                    {{ $record->revision_note }}
                 </dd>
             </div>
         @endif

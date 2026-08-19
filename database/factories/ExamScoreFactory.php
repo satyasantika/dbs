@@ -55,7 +55,7 @@ class ExamScoreFactory extends Factory
         return $this->afterCreating(function (ExamScore $score) use ($grade) {
             $finalGrade = $grade ?? fake()->randomFloat(2, 75, 95);
 
-            app(ExamScoreUpdater::class)->applyAdminFinalGrade($score, $finalGrade);
+            app(ExamScoreUpdater::class)->allowSintesysWrite()->applyAdminFinalGrade($score, $finalGrade);
         });
     }
 

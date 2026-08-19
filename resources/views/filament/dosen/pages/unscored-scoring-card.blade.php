@@ -47,6 +47,15 @@
                 @endif
             </dd>
         </div>
+
+        @if (filled($record->revision_note))
+            <div class="flex items-start justify-between gap-3">
+                <dt class="shrink-0 text-gray-500 dark:text-gray-400">Catatan</dt>
+                <dd class="min-w-0 break-words text-right font-medium text-gray-950 dark:text-white">
+                    {{ $record->revision_note }}
+                </dd>
+            </div>
+        @endif
     </dl>
 
     @include('filament.dosen.pages.partials.scoring-examiners', ['registration' => $registration])

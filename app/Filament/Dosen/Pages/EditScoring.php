@@ -82,7 +82,7 @@ class EditScoring extends Page
     {
         $studentName = $this->record->registration?->student?->name ?? '-';
 
-        return 'Menilai '.$studentName;
+        return 'Hasil penilaian '.$studentName;
     }
 
     protected function getHeaderActions(): array
