@@ -3,7 +3,11 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\ExamRegistrationResource;
+use App\Services\Examination\SintesysExamRegistrationImporter;
+use App\Services\Sintesys\SintesysException;
 use Carbon\Carbon;
+use Filament\Notifications\Notification;
+use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
@@ -60,6 +64,7 @@ class ExamRegistrationsByDateWidget extends BaseWidget
         $this->calendarMonth = Carbon::parse($date)->format('Y-m');
         $this->syncCalendarPartsFromMonth();
         $this->updatedExamDate();
+        $this->syncSintesysForSelectedDate();
     }
 
     public function previousMonth(): void
@@ -202,7 +207,47 @@ class ExamRegistrationsByDateWidget extends BaseWidget
             ->emptyStateHeading('Tidak ada ujian pada tanggal ini')
             ->emptyStateDescription('Pilih tanggal ujian lain pada kalender untuk melihat jadwal.')
             ->emptyStateIcon('heroicon-o-calendar-days')
+            ->searchPlaceholder('Cari mahasiswa, NIM, atau penguji...')
+            ->headerActions([
+                Tables\Actions\Action::make('syncSintesys')
+                    ->label('Sinkronisasi Sintesys')
+                    ->icon('heroicon-o-arrow-path')
+                    ->color('success')
+                    ->action(fn () => $this->syncSintesysForSelectedDate()),
+            ])
             ->paginated([10, 25, 50]);
+    }
+
+    public function syncSintesysForSelectedDate(): void
+    {
+        $date = filled($this->examDate) ? $this->examDate : now()->toDateString();
+
+        try {
+            $result = app(SintesysExamRegistrationImporter::class)->persist($date, $date);
+        } catch (SintesysException $e) {
+            Notification::make()
+                ->danger()
+                ->title('Sinkronisasi Sintesys gagal')
+                ->body($e->getMessage())
+                ->send();
+
+            return;
+        }
+
+        $this->flushCachedTableRecords();
+        $this->resetPage();
+
+        $body = "Baru: {$result['created']} · Diperbarui: {$result['updated']} · Dilewati: {$result['skipped']}";
+
+        if ($result['errors'] !== []) {
+            $body .= "\n".implode("\n", array_slice($result['errors'], 0, 5));
+        }
+
+        Notification::make()
+            ->success()
+            ->title('Sinkronisasi Sintesys selesai')
+            ->body($body)
+            ->send();
     }
 
     protected function syncCalendarPartsFromMonth(): void
