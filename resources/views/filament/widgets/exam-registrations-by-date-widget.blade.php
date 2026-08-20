@@ -337,7 +337,7 @@
                         <div class="flex flex-wrap items-center gap-3">
                             <span
                                 wire:loading.flex
-                                wire:target="selectExamDate,syncSintesysForSelectedDate,goToToday,mountTableAction"
+                                wire:target="syncSintesysForSelectedDate,mountTableAction"
                                 class="items-center gap-1.5 text-xs font-semibold text-primary-600 dark:text-primary-400"
                             >
                                 <svg class="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">

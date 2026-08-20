@@ -279,10 +279,16 @@ class SintesysExamRegistrationSyncTest extends TestCase
         $admin = User::factory()->create()->assignRole('admin');
         Filament::setCurrentPanel(Filament::getPanel('admin'));
 
-        Livewire::actingAs($admin)
+        $widget = Livewire::actingAs($admin)
             ->test(ExamRegistrationsByDateWidget::class)
             ->assertSee('Sinkronisasi Sintesys')
-            ->call('selectExamDate', '2025-10-15')
+            ->call('selectExamDate', '2025-10-15');
+
+        $this->assertSame('2025-10-15', $widget->get('examDate'));
+        $this->assertSame(0, ExamRegistration::query()->count());
+        Http::assertNothingSent();
+
+        $widget->call('syncSintesysForSelectedDate')
             ->assertNotified('Sinkronisasi Sintesys selesai');
 
         $this->assertSame(1, ExamRegistration::query()->count());
