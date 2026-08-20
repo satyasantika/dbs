@@ -64,7 +64,6 @@ class ExamRegistrationsByDateWidget extends BaseWidget
         $this->calendarMonth = Carbon::parse($date)->format('Y-m');
         $this->syncCalendarPartsFromMonth();
         $this->updatedExamDate();
-        $this->syncSintesysForSelectedDate();
     }
 
     public function previousMonth(): void
