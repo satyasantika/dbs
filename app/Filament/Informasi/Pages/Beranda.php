@@ -15,6 +15,7 @@ use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Versi Filament (publik, tanpa login) dari App\Http\Controllers\
@@ -38,6 +39,18 @@ class Beranda extends Page implements HasTable
      * baru graduationStatsForAngkatan() ikut berjalan dua kali.
      */
     private ?Collection $rekapCache = null;
+
+    /**
+     * Statistik mentah (belum dijumlah lintas angkatan) dari
+     * graduationStatsForAngkatan(), diisi di dalam rekap() dan dipakai
+     * ulang oleh graduationAverages() — supaya graduationAverages() tidak
+     * perlu memanggil trulyPassedIds()/graduationStatsForAngkatan() lagi
+     * dari nol untuk setiap angkatan (dulu menggandakan hampir semua query
+     * yang sudah dilakukan rekap()).
+     *
+     * @var array<int|string, array{total_months: int, duration_count: int, ipk_sum: float, ipk_count: int, lulus_count: int}>
+     */
+    private array $graduationStatsCache = [];
 
     public static function getUrl(array $parameters = [], bool $isAbsolute = true, ?string $panel = null, ?Model $tenant = null): string
     {
@@ -323,46 +336,66 @@ class Beranda extends Page implements HasTable
             return $this->rekapCache;
         }
 
-        $angkatans = GuideExaminer::where('year_generation', '>=', 2019)
-            ->distinct()
-            ->orderBy('year_generation')
-            ->pluck('year_generation');
+        // Cache lintas-request (bukan cuma per-request seperti $rekapCache
+        // di atas) — halaman ini publik/tanpa auth dan tanpa pagination,
+        // jadi tiap kunjungan anonim/bot menjalankan ulang puluhan query
+        // per angkatan dari nol. TTL pendek karena datanya tidak perlu
+        // real-time per detik (nilai/status baru diisi manual oleh dosen).
+        // graduationStatsCache ikut disimpan dalam payload cache supaya
+        // graduationAverages() tetap benar walau rekap() ini cache HIT
+        // (closure di bawah, tempat graduationStatsCache biasanya diisi,
+        // tidak ikut jalan saat cache HIT).
+        $cached = Cache::remember('beranda.rekap', now()->addMinutes(5), function () {
+            $angkatans = GuideExaminer::where('year_generation', '>=', 2019)
+                ->distinct()
+                ->orderBy('year_generation')
+                ->pluck('year_generation');
 
-        return $this->rekapCache = $angkatans->map(function ($angkatan) {
-            $total = GuideExaminer::where('year_generation', $angkatan)->count();
-            $allIds = GuideExaminer::where('year_generation', $angkatan)->pluck('user_id');
+            $graduationStats = [];
 
-            $trulyPassedSemproIds = $this->trulyPassedIds($angkatan, 'proposal_date', 1);
-            $trulyPassedSemhasIds = $this->trulyPassedIds($angkatan, 'seminar_date', 2);
-            $lulusIds = $this->trulyPassedIds($angkatan, 'thesis_date', 3);
+            $rows = $angkatans->map(function ($angkatan) use (&$graduationStats) {
+                $total = GuideExaminer::where('year_generation', $angkatan)->count();
+                $allIds = GuideExaminer::where('year_generation', $angkatan)->pluck('user_id');
 
-            $lulus = $lulusIds->count();
-            $belumLulus = $total - $lulus;
+                $trulyPassedSemproIds = $this->trulyPassedIds($angkatan, 'proposal_date', 1);
+                $trulyPassedSemhasIds = $this->trulyPassedIds($angkatan, 'seminar_date', 2);
+                $lulusIds = $this->trulyPassedIds($angkatan, 'thesis_date', 3);
 
-            $belumSemproIds = $allIds->diff($trulyPassedSemproIds)->values();
-            $akanSemhasIds = $trulyPassedSemproIds->diff($trulyPassedSemhasIds)->values();
-            $akanSidangIds = $trulyPassedSemhasIds->diff($lulusIds)->values();
+                $lulus = $lulusIds->count();
+                $belumLulus = $total - $lulus;
 
-            $gradStats = $this->graduationStatsForAngkatan($angkatan, $lulusIds);
+                $belumSemproIds = $allIds->diff($trulyPassedSemproIds)->values();
+                $akanSemhasIds = $trulyPassedSemproIds->diff($trulyPassedSemhasIds)->values();
+                $akanSidangIds = $trulyPassedSemhasIds->diff($lulusIds)->values();
 
-            return [
-                'angkatan' => $angkatan,
-                'total' => $total,
-                'lulus' => $lulus,
-                'lulus_pct' => $total > 0 ? round($lulus / $total * 100, 1) : 0.0,
-                'belum_lulus' => $belumLulus,
-                'belum_lulus_pct' => $total > 0 ? round($belumLulus / $total * 100, 1) : 0.0,
-                'belum_sempro' => $belumSemproIds->count(),
-                'belum_sempro_reg' => $this->countUpcomingRegistrations($belumSemproIds, examTypeId: 1),
-                'akan_semhas' => $akanSemhasIds->count(),
-                'akan_semhas_reg' => $this->countUpcomingRegistrations($akanSemhasIds, examTypeId: 2),
-                'akan_sidang' => $akanSidangIds->count(),
-                'akan_sidang_reg' => $this->countUpcomingRegistrations($akanSidangIds, examTypeId: 3),
-                'avg_duration_label' => $this->formatDurationLabel($gradStats['total_months'], $gradStats['duration_count']),
-                'count_ipk' => $gradStats['ipk_count'],
-                'avg_ipk' => $this->formatAvgIpk($gradStats['ipk_sum'], $gradStats['ipk_count']),
-            ];
+                $gradStats = $this->graduationStatsForAngkatan($angkatan, $lulusIds);
+                $graduationStats[$angkatan] = [...$gradStats, 'lulus_count' => $lulus];
+
+                return [
+                    'angkatan' => $angkatan,
+                    'total' => $total,
+                    'lulus' => $lulus,
+                    'lulus_pct' => $total > 0 ? round($lulus / $total * 100, 1) : 0.0,
+                    'belum_lulus' => $belumLulus,
+                    'belum_lulus_pct' => $total > 0 ? round($belumLulus / $total * 100, 1) : 0.0,
+                    'belum_sempro' => $belumSemproIds->count(),
+                    'belum_sempro_reg' => $this->countUpcomingRegistrations($belumSemproIds, examTypeId: 1),
+                    'akan_semhas' => $akanSemhasIds->count(),
+                    'akan_semhas_reg' => $this->countUpcomingRegistrations($akanSemhasIds, examTypeId: 2),
+                    'akan_sidang' => $akanSidangIds->count(),
+                    'akan_sidang_reg' => $this->countUpcomingRegistrations($akanSidangIds, examTypeId: 3),
+                    'avg_duration_label' => $this->formatDurationLabel($gradStats['total_months'], $gradStats['duration_count']),
+                    'count_ipk' => $gradStats['ipk_count'],
+                    'avg_ipk' => $this->formatAvgIpk($gradStats['ipk_sum'], $gradStats['ipk_count']),
+                ];
+            });
+
+            return ['rows' => $rows->all(), 'graduation_stats' => $graduationStats];
         });
+
+        $this->graduationStatsCache = $cached['graduation_stats'];
+
+        return $this->rekapCache = collect($cached['rows']);
     }
 
     /**
@@ -416,36 +449,27 @@ class Beranda extends Page implements HasTable
      */
     public function graduationAverages(): array
     {
-        $angkatans = GuideExaminer::where('year_generation', '>=', 2019)
-            ->distinct()
-            ->pluck('year_generation');
+        // Memastikan $graduationStatsCache terisi — rekap() sendiri sudah
+        // memoisasi lewat $rekapCache, jadi ini tidak menjalankan query lagi
+        // kalau rekap() sudah pernah dipanggil pada request ini.
+        $this->rekap();
 
-        $allGraduatedUserIds = collect();
+        $countLulus = 0;
         $totalMonths = 0;
         $durationCount = 0;
         $ipkSum = 0.0;
         $ipkCount = 0;
 
-        foreach ($angkatans as $angkatan) {
-            $lulusIds = $this->trulyPassedIds($angkatan, 'thesis_date', 3);
-
-            if ($lulusIds->isEmpty()) {
-                continue;
-            }
-
-            $allGraduatedUserIds = $allGraduatedUserIds->merge($lulusIds);
-
-            $stats = $this->graduationStatsForAngkatan($angkatan, $lulusIds);
+        foreach ($this->graduationStatsCache as $stats) {
+            $countLulus += $stats['lulus_count'];
             $totalMonths += $stats['total_months'];
             $durationCount += $stats['duration_count'];
             $ipkSum += $stats['ipk_sum'];
             $ipkCount += $stats['ipk_count'];
         }
 
-        $allGraduatedUserIds = $allGraduatedUserIds->unique()->values();
-
         return [
-            'count_lulus' => $allGraduatedUserIds->count(),
+            'count_lulus' => $countLulus,
             'avg_duration_label' => $this->formatDurationLabel($totalMonths, $durationCount),
             'count_ipk' => $ipkCount,
             'avg_ipk' => $this->formatAvgIpk($ipkSum, $ipkCount),
@@ -610,7 +634,7 @@ class Beranda extends Page implements HasTable
         return ExamRegistration::whereIn('user_id', $dateFilledIds)
             ->where('exam_type_id', $examTypeId)
             ->where('pass_exam', 0)
-            ->whereDate('exam_date', '>=', now()->toDateString())
+            ->where('exam_date', '>=', now()->toDateString())
             ->pluck('user_id')
             ->unique()
             ->values();
@@ -660,7 +684,7 @@ class Beranda extends Page implements HasTable
         return ExamRegistration::whereIn('user_id', $userIds)
             ->where('exam_type_id', $examTypeId)
             ->where('pass_exam', 0)
-            ->whereDate('exam_date', '>=', now()->toDateString())
+            ->where('exam_date', '>=', now()->toDateString())
             ->distinct('user_id')
             ->count('user_id');
     }
