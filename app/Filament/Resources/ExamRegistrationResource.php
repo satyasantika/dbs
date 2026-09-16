@@ -263,6 +263,11 @@ class ExamRegistrationResource extends Resource
                             ->label('Judul Skripsi')
                             ->rows(3)
                             ->columnSpanFull(),
+                        Forms\Components\TextInput::make('exam_file')
+                            ->label('Link File Ujian')
+                            ->url()
+                            ->maxLength(65535)
+                            ->columnSpanFull(),
                         Forms\Components\Hidden::make('_show_additional_details')
                             ->default(false)
                             ->dehydrated(false)
