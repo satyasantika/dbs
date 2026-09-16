@@ -513,9 +513,20 @@ class ExamRegistrationResource extends Resource
                 // Ganti "klik di mana saja di kartu" (recordUrl, dimatikan
                 // di table() — lihat komentar di sana) dengan tombol edit
                 // eksplisit supaya navigasi ke halaman edit tetap 1 klik.
+                //
+                // ->url() dipasang eksplisit di sini (bukan dibiarkan
+                // ter-auto-isi) karena getTableActions() ini dipakai ulang
+                // oleh ExamRegistrationsByDateWidget (kalender dashboard),
+                // sebuah TableWidget biasa — bukan ListRecords/RelationManager
+                // — sehingga tidak lewat hook configureTableAction() yang
+                // biasanya mengisi ->url()+->form() otomatis. Tanpa ->url()
+                // eksplisit, tombol Edit di widget dashboard jadi <button>
+                // yang membuka modal KOSONG (shouldOpenModal()=true, tanpa
+                // ->form() sama sekali) alih-alih menuju halaman edit.
                 Tables\Actions\EditAction::make()
                     ->iconButton()
-                    ->tooltip('Edit Pendaftaran Ujian'),
+                    ->tooltip('Edit Pendaftaran Ujian')
+                    ->url(fn (ExamRegistration $record): string => static::getUrl('edit', ['record' => $record])),
                 Tables\Actions\Action::make('set_examiners')
                     ->label('Set ke penguji')
                     ->icon('heroicon-o-user-plus')
