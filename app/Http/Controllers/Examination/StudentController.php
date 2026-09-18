@@ -47,7 +47,9 @@ class StudentController extends Controller
     {
         $user_id = User::where('username',$request->student_id)->first()->id;
         $examination = ExamRegistration::with(['student','examtype'])->where('user_id',$user_id)->where('exam_date',$request->exam_date)->first();
-        $belum_menilai = ExamScore::where('exam_registration_id',$examination->id)->whereNull('pass_approved')->doesntExist();
+        $belum_menilai = !is_null($examination->chief_id)
+            && !is_null($examination->exam_date)
+            && ExamScore::where('exam_registration_id',$examination->id)->whereNull('pass_approved')->doesntExist();
         return view('examination.student.result',compact('examination','belum_menilai'));
     }
 

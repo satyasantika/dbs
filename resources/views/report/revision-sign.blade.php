@@ -38,10 +38,10 @@
     <span  @style('line-height: 1')>&nbsp;</span><br>
     {{-- <hr> --}}
     <p>Telah menyelesaikan perbaikan {{ $examregistration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}
-        yang telah disarankan saat {{ strToUpper($examregistration->examtype->name) }} pada tanggal {{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}.</p>
+        yang telah disarankan saat {{ strToUpper($examregistration->examtype->name) }} pada tanggal {{ $examregistration->exam_date?->isoFormat('DD MMMM Y') ?? '-' }}.</p>
     <p>Demikian surat keterangan ini dibuat untuk dipergunakan sebagaimana mestinya.</p>
     <p style="text-align: right">
-        Tasikmalaya, {{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}<br>
+        Tasikmalaya, {{ $examregistration->exam_date?->isoFormat('DD MMMM Y') ?? '-' }}<br>
     </p>
     {{-- tabel penguji --}}
     <div style="line-height:1">
@@ -76,8 +76,8 @@
                     <br>
                     Ketua Penguji,<br>
                     <span  @style('line-height: 4')>&nbsp;</span><br>
-                    {{ $examregistration->chief->name }}<br>
-                    NIDN {{ $examregistration->chief->username }}
+                    {{ $examregistration->chief?->name ?? '-' }}<br>
+                    NIDN {{ $examregistration->chief?->username ?? '-' }}
                 </td>
             </tr>
         </table>
