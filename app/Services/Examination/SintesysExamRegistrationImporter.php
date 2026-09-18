@@ -259,8 +259,13 @@ class SintesysExamRegistrationImporter
             ->first();
 
         $isUpdate = (bool) $existing;
+        $examiner1Id = $attributes['examiner1_id'] ?? null;
 
         if ($existing) {
+            if (! filled($existing->chief_id) && filled($examiner1Id)) {
+                $attributes['chief_id'] = $examiner1Id;
+            }
+
             $existing->fill($attributes)->save();
             $registration = $existing->fresh();
         } else {
@@ -271,6 +276,10 @@ class SintesysExamRegistrationImporter
 
             if ($order > 3) {
                 throw new SintesysException(strtoupper($student->name).' sudah 3× ujian jenis ini.');
+            }
+
+            if (filled($examiner1Id)) {
+                $attributes['chief_id'] = $examiner1Id;
             }
 
             $registration = ExamRegistration::create(array_merge($attributes, [

@@ -130,6 +130,7 @@ class SintesysExamRegistrationSyncTest extends TestCase
         $this->assertSame('2025-10-15', $registration->exam_date->format('Y-m-d'));
         $this->assertSame($this->dosen1->id, $registration->examiner1_id);
         $this->assertSame($this->dosen2->id, $registration->examiner2_id);
+        $this->assertSame($this->dosen1->id, $registration->chief_id);
 
         $score = ExamScore::query()
             ->where('exam_registration_id', $registration->id)
@@ -168,6 +169,7 @@ class SintesysExamRegistrationSyncTest extends TestCase
 
         $registration = ExamRegistration::query()->first();
         $this->assertSame('Judul yang Diperbarui', $registration->title);
+        $this->assertSame($this->dosen1->id, $registration->chief_id);
 
         $score = ExamScore::query()
             ->where('exam_registration_id', $registration->id)
@@ -177,6 +179,32 @@ class SintesysExamRegistrationSyncTest extends TestCase
         $this->assertSame(80, (int) $score->score01);
         $this->assertSame(80, (int) $score->score05);
         $this->assertSame('Catatan baru dari Sintesys', $score->revision_note);
+    }
+
+    public function test_persist_mengisi_chief_id_kosong_dari_examiner1_tanpa_menimpa_ketua_yang_sudah_ada(): void
+    {
+        $importer = app(SintesysExamRegistrationImporter::class);
+
+        Http::fake([
+            '*' => Http::response(['data' => [$this->sampleRow()]], 200),
+        ]);
+
+        $importer->persist('2025-10-01', '2025-10-31');
+
+        $registration = ExamRegistration::query()->first();
+        $this->assertSame($this->dosen1->id, $registration->chief_id);
+
+        $registration->update(['chief_id' => $this->dosen2->id]);
+
+        $importer->persist('2025-10-01', '2025-10-31');
+
+        $this->assertSame($this->dosen2->id, $registration->fresh()->chief_id);
+
+        $registration->update(['chief_id' => null]);
+
+        $importer->persist('2025-10-01', '2025-10-31');
+
+        $this->assertSame($this->dosen1->id, $registration->fresh()->chief_id);
     }
 
     public function test_penguji_nidn_tidak_ada_menjadi_warning_slot_kosong(): void
