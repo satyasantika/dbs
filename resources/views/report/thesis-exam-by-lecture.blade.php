@@ -13,7 +13,7 @@
             PENILAIAN SKRIPSI<br>
         </p>
         <p style="text-align:justify;">
-            Pada hari ini {{ $examregistration->exam_date->isoFormat('dddd, DD MMMM Y') }}
+            Pada hari ini {{ $examregistration->exam_date?->isoFormat('dddd, DD MMMM Y') ?? '-' }}
             pukul {{ \Carbon\Carbon::create($examregistration->exam_time)->isoFormat('HH:mm') }} WIB
             bertempat di Ruang Sidang {{ $examregistration->room }} Fakultas Keguruan dan Ilmu Pendidikan
             telah dilaksanakan SIDANG SKRIPSI atas nama,
@@ -92,7 +92,7 @@
                         <td style="width: 50%" class="text-center"><br>
 
                         </td>
-                        <td style="width: 50%" class="text-center">Tasikmalaya, {{ $examscore->registration->exam_date->isoFormat('DD MMMM Y') }}<br>
+                        <td style="width: 50%" class="text-center">Tasikmalaya, {{ $examscore->registration->exam_date?->isoFormat('DD MMMM Y') ?? '-' }}<br>
                             @if ($examscore->examiner_order == 1) Penguji I,@endif
                             @if ($examscore->examiner_order == 2) Penguji II,@endif
                             @if ($examscore->examiner_order == 3) Penguji III,@endif

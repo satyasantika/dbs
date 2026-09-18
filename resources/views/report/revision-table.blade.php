@@ -30,7 +30,7 @@
             <tr>
                 <td>Tanggal Ujian</td>
                 <td>:</td>
-                <td>{{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}</td>
+                <td>{{ $examregistration->exam_date?->isoFormat('DD MMMM Y') ?? '-' }}</td>
             </tr>
             <tr style="vertical-align: top">
                 <td>Judul {{ $examregistration->exam_type_id == 1 ? 'Proposal' : 'Skripsi' }}</td>
@@ -82,11 +82,11 @@
             <tr>
                 <td>
                     <br>
-                    Tasikmalaya, {{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}<br>
+                    Tasikmalaya, {{ $examregistration->exam_date?->isoFormat('DD MMMM Y') ?? '-' }}<br>
                     Ketua Penguji,<br>
                     <span  @style('line-height: 4')>&nbsp;</span><br>
-                    {{ $examregistration->chief->name }}<br>
-                    NIDN {{ $examregistration->chief->username }}
+                    {{ $examregistration->chief?->name ?? '-' }}<br>
+                    NIDN {{ $examregistration->chief?->username ?? '-' }}
                 </td>
             </tr>
         </table>

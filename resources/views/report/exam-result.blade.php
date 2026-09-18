@@ -10,7 +10,7 @@
         BERITA ACARA HASIL {{ strToUpper($examregistration->examtype->name) }}<br>
     </p>
     <p style="text-align:justify;">
-        Pada hari ini {{ $examregistration->exam_date->isoFormat('dddd, DD MMMM Y') }}
+        Pada hari ini {{ $examregistration->exam_date?->isoFormat('dddd, DD MMMM Y') ?? '-' }}
         pukul {{ \Carbon\Carbon::parse($examregistration->exam_time)->isoFormat('HH:mm') }} WIB
         bertempat di Ruang Sidang Fakultas Keguruan dan Ilmu Pendidikan
         telah dilaksanakan {{ $examregistration->examtype->name }} bagi mahasiswa:
@@ -118,11 +118,11 @@
                         Vepi Apiati, S.Pd., M.Pd.<br>
                         NIP 197504272021212004
                     </td>
-                    <td>Tasikmalaya, {{ $examregistration->exam_date->isoFormat('DD MMMM Y') }}<br>
+                    <td>Tasikmalaya, {{ $examregistration->exam_date?->isoFormat('DD MMMM Y') ?? '-' }}<br>
                         Ketua Penguji,<br>
                         <span  @style('line-height: 4')>&nbsp;</span><br>
-                        {{ $examregistration->chief->name }}<br>
-                        NIDN {{ $examregistration->chief->username }}
+                        {{ $examregistration->chief?->name ?? '-' }}<br>
+                        NIDN {{ $examregistration->chief?->username ?? '-' }}
                     </td>
                 </tr>
             </tbody>
