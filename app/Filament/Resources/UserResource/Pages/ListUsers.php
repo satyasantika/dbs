@@ -13,6 +13,11 @@ class ListUsers extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\Action::make('importPhones')
+                ->label('Import Nomor HP')
+                ->icon('heroicon-o-device-phone-mobile')
+                ->color('gray')
+                ->url(UserResource::getUrl('import-phones')),
             Actions\Action::make('import')
                 ->label('Import Banyak')
                 ->icon('heroicon-o-arrow-up-tray')

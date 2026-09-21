@@ -260,6 +260,7 @@ class UserResource extends Resource
             'create' => Pages\CreateUser::route('/create'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
             'import' => Pages\ImportUsers::route('/import'),
+            'import-phones' => Pages\ImportUserPhones::route('/import-phones'),
         ];
     }
 

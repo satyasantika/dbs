@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Setting;
 use App\Http\Controllers\Controller;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\UserPhone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -71,6 +72,145 @@ class UserImportController extends Controller
         }
 
         return response()->json(['results' => $results]);
+    }
+
+    public function pasteImportPhonesCheck(Request $request)
+    {
+        $request->validate(['rows' => 'required|array|min:1|max:200']);
+
+        $checks = [];
+
+        foreach ($request->rows as $row) {
+            $checks[] = $this->checkPhoneImportRow($row);
+        }
+
+        return response()->json(['checks' => $checks]);
+    }
+
+    public function pasteImportPhones(Request $request)
+    {
+        $request->validate(['rows' => 'required|array|min:1|max:200']);
+
+        $results = [];
+
+        foreach ($request->rows as $row) {
+            $rowNum = $row['_rowNum'] ?? '?';
+
+            if ($row['_invalid'] ?? false) {
+                continue;
+            }
+
+            try {
+                $results[] = DB::transaction(fn () => $this->importPhoneRow($row));
+            } catch (Throwable $e) {
+                Log::error('user pasteImportPhones row failed', [
+                    'row' => $rowNum,
+                    'npm' => $row['npm'] ?? $row['username'] ?? null,
+                    'message' => $e->getMessage(),
+                ]);
+
+                $results[] = [
+                    'row' => $rowNum,
+                    'status' => 'error',
+                    'message' => 'Baris '.$rowNum.' gagal: '.$e->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json(['results' => $results]);
+    }
+
+    /**
+     * @return array{row: int|string, status: string, message: string}
+     */
+    private function importPhoneRow(array $row): array
+    {
+        $rowNum = $row['_rowNum'] ?? '?';
+        $npm = trim((string) ($row['npm'] ?? $row['username'] ?? ''));
+        $phone = UserPhone::normalize((string) ($row['phone'] ?? $row['hp'] ?? ''));
+
+        if ($npm === '') {
+            return [
+                'row' => $rowNum,
+                'status' => 'error',
+                'message' => 'NPM kosong.',
+            ];
+        }
+
+        if ($phone === '' || strlen($phone) > 20) {
+            return [
+                'row' => $rowNum,
+                'status' => 'error',
+                'message' => 'Nomor HP tidak valid.',
+            ];
+        }
+
+        $user = User::where('username', $npm)->first();
+
+        if (! $user) {
+            return [
+                'row' => $rowNum,
+                'status' => 'error',
+                'message' => "NPM {$npm} tidak ditemukan.",
+            ];
+        }
+
+        $user->update(['phone' => $phone]);
+
+        return [
+            'row' => $rowNum,
+            'status' => 'success',
+            'message' => "Diperbarui: {$user->name} ({$npm}) — {$phone}",
+        ];
+    }
+
+    /**
+     * @return array{
+     *     row: int|string,
+     *     found: bool,
+     *     name: string|null,
+     *     current_phone: string|null,
+     *     phone: string,
+     *     message: string|null
+     * }
+     */
+    private function checkPhoneImportRow(array $row): array
+    {
+        $rowNum = $row['_rowNum'] ?? '?';
+        $npm = trim((string) ($row['npm'] ?? $row['username'] ?? ''));
+        $phone = UserPhone::normalize((string) ($row['phone'] ?? $row['hp'] ?? ''));
+
+        $base = [
+            'row' => $rowNum,
+            'found' => false,
+            'name' => null,
+            'current_phone' => null,
+            'phone' => $phone,
+            'message' => null,
+        ];
+
+        if ($npm === '') {
+            return array_merge($base, ['message' => 'NPM kosong']);
+        }
+
+        if ($phone === '') {
+            return array_merge($base, ['message' => 'Nomor HP tidak valid']);
+        }
+
+        $user = User::where('username', $npm)->first();
+
+        if (! $user) {
+            return array_merge($base, ['message' => "NPM {$npm} tidak ditemukan"]);
+        }
+
+        return [
+            'row' => $rowNum,
+            'found' => true,
+            'name' => $user->name,
+            'current_phone' => $user->phone,
+            'phone' => $phone,
+            'message' => null,
+        ];
     }
 
     /**
