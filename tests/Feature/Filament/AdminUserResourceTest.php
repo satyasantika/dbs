@@ -251,6 +251,91 @@ class AdminUserResourceTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_import_nomor_hp_memperbarui_user_yang_sudah_ada(): void
+    {
+        $mahasiswa = User::factory()->create([
+            'username' => '222151146',
+            'phone' => null,
+        ])->assignRole('mahasiswa');
+
+        $this->actingAs($this->admin)
+            ->postJson(route('users.paste-import-phones'), [
+                'rows' => [
+                    [
+                        '_rowNum' => 1,
+                        'npm' => '222151146',
+                        'phone' => '0812-3456-7890',
+                    ],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('results.0.status', 'success');
+
+        $this->assertSame('81234567890', $mahasiswa->fresh()->phone);
+    }
+
+    public function test_import_nomor_hp_gagal_jika_npm_tidak_ditemukan(): void
+    {
+        $this->actingAs($this->admin)
+            ->postJson(route('users.paste-import-phones'), [
+                'rows' => [
+                    [
+                        '_rowNum' => 1,
+                        'npm' => '999999999',
+                        'phone' => '081234567890',
+                    ],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('results.0.status', 'error');
+
+        $this->assertDatabaseMissing('users', ['username' => '999999999']);
+    }
+
+    public function test_import_nomor_hp_check_mengenali_npm_yang_ada(): void
+    {
+        User::factory()->create([
+            'username' => '222151146',
+            'name' => 'Alliya',
+            'phone' => '81111111111',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->postJson(route('users.paste-import-phones-check'), [
+                'rows' => [
+                    [
+                        '_rowNum' => 1,
+                        'npm' => '222151146',
+                        'phone' => '+62 812-3456-7890',
+                    ],
+                ],
+            ])
+            ->assertOk()
+            ->assertJsonPath('checks.0.found', true)
+            ->assertJsonPath('checks.0.name', 'Alliya')
+            ->assertJsonPath('checks.0.phone', '81234567890')
+            ->assertJsonPath('checks.0.current_phone', '81111111111');
+    }
+
+    public function test_halaman_import_nomor_hp_dapat_dibuka_admin(): void
+    {
+        $this->actingAs($this->admin)
+            ->get(UserResource::getUrl('import-phones'))
+            ->assertOk()
+            ->assertSee('Import Nomor HP');
+    }
+
+    public function test_non_admin_tidak_dapat_akses_import_nomor_hp(): void
+    {
+        $dosen = User::factory()->create()->assignRole('dosen');
+
+        $this->actingAs($dosen)
+            ->postJson(route('users.paste-import-phones'), [
+                'rows' => [['_rowNum' => 1, 'npm' => '222151146', 'phone' => '081234567890']],
+            ])
+            ->assertForbidden();
+    }
+
     public function test_exam_scores_terhapus_saat_exam_registration_dihapus(): void
     {
         $examType = ExamType::create(['name' => 'Skripsi']);
