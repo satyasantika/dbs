@@ -138,10 +138,14 @@ class ListExamRegistrations extends ListRecords
                         return;
                     }
 
-                    $body = "Baru: {$result['created']} · Diperbarui: {$result['updated']} · Dilewati: {$result['skipped']}";
+                    $body = "Baru: {$result['created']} · Diperbarui: {$result['updated']} · Dilewati: {$result['skipped']} · Dihapus (dipindah): {$result['removed']}";
 
                     if ($result['errors'] !== []) {
                         $body .= "\n".implode("\n", array_slice($result['errors'], 0, 5));
+                    }
+
+                    if (($result['removedDetails'] ?? []) !== []) {
+                        $body .= "\nDihapus: ".implode('; ', array_slice($result['removedDetails'], 0, 5));
                     }
 
                     Notification::make()

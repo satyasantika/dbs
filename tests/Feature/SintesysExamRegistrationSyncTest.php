@@ -332,6 +332,90 @@ class SintesysExamRegistrationSyncTest extends TestCase
         $this->assertSame('Judul Dashboard', ExamRegistration::query()->first()->title);
     }
 
+    public function test_ujian_yang_dipindah_dihapus_otomatis(): void
+    {
+        $importer = app(SintesysExamRegistrationImporter::class);
+
+        Http::fake([
+            '*' => Http::sequence()
+                ->push(['data' => [$this->sampleRow()]])
+                ->push(['data' => []]),
+        ]);
+
+        $importer->persist('2025-10-01', '2025-10-31');
+
+        $this->assertSame(1, ExamRegistration::query()->count());
+
+        $result = $importer->persist('2025-10-01', '2025-10-31');
+
+        $this->assertSame(1, $result['removed']);
+        $this->assertSame(0, ExamRegistration::query()->count());
+        $this->assertDatabaseCount('exam_scores', 0);
+    }
+
+    public function test_ujian_yang_dipindah_ke_tanggal_lain_di_rentang_yang_sama_tidak_hilang(): void
+    {
+        $importer = app(SintesysExamRegistrationImporter::class);
+
+        $movedRow = $this->sampleRow();
+        $movedRow['tanggal_ujian'] = '2025-10-20 08:05:00';
+
+        Http::fake([
+            '*' => Http::sequence()
+                ->push(['data' => [$this->sampleRow()]])
+                ->push(['data' => [$movedRow]]),
+        ]);
+
+        $importer->persist('2025-10-01', '2025-10-31');
+
+        $result = $importer->persist('2025-10-01', '2025-10-31');
+
+        // Baris lama (15 Okt) hilang dari Sintesys tapi mahasiswa yang sama
+        // muncul lagi di tanggal baru (20 Okt) dalam rentang yang sama →
+        // baris lama harus dihapus, baris baru dibuat, total tetap 1.
+        $this->assertSame(1, $result['removed']);
+        $this->assertSame(1, $result['created']);
+        $this->assertSame(1, ExamRegistration::query()->count());
+        $this->assertSame('2025-10-20', ExamRegistration::query()->first()->exam_date->format('Y-m-d'));
+    }
+
+    public function test_prune_tidak_berlaku_untuk_ujian_sebelum_agustus_2025(): void
+    {
+        $importer = app(SintesysExamRegistrationImporter::class);
+
+        $oldRow = $this->sampleRow();
+        $oldRow['tanggal_ujian'] = '2025-07-15 08:05:00';
+
+        Http::fake(['*' => Http::response(['data' => [$oldRow]], 200)]);
+        $importer->persist('2025-07-01', '2025-07-31');
+
+        $this->assertSame(1, ExamRegistration::query()->count());
+
+        // Sync ulang rentang Juli 2025 (sebelum cutoff) dengan Sintesys kosong —
+        // data lama tidak boleh terhapus karena di luar masa berlaku fitur ini.
+        Http::fake(['*' => Http::response(['data' => []], 200)]);
+        $result = $importer->persist('2025-07-01', '2025-07-31');
+
+        $this->assertSame(0, $result['removed']);
+        $this->assertSame(1, ExamRegistration::query()->count());
+    }
+
+    public function test_ujian_yang_sudah_dikirim_ke_mahasiswa_tidak_dihapus_otomatis(): void
+    {
+        $importer = app(SintesysExamRegistrationImporter::class);
+
+        Http::fake(['*' => Http::response(['data' => [$this->sampleRow()]], 200)]);
+        $importer->persist('2025-10-01', '2025-10-31');
+
+        ExamRegistration::query()->first()->update(['sent_at' => now()]);
+
+        Http::fake(['*' => Http::response(['data' => []], 200)]);
+        $result = $importer->persist('2025-10-01', '2025-10-31');
+
+        $this->assertSame(0, $result['removed']);
+        $this->assertSame(1, ExamRegistration::query()->count());
+    }
+
     /**
      * @return array<string, mixed>
      */
