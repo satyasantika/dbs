@@ -12,6 +12,7 @@ use App\Support\SintesysExamTypeMap;
 use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Throwable;
@@ -19,6 +20,14 @@ use Throwable;
 class SintesysExamRegistrationImporter
 {
     public const MAX_RANGE_DAYS = 183;
+
+    /**
+     * Sinkronisasi "hapus karena dipindah" hanya berlaku untuk ujian dengan
+     * exam_date pada atau setelah tanggal ini. Data lebih lama dari cutoff
+     * tidak pernah dihapus otomatis meski tidak lagi muncul di Sintesys,
+     * karena riwayat sebelum tanggal ini tidak terjamin konsisten dengan Sintesys.
+     */
+    public const PRUNE_CUTOFF_DATE = '2025-08-01';
 
     public function __construct(
         protected SintesysTugasAkhirClient $client,
@@ -66,7 +75,7 @@ class SintesysExamRegistrationImporter
     }
 
     /**
-     * @return array{created: int, updated: int, skipped: int, errors: array<int, string>}
+     * @return array{created: int, updated: int, skipped: int, errors: array<int, string>, removed: int, removed_details: array<int, string>}
      */
     public function persist(string $tanggalMulai, string $tanggalSelesai, ?int $jenisUjianId = null): array
     {
@@ -99,7 +108,120 @@ class SintesysExamRegistrationImporter
             }
         }
 
-        return compact('created', 'updated', 'skipped', 'errors');
+        [$removed, $removedDetails] = $this->pruneMovedRegistrations(
+            $tanggalMulai,
+            $tanggalSelesai,
+            $jenisUjianId,
+            $preview['rows'],
+        );
+
+        return compact('created', 'updated', 'skipped', 'errors', 'removed', 'removedDetails');
+    }
+
+    /**
+     * Hapus pendaftaran ujian lokal yang berada di dalam rentang tanggal yang
+     * disinkronkan tetapi TIDAK lagi muncul di respons Sintesys untuk rentang
+     * tersebut — artinya jadwal ujian tersebut sudah dipindah (atau dibatalkan)
+     * di Sintesys. Ini hanya berlaku untuk exam_date >= self::PRUNE_CUTOFF_DATE
+     * (Agustus 2025 ke atas); data lebih lama tidak pernah disentuh.
+     *
+     * Aman untuk dihapus karena exam_scores punya FK cascadeOnDelete ke
+     * exam_registrations (lihat migrasi 2026_07_04_000001).
+     *
+     * @param  array<int, array<string, mixed>>  $previewRows  Baris hasil preview() rentang yang sama (sumber kebenaran Sintesys saat ini)
+     * @return array{0: int, 1: array<int, string>}
+     */
+    protected function pruneMovedRegistrations(
+        string $tanggalMulai,
+        string $tanggalSelesai,
+        ?int $jenisUjianId,
+        array $previewRows,
+    ): array {
+        $cutoff = Carbon::parse(self::PRUNE_CUTOFF_DATE)->startOfDay();
+        $rangeStart = Carbon::parse($tanggalMulai)->startOfDay();
+        $rangeEnd = Carbon::parse($tanggalSelesai)->startOfDay();
+
+        // Cutoff belum tercapai sama sekali oleh rentang sync ini — tidak ada yang diprune.
+        if ($rangeEnd->lt($cutoff)) {
+            return [0, []];
+        }
+
+        // Prune hanya berlaku mulai cutoff, meski rentang sync mundur ke sebelum itu.
+        $pruneFrom = $rangeStart->lt($cutoff) ? $cutoff : $rangeStart;
+
+        // Kumpulkan pasangan (user_id, exam_type_id, exam_date) yang MASIH ada di Sintesys
+        // untuk rentang ini, dari baris preview yang valid (baru/duplikat).
+        $stillPresent = [];
+
+        foreach ($previewRows as $row) {
+            if (! in_array($row['status'] ?? null, ['baru', 'duplikat'], true)) {
+                continue;
+            }
+
+            $nim = (string) ($row['nim'] ?? '');
+            $examTypeId = $row['exam_type_id'] ?? null;
+            $examDate = $row['exam_date'] ?? null;
+
+            if ($nim === '' || ! $examTypeId || ! $examDate) {
+                continue;
+            }
+
+            $stillPresent[$nim.'|'.$examTypeId.'|'.$examDate] = true;
+        }
+
+        $query = ExamRegistration::query()
+            ->join('users', 'users.id', '=', 'exam_registrations.user_id')
+            ->whereBetween('exam_registrations.exam_date', [
+                $pruneFrom->toDateString(),
+                $rangeEnd->toDateString(),
+            ])
+            ->select(['exam_registrations.*', 'users.username as student_username']);
+
+        if ($jenisUjianId) {
+            $localTypeId = SintesysExamTypeMap::localExamTypeId($jenisUjianId);
+
+            // Jenis ujian Sintesys ini tidak terpetakan ke sistem lokal —
+            // tidak ada dasar aman untuk memilih baris yang akan diprune.
+            if (! $localTypeId) {
+                return [0, []];
+            }
+
+            $query->where('exam_registrations.exam_type_id', $localTypeId);
+        }
+
+        $removed = 0;
+        $removedDetails = [];
+
+        foreach ($query->get() as $registration) {
+            $key = $registration->student_username.'|'.$registration->exam_type_id.'|'.$registration->exam_date->format('Y-m-d');
+
+            if (isset($stillPresent[$key])) {
+                continue;
+            }
+
+            // Jangan hapus jika penilaian sudah pernah dikirim ke mahasiswa —
+            // hindari kehilangan data yang sudah difinalisasi/dibagikan.
+            if ($registration->sent_at !== null) {
+                continue;
+            }
+
+            DB::transaction(function () use ($registration): void {
+                $registration->delete();
+            });
+
+            Log::info('Sintesys sync: exam_registration dihapus karena dipindah/tidak ditemukan di Sintesys', [
+                'exam_registration_id' => $registration->id,
+                'user_id' => $registration->user_id,
+                'exam_type_id' => $registration->exam_type_id,
+                'exam_date' => $registration->exam_date->format('Y-m-d'),
+            ]);
+
+            $removed++;
+            $removedDetails[] = strtoupper($registration->student->name ?? $registration->student_username)
+                .' — jadwal '.$registration->exam_date->format('d-m-Y').' tidak lagi ada di Sintesys (dihapus)';
+        }
+
+        return [$removed, $removedDetails];
     }
 
     public function assertDateRange(string $tanggalMulai, string $tanggalSelesai): void
