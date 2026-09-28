@@ -218,6 +218,8 @@
         .jadwal-badge-jenis-sidang { background: #dcfce7; color: #15803d; }
         .jadwal-badge-jenis-default { background: #eef2ff; color: #4338ca; }
         .jadwal-badge-nim { background: #f1f5f9; color: #475569; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .jadwal-badge-file { background: #e0f2fe; color: #0369a1; text-decoration: none; }
+        .jadwal-badge-file:hover { background: #bae6fd; }
 
         {{-- Baris Nama (TitleCase) + badge NIM + trigger "Judul" (native
              <details>/<summary>, tanpa JS) sejajar di baris yang sama.

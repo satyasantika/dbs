@@ -3,14 +3,19 @@
 namespace App\Filament\Widgets;
 
 use App\Filament\Resources\ExamRegistrationResource;
+use App\Models\ExamRegistration;
 use App\Services\Examination\SintesysExamRegistrationImporter;
 use App\Services\Sintesys\SintesysException;
+use App\Support\ExamFileLinkPaste;
 use Carbon\Carbon;
+use Filament\Forms;
+use Filament\Forms\Get;
 use Filament\Notifications\Notification;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\HtmlString;
 
 class ExamRegistrationsByDateWidget extends BaseWidget
 {
@@ -194,8 +199,7 @@ class ExamRegistrationsByDateWidget extends BaseWidget
         // data-grid-fit="rows" data-grid-fit-rows="2" di view widget ini
         // (bukan mengikuti tinggi layar seperti grid lain).
         return $table
-            ->query(fn (): Builder => ExamRegistrationResource::getEloquentQuery()
-                ->whereDate('exam_date', $this->examDate ?: now()->toDateString()))
+            ->query(fn (): Builder => $this->selectedDateRegistrationsQuery())
             ->contentGrid([
                 'default' => 1,
             ])
@@ -213,8 +217,69 @@ class ExamRegistrationsByDateWidget extends BaseWidget
                     ->icon('heroicon-o-arrow-path')
                     ->color('success')
                     ->action(fn () => $this->syncSintesysForSelectedDate()),
+                $this->pasteExamFileLinksAction(),
             ])
             ->paginated([10, 25, 50]);
+    }
+
+    /**
+     * Isi Link File Ujian (exam_file) banyak mahasiswa sekaligus untuk
+     * tanggal yang sedang dipilih di kalender — tidak perlu pilih tanggal
+     * lagi di modal. Paste "NPM <tab> link" dari Excel; preview di bawah
+     * textarea ikut diperbarui setiap kali isinya berubah.
+     */
+    protected function pasteExamFileLinksAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('pasteExamFileLinks')
+            ->label('Link Drive File Ujian')
+            ->icon('heroicon-o-link')
+            ->color('info')
+            ->modalHeading(fn (): string => 'Link Drive File Ujian — '.$this->selectedDateLabel)
+            ->modalDescription('Copy dua kolom dari Excel (NPM, lalu link drive) dan paste di bawah. Hanya mahasiswa yang ujian pada tanggal ini yang diperbarui.')
+            ->modalWidth('4xl')
+            ->modalSubmitActionLabel('Simpan Link')
+            ->form([
+                Forms\Components\Textarea::make('paste')
+                    ->label('Data NPM & Link')
+                    ->placeholder("222151146\thttps://drive.google.com/...\n222151147\thttps://drive.google.com/...")
+                    ->rows(6)
+                    ->required()
+                    ->live(debounce: 400),
+                Forms\Components\Placeholder::make('preview')
+                    ->label('Preview')
+                    ->content(fn (Get $get): HtmlString => new HtmlString(view(
+                        'filament.widgets.exam-file-link-paste-preview',
+                        ['rows' => ExamFileLinkPaste::preview($get('paste'), $this->examFileLinkTargetsQuery())],
+                    )->render())),
+            ])
+            ->action(function (array $data): void {
+                $result = ExamFileLinkPaste::apply($data['paste'] ?? '', $this->examFileLinkTargetsQuery());
+
+                $this->flushCachedTableRecords();
+
+                Notification::make()
+                    ->success()
+                    ->title('Link file ujian disimpan')
+                    ->body("Disimpan: {$result['saved']} · Dilewati: {$result['skipped']}")
+                    ->send();
+            });
+    }
+
+    protected function selectedDateRegistrationsQuery(): Builder
+    {
+        return ExamRegistrationResource::getEloquentQuery()
+            ->whereDate('exam_date', $this->examDate ?: now()->toDateString());
+    }
+
+    /**
+     * Tanpa eager load kartu (getEloquentQuery()) — preview dihitung ulang
+     * setiap ketikan, cukup kolom yang dipakai ExamFileLinkPaste.
+     */
+    protected function examFileLinkTargetsQuery(): Builder
+    {
+        return ExamRegistration::query()
+            ->select(['id', 'user_id', 'exam_file'])
+            ->whereDate('exam_date', $this->examDate ?: now()->toDateString());
     }
 
     public function syncSintesysForSelectedDate(): void
