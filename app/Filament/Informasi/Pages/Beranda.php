@@ -155,7 +155,25 @@ class Beranda extends Page implements HasTable
             .'<span class="jadwal-nama">'.e(\Illuminate\Support\Str::title($nama)).'</span>'
             .'<span class="jadwal-badge jadwal-badge-nim">'.e($nim).'</span>'
             .$this->buildJudulToggleHtml($record)
+            .$this->buildExamFileLinkHtml($record)
             .'</div>';
+    }
+
+    /**
+     * Link drive file ujian (exam_file, diisi massal dari widget kalender
+     * admin) — hanya tampil kalau sudah diisi dan berupa URL http(s).
+     */
+    private function buildExamFileLinkHtml(ExamRegistration $record): string
+    {
+        $link = trim((string) $record->exam_file);
+
+        if (! \App\Support\ExamFileLinkPaste::isValidLink($link)) {
+            return '';
+        }
+
+        return '<a class="jadwal-badge jadwal-badge-file" href="'.e($link).'" target="_blank" rel="noopener">'
+            .'Link File Ujian ↗'
+            .'</a>';
     }
 
     /**
