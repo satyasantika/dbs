@@ -137,7 +137,7 @@ class UserImportController extends Controller
             ];
         }
 
-        if ($phone === '' || strlen($phone) > 20) {
+        if (! UserPhone::isValid($phone)) {
             return [
                 'row' => $rowNum,
                 'status' => 'error',
@@ -193,7 +193,7 @@ class UserImportController extends Controller
             return array_merge($base, ['message' => 'NPM kosong']);
         }
 
-        if ($phone === '') {
+        if (! UserPhone::isValid($phone)) {
             return array_merge($base, ['message' => 'Nomor HP tidak valid']);
         }
 
