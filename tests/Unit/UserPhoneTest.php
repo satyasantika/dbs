@@ -23,4 +23,25 @@ class UserPhoneTest extends TestCase
         $this->assertSame('', UserPhone::normalize(''));
         $this->assertSame('', UserPhone::normalize(null));
     }
+
+    public function test_is_valid_menerima_nomor_diawali_8(): void
+    {
+        $this->assertTrue(UserPhone::isValid('81234567890'));
+        $this->assertTrue(UserPhone::isValid('85212314123'));
+    }
+
+    public function test_is_valid_menolak_awalan_0_62_atau_plus62(): void
+    {
+        $this->assertFalse(UserPhone::isValid('081234567890'));
+        $this->assertFalse(UserPhone::isValid('6281234567890'));
+        $this->assertFalse(UserPhone::isValid('+6281234567890'));
+    }
+
+    public function test_is_valid_menolak_bukan_awalan_8_atau_terlalu_pendek(): void
+    {
+        $this->assertFalse(UserPhone::isValid(''));
+        $this->assertFalse(UserPhone::isValid('123456'));
+        $this->assertFalse(UserPhone::isValid('712345678'));
+        $this->assertFalse(UserPhone::isValid('81234'));
+    }
 }

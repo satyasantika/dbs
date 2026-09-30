@@ -7,6 +7,7 @@ use App\Models\ExamRegistration;
 use App\Services\Examination\SintesysExamRegistrationImporter;
 use App\Services\Sintesys\SintesysException;
 use App\Support\ExamFileLinkPaste;
+use App\Support\ExamPhoneUpdatePaste;
 use Carbon\Carbon;
 use Filament\Forms;
 use Filament\Forms\Get;
@@ -218,6 +219,7 @@ class ExamRegistrationsByDateWidget extends BaseWidget
                     ->color('success')
                     ->action(fn () => $this->syncSintesysForSelectedDate()),
                 $this->pasteExamFileLinksAction(),
+                $this->pasteExamPhoneUpdateAction(),
             ])
             ->paginated([10, 25, 50]);
     }
@@ -280,6 +282,49 @@ class ExamRegistrationsByDateWidget extends BaseWidget
         return ExamRegistration::query()
             ->select(['id', 'user_id', 'exam_file'])
             ->whereDate('exam_date', $this->examDate ?: now()->toDateString());
+    }
+
+    /**
+     * Update nomor HP (users.phone) banyak mahasiswa sekaligus untuk
+     * tanggal yang sedang dipilih di kalender — pola sama persis dengan
+     * pasteExamFileLinksAction() di atas, hanya kolom kedua & target
+     * kolomnya beda (nomor HP, bukan link drive).
+     */
+    protected function pasteExamPhoneUpdateAction(): Tables\Actions\Action
+    {
+        return Tables\Actions\Action::make('pasteExamPhoneUpdate')
+            ->label('Update Nomor HP')
+            ->icon('heroicon-o-device-phone-mobile')
+            ->color('info')
+            ->modalHeading(fn (): string => 'Update Nomor HP — '.$this->selectedDateLabel)
+            ->modalDescription('Copy dua kolom dari Excel (NPM, lalu nomor HP) dan paste di bawah. Hanya mahasiswa yang ujian pada tanggal ini yang diperbarui.')
+            ->modalWidth('4xl')
+            ->modalSubmitActionLabel('Simpan Nomor HP')
+            ->form([
+                Forms\Components\Textarea::make('paste')
+                    ->label('Data NPM & Nomor HP')
+                    ->placeholder("222151146\t085212314123\n222151147\t085212314124")
+                    ->rows(6)
+                    ->required()
+                    ->live(debounce: 400),
+                Forms\Components\Placeholder::make('preview')
+                    ->label('Preview')
+                    ->content(fn (Get $get): HtmlString => new HtmlString(view(
+                        'filament.widgets.exam-phone-update-preview',
+                        ['rows' => ExamPhoneUpdatePaste::preview($get('paste'), $this->examFileLinkTargetsQuery())],
+                    )->render())),
+            ])
+            ->action(function (array $data): void {
+                $result = ExamPhoneUpdatePaste::apply($data['paste'] ?? '', $this->examFileLinkTargetsQuery());
+
+                $this->flushCachedTableRecords();
+
+                Notification::make()
+                    ->success()
+                    ->title('Nomor HP disimpan')
+                    ->body("Disimpan: {$result['saved']} · Dilewati: {$result['skipped']}")
+                    ->send();
+            });
     }
 
     public function syncSintesysForSelectedDate(): void

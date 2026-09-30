@@ -72,7 +72,7 @@ class UnscoredExamsWidget extends BaseWidget
                         . '%20pada%20'
                         . rawurlencode($record->registration?->exam_date?->isoFormat('dddd, D MMMM Y') ?? '-')
                         . '%0A%0Asilakan%20akses:%0A%0A'
-                        . rawurlencode(url('/examination/scoring/' . $record->id . '/edit'))
+                        . rawurlencode('https://sintesys.unsil.ac.id')
                     )
                     ->openUrlInNewTab()
                     ->iconButton(),
