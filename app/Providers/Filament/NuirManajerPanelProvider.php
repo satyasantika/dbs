@@ -31,7 +31,7 @@ class NuirManajerPanelProvider extends PanelProvider
             ->path('nuir-manajer')
             ->login(false)
             ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Manajer NUIR'))
-            ->homeUrl(fn () => route('home'))
+            ->homeUrl(fn () => \App\Filament\Informasi\Pages\Beranda::getUrl())
             ->colors([
                 'primary' => Color::Indigo,
             ])

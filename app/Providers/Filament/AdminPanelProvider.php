@@ -39,6 +39,7 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->brandName('Portal Admin')
+            ->homeUrl(fn () => \App\Filament\Informasi\Pages\Beranda::getUrl())
             ->colors([
                 'primary' => Color::Blue,
                 'proposal' => Color::Sky,

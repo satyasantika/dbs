@@ -31,7 +31,7 @@ class NuirValidatorPanelProvider extends PanelProvider
             ->path('nuir-validator')
             ->login(false)
             ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Validator NUIR'))
-            ->homeUrl(fn () => route('home'))
+            ->homeUrl(fn () => \App\Filament\Informasi\Pages\Beranda::getUrl())
             ->colors([
                 'primary' => Color::Teal,
             ])

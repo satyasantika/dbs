@@ -37,7 +37,7 @@ class DosenPanelProvider extends PanelProvider
             ->path('home')
             ->login(false)
             ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Dosen'))
-            ->homeUrl(fn () => route('home'))
+            ->homeUrl(fn () => \App\Filament\Informasi\Pages\Beranda::getUrl())
             ->colors([
                 'primary' => Color::Blue,
             ])

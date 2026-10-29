@@ -38,7 +38,7 @@ class MahasiswaPanelProvider extends PanelProvider
             ->path('mahasiswa')
             ->login(false)
             ->brandName(fn () => FilamentBrand::withHomeIcon('Portal Mahasiswa'))
-            ->homeUrl(fn () => route('home'))
+            ->homeUrl(fn () => \App\Filament\Informasi\Pages\Beranda::getUrl())
             ->colors([
                 'primary' => Color::Emerald,
             ])

@@ -39,7 +39,7 @@ class DbsPanelProvider extends PanelProvider
             ->path('dbs')
             ->login(false)
             ->brandName(fn () => FilamentBrand::withHomeIcon('Portal DBS'))
-            ->homeUrl(fn () => route('home'))
+            ->homeUrl(fn () => \App\Filament\Informasi\Pages\Beranda::getUrl())
             ->colors([
                 'primary' => Color::Blue,
             ])
