@@ -139,8 +139,7 @@
                             . ' pada ' . ($record->exam_date?->isoFormat('dddd, D MMMM Y') ?? '')
                             . " agar mahasiswa tersebut dapat segera mencetak lembar revisinya\n\n"
                             . "silakan akses:\n\n"
-                            . route('scoring.edit', ['scoring' => $score]) . "\n\n"
-                            . '(jika eror saat buka link di handphone, pastikan awalannya http:// bukan https://)'
+                            . 'https://sintesys.unsil.ac.id'
                         )
                     : null;
             @endphp

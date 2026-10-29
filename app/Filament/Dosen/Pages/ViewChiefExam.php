@@ -146,7 +146,6 @@ class ViewChiefExam extends Page implements HasTable
         $studentName = $record->registration?->student?->name ?? '-';
         $examTypeName = $record->registration?->examtype?->name ?? '-';
         $examDate = $record->registration?->exam_date?->isoFormat('dddd, D MMMM Y') ?? '-';
-        $scoringUrl = url(route('scoring.edit', $record->id, absolute: false));
 
         $message = implode("\n", [
             'Yth. Penguji '.$studentName.',',
@@ -155,9 +154,7 @@ class ViewChiefExam extends Page implements HasTable
             '',
             'Silakan akses:',
             '',
-            $scoringUrl,
-            '',
-            '(jika eror saat buka link di handphone, pastikan awalannya http:// bukan https://)',
+            'https://sintesys.unsil.ac.id',
         ]);
 
         return 'https://api.whatsapp.com/send/?phone=62'.$phone.'&text='.rawurlencode($message);
