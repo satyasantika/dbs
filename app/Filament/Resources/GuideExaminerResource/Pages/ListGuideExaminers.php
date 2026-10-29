@@ -37,6 +37,11 @@ class ListGuideExaminers extends ListRecords
                 ->icon('heroicon-o-bars-arrow-down')
                 ->color('gray')
                 ->button(),
+            Actions\Action::make('importGuideExaminers')
+                ->label('Import Massal (Copy-Paste)')
+                ->icon('heroicon-o-arrow-up-tray')
+                ->color('gray')
+                ->url(GuideExaminerResource::getUrl('import')),
             Actions\CreateAction::make(),
         ];
     }

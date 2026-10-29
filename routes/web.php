@@ -150,6 +150,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/setting/users/paste-import-check-duplicates', [App\Http\Controllers\Setting\UserImportController::class, 'pasteImportCheckDuplicates'])->name('users.paste-import-check-duplicates');
     Route::post('/setting/users/paste-import-phones', [App\Http\Controllers\Setting\UserImportController::class, 'pasteImportPhones'])->name('users.paste-import-phones');
     Route::post('/setting/users/paste-import-phones-check', [App\Http\Controllers\Setting\UserImportController::class, 'pasteImportPhonesCheck'])->name('users.paste-import-phones-check');
+    Route::post('/setting/guideexaminers/paste-import-check', [App\Http\Controllers\Setting\GuideExaminerImportController::class, 'pasteImportCheck'])->name('guideexaminers.paste-import-check');
+    Route::post('/setting/guideexaminers/paste-import', [App\Http\Controllers\Setting\GuideExaminerImportController::class, 'pasteImport'])->name('guideexaminers.paste-import');
     Route::get('datatable/{id}', function(App\DataTables\ExamRegistrationsDataTable $dataTable, $id){
         return $dataTable->with('id', $id)
         ->render('layouts.setting');

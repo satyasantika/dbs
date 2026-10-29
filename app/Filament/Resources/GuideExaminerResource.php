@@ -489,6 +489,7 @@ class GuideExaminerResource extends Resource
             'index' => Pages\ListGuideExaminers::route('/'),
             'create' => Pages\CreateGuideExaminer::route('/create'),
             'edit' => Pages\EditGuideExaminer::route('/{record}/edit'),
+            'import' => Pages\ImportGuideExaminers::route('/import'),
         ];
     }
 }
