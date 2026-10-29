@@ -364,7 +364,7 @@ class Beranda extends Page implements HasTable
         // (closure di bawah, tempat graduationStatsCache biasanya diisi,
         // tidak ikut jalan saat cache HIT).
         $cached = Cache::remember('beranda.rekap', now()->addMinutes(5), function () {
-            $angkatans = GuideExaminer::where('year_generation', '>=', 2019)
+            $angkatans = GuideExaminer::where('year_generation', '>=', 2020)
                 ->distinct()
                 ->orderBy('year_generation')
                 ->pluck('year_generation');
