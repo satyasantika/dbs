@@ -74,6 +74,11 @@ class AppServiceProvider extends ServiceProvider
         );
 
         FilamentView::registerRenderHook(
+            PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+            fn (): \Illuminate\Contracts\View\View => view('auth.tombol-google'),
+        );
+
+        FilamentView::registerRenderHook(
             PanelsRenderHook::SCRIPTS_AFTER,
             fn (): \Illuminate\Contracts\View\View => view('filament.shared.adaptive-grid-script'),
         );

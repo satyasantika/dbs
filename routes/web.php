@@ -191,3 +191,8 @@ Route::get('/pilih-peran', function () {
 })->middleware('auth')->name('role.gate');
 
 Route::impersonate();
+
+Route::prefix('auth/google')->middleware('throttle:google-login')->group(function () {
+    Route::get('redirect', [App\Http\Controllers\Auth\GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+    Route::get('callback', [App\Http\Controllers\Auth\GoogleAuthController::class, 'callback'])->name('auth.google.callback');
+});

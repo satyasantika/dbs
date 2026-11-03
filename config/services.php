@@ -31,6 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', '/auth/google/callback'),
+        'aktif' => (bool) env('GOOGLE_LOGIN_ENABLED', false),
+    ],
+
     'sintesys' => [
         'url' => env('SINTESYS_URL', 'https://api-sintesys.unsil.io/api/akademik/tugas_akhir'),
         'kode_prodi' => env('SINTESYS_KODE_PRODI', '2151'),
