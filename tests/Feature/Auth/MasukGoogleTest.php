@@ -129,8 +129,7 @@ class MasukGoogleTest extends TestCase
 
         $u = User::firstWhere('email', 'baru@gmail.com');
         $this->assertNotNull($u);
-        $this->assertNotSame('baru', $u->username);
-        $this->assertStringStartsWith('baru', $u->username);
+        $this->assertSame('baru-2', $u->username);
         $this->assertSame(2, User::count());
     }
 
@@ -183,6 +182,10 @@ class MasukGoogleTest extends TestCase
             ->assertRedirect(url('/halaman-x'));
 
         $this->withSession(['google_asal' => 'https://evil.example/'])
+            ->get(route('auth.google.callback', ['error' => 'access_denied']))
+            ->assertRedirect(route('login'));
+
+        $this->withSession(['google_asal' => rtrim(url('/'), '/').'.evil.example/'])
             ->get(route('auth.google.callback', ['error' => 'access_denied']))
             ->assertRedirect(route('login'));
     }
