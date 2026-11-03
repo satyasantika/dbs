@@ -24,7 +24,7 @@ class GoogleAuthController extends Controller
             return redirect()->to($this->tujuan(Auth::user()) ?? route('login'));
         }
 
-        session(['google_asal' => $request->query('asal')]);
+        session(['google_asal' => is_string($request->query('asal')) ? $request->query('asal') : null]);
 
         return Socialite::driver('google')->scopes(['openid', 'email', 'profile'])->redirect();
     }

@@ -81,6 +81,13 @@ class MasukGoogleTest extends TestCase
         $this->assertStringContainsString('openid', urldecode($q['scope']));
     }
 
+    public function test_asal_bukan_string_diabaikan_tanpa_galat(): void
+    {
+        $lokasi = $this->get(route('auth.google.redirect', ['asal' => ['x']]))->assertRedirect()->headers->get('Location');
+
+        $this->assertStringStartsWith('https://accounts.google.com/', $lokasi);
+    }
+
     public function test_memasukkan_akun_yang_sudah_ada_dan_menautkan_google_id(): void
     {
         $user = $this->penggunaDosen();
