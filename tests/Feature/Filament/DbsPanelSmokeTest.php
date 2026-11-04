@@ -155,6 +155,7 @@ class DbsPanelSmokeTest extends TestCase
 
         $this->assertFalse($panel->hasTopNavigation());
         $this->assertSame('Portal Admin', $panel->getBrandName());
-        $this->assertNull($panel->getHomeUrl());
+        // Logo sidebar diarahkan ke beranda publik (commit 6b5a53f).
+        $this->assertSame(url('/informasi/beranda'), $panel->getHomeUrl());
     }
 }

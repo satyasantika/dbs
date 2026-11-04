@@ -8,6 +8,8 @@ use App\Filament\Dosen\Pages\GuideSupervision;
 use App\Filament\Dosen\Pages\Scoring;
 use App\Filament\Dosen\Pages\UnscoredScoring;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -22,6 +24,8 @@ use Tests\TestCase;
  */
 class DosenPanelSmokeTest extends TestCase
 {
+    use RefreshDatabase;
+
     private User $dosen;
 
     private User $dosenWithActive;
@@ -30,25 +34,12 @@ class DosenPanelSmokeTest extends TestCase
     {
         parent::setUp();
 
-        $dosen = User::role('dosen')->first();
+        $this->seed(PermissionSeeder::class);
 
-        if (! $dosen) {
-            $this->markTestSkipped('Tidak ada user dengan role dosen di database.');
-        }
-
-        $this->dosen = $dosen;
+        $this->dosen = User::factory()->create()->assignRole('dosen');
 
         // Untuk page yang membutuhkan permission 'active' (GuideSupervision, GraduationEvidence)
-        $dosenWithActive = User::role('dosen')
-            ->whereHas('permissions', fn ($q) => $q->where('name', 'active'))
-            ->first();
-
-        // Fallback: dosen yang dapat permission 'active' via rolenya
-        if (! $dosenWithActive) {
-            $dosenWithActive = User::role('dosen')->get()->first(
-                fn (User $u) => $u->can('active')
-            );
-        }
+        $dosenWithActive = $this->dosen->can('active') ? $this->dosen : null;
 
         $this->dosenWithActive = $dosenWithActive ?? $this->dosen;
     }
@@ -158,11 +149,7 @@ class DosenPanelSmokeTest extends TestCase
 
     public function test_admin_cannot_access_dosen_panel(): void
     {
-        $admin = User::role('admin')->first();
-
-        if (! $admin) {
-            $this->markTestSkipped('Tidak ada user admin di database.');
-        }
+        $admin = User::factory()->create()->assignRole('admin');
 
         $this->actingAs($admin)
             ->get(UnscoredScoring::getUrl())

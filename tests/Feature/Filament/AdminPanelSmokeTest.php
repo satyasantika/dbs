@@ -7,6 +7,8 @@ use App\Filament\Resources\GuideExaminerResource;
 use App\Filament\Resources\RoleResource;
 use App\Filament\Resources\UserResource;
 use App\Models\User;
+use Database\Seeders\PermissionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
@@ -17,19 +19,16 @@ use Tests\TestCase;
  */
 class AdminPanelSmokeTest extends TestCase
 {
+    use RefreshDatabase;
+
     private User $admin;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $admin = User::role('admin')->first();
-
-        if (! $admin) {
-            $this->markTestSkipped('Tidak ada user dengan role admin di database.');
-        }
-
-        $this->admin = $admin;
+        $this->seed(PermissionSeeder::class);
+        $this->admin = User::factory()->create()->assignRole('admin');
     }
 
     // ----------------------------------------------------------------
@@ -56,11 +55,7 @@ class AdminPanelSmokeTest extends TestCase
     public function test_users_edit_accessible(): void
     {
         // Menggantikan GET /setting/users/{id}/edit
-        $user = User::where('id', '!=', $this->admin->id)->first();
-
-        if (! $user) {
-            $this->markTestSkipped('Tidak ada user lain untuk diedit.');
-        }
+        $user = User::factory()->create();
 
         $this->actingAs($this->admin)
             ->get(UserResource::getUrl('edit', ['record' => $user]))
@@ -90,11 +85,7 @@ class AdminPanelSmokeTest extends TestCase
     public function test_roles_edit_has_permission_assignment(): void
     {
         // Menggantikan: edit role + setting/rolepermissions (assign permission ke role)
-        $role = \App\Models\Role::where('name', '!=', 'admin')->first();
-
-        if (! $role) {
-            $this->markTestSkipped('Tidak ada role non-admin untuk diedit.');
-        }
+        $role = \App\Models\Role::where('name', '!=', 'admin')->firstOrFail();
 
         $this->actingAs($this->admin)
             ->get(RoleResource::getUrl('edit', ['record' => $role]))
@@ -153,11 +144,7 @@ class AdminPanelSmokeTest extends TestCase
 
     public function test_dosen_cannot_access_admin_panel(): void
     {
-        $dosen = User::role('dosen')->first();
-
-        if (! $dosen) {
-            $this->markTestSkipped('Tidak ada user dosen di database.');
-        }
+        $dosen = User::factory()->create()->assignRole('dosen');
 
         $this->actingAs($dosen)
             ->get(UserResource::getUrl('index'))
