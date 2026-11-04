@@ -230,6 +230,8 @@
                     Masuk &rarr;
                 </button>
             </form>
+
+            @include('auth.tombol-google')
         </div>
 
         <a href="{{ route('welcome') }}" class="back-link">
