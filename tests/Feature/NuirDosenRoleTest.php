@@ -128,9 +128,17 @@ class NuirDosenRoleTest extends TestCase
             ->assertRedirect()
             ->assertSessionHas('success');
 
+        // Sejak bd03610 pembatalan tidak menghapus baris, melainkan membaliknya
+        // menjadi approved=false agar elemen terbuka kembali untuk ditinjau.
         $this->assertDatabaseMissing('nuir_content_reviews', [
             'user_id' => $this->dosenP1->id,
             'field' => NuirContentReview::FIELD_NOVELTY,
+            'approved' => true,
+        ]);
+        $this->assertDatabaseHas('nuir_content_reviews', [
+            'user_id' => $this->dosenP1->id,
+            'field' => NuirContentReview::FIELD_NOVELTY,
+            'approved' => false,
         ]);
     }
 
@@ -215,8 +223,10 @@ class NuirDosenRoleTest extends TestCase
         $this->approveNuiField($this->dosenP2, $this->proposal, 'urgency');
         $this->approveNuiField($this->dosenP2, $this->proposal, 'impact');
 
+        // Sejak c2184aa, permintaan revisi P2 pada suatu elemen turut membatalkan
+        // persetujuan P1 pada elemen yang sama, sehingga kursi P1 kembali pending.
         $proposal = $this->proposal->fresh();
-        $this->assertEquals('accepted', $proposal->guide1_status);
+        $this->assertEquals('pending', $proposal->guide1_status);
         $this->assertEquals('pending', $proposal->guide2_status);
         $this->assertFalse($proposal->final);
     }
