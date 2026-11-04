@@ -91,9 +91,11 @@ class MasukGoogleTest extends TestCase
     public function test_memasukkan_akun_yang_sudah_ada_dan_menautkan_google_id(): void
     {
         $user = $this->penggunaDosen();
+        $hashAwal = $user->password;
         $this->googleSebagai('budi@unsil.ac.id');
 
         $this->get(route('auth.google.callback'))->assertRedirect(route('home'));
+        $this->assertSame($hashAwal, $user->refresh()->password);
 
         $this->assertAuthenticatedAs($user);
         $this->assertSame('g-'.md5('budi@unsil.ac.id'), $user->refresh()->google_id);
@@ -206,11 +208,56 @@ class MasukGoogleTest extends TestCase
             ->assertRedirect(route('home'));
     }
 
-    public function test_membatasi_10_permintaan_per_menit_per_ip(): void
+    public function test_redirect_uri_kosong_memakai_bawaan(): void
+    {
+        // GOOGLE_REDIRECT_URI= kosong di .env membuat env() mengembalikan '' (bukan null).
+        $awal = $_ENV['GOOGLE_REDIRECT_URI'] ?? null;
+        $_ENV['GOOGLE_REDIRECT_URI'] = '';
+        $_SERVER['GOOGLE_REDIRECT_URI'] = '';
+        putenv('GOOGLE_REDIRECT_URI=');
+
+        try {
+            $konfigurasi = require config_path('services.php');
+        } finally {
+            if ($awal === null) {
+                unset($_ENV['GOOGLE_REDIRECT_URI'], $_SERVER['GOOGLE_REDIRECT_URI']);
+                putenv('GOOGLE_REDIRECT_URI');
+            } else {
+                $_ENV['GOOGLE_REDIRECT_URI'] = $_SERVER['GOOGLE_REDIRECT_URI'] = $awal;
+                putenv('GOOGLE_REDIRECT_URI='.$awal);
+            }
+        }
+
+        $this->assertSame('/auth/google/callback', $konfigurasi['google']['redirect']);
+        config(['services.google.redirect' => $konfigurasi['google']['redirect']]);
+
+        $lokasi = $this->get(route('auth.google.redirect'))->assertRedirect()->headers->get('Location');
+
+        parse_str(parse_url($lokasi, PHP_URL_QUERY), $q);
+        $this->assertSame(route('auth.google.callback'), $q['redirect_uri']);
+    }
+
+    public function test_menautkan_akun_swa_daftar_tanpa_peran_memutar_kata_sandi(): void
+    {
+        $user = User::factory()->unverified()->create([
+            'email' => 'korban@unsil.ac.id',
+            'password' => \Illuminate\Support\Facades\Hash::make('sandi-penyerang'),
+        ]);
+        $this->googleSebagai('korban@unsil.ac.id');
+
+        $this->get(route('auth.google.callback'));
+
+        $user->refresh();
+        $this->assertFalse(\Illuminate\Support\Facades\Hash::check('sandi-penyerang', $user->password));
+        $this->assertSame('g-'.md5('korban@unsil.ac.id'), $user->google_id);
+        $this->assertNotNull($user->email_verified_at);
+    }
+
+    public function test_membatasi_60_permintaan_per_menit_per_ip(): void
     {
         $this->googleSebagai('x@gmail.com', ['email_verified' => false]);
 
-        for ($i = 0; $i < 10; $i++) {
+        for ($i = 0; $i < 60; $i++) {
             $this->get(route('auth.google.callback'))->assertRedirect();
         }
 

@@ -39,7 +39,19 @@ class MasukDenganGoogle
         }
 
         if ($user->google_id === null) {
-            $user->forceFill(['google_id' => $google->getId()])->save();
+            $tautan = ['google_id' => $google->getId()];
+
+            // Cegah pra-klaim: akun swa-daftar tanpa verifikasi surel dan tanpa peran
+            // bisa dibuat penyerang dengan surel korban; putar kredensialnya.
+            if ($user->email_verified_at === null && $user->roles()->doesntExist()) {
+                $tautan += [
+                    'password' => Hash::make(Str::random(40)),
+                    'remember_token' => null,
+                    'email_verified_at' => now(),
+                ];
+            }
+
+            $user->forceFill($tautan)->save();
         }
 
         return $user;

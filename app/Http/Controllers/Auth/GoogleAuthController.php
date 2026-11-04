@@ -61,7 +61,7 @@ class GoogleAuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->to($tujuan);
+        return redirect()->intended($tujuan);
     }
 
     private function tujuan(User $user): ?string
