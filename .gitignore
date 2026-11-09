@@ -19,3 +19,5 @@ yarn-error.log
 /.vscode
 NUL
 /.claude
+/public/css/filament
+/public/js/filament
