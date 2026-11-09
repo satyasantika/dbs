@@ -28,7 +28,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 60s
           command_timeout: 25m
-          script_stop: true
           script: |
             flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
 
@@ -41,6 +40,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 60s
           command_timeout: 25m
-          script_stop: true
           script: |
             flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
