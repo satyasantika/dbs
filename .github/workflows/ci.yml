@@ -77,6 +77,19 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
+      # Halaman login dan role-gate memakai @vite; tanpa public/build/manifest.json
+      # responsnya 500. Di lokal folder itu sudah ada, di runner harus dibangun dulu.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Build aset untuk tes
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+
       # UTANG GAYA: 139 berkas lama belum sesuai Pint (kebanyakan no_unused_imports,
       # ordered_imports). Selama belum dirapikan dalam satu commit khusus, Pint hanya
       # memberi informasi dan tidak menggagalkan rilis.
