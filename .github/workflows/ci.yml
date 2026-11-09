@@ -152,6 +152,11 @@ jobs:
           script: |
             flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
 
+      # Beri waktu pulih bila kegagalan berasal dari gangguan sesaat (jaringan atau GitHub).
+      - name: Jeda sebelum percobaan 2
+        if: steps.rilis.outcome == 'failure'
+        run: sleep 60
+
       - name: Rilis via SSH (percobaan 2)
         if: steps.rilis.outcome == 'failure'
         uses: appleboy/ssh-action@v1.2.5
