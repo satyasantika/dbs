@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Push ke main tidak boleh saling menyalip (job deploy menjalankan composer, build aset,
+# dan migrasi di server). PR boleh dibatalkan bila ada push baru.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      mysql:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          # phpunit.xml memaksa DB_DATABASE=db_dbs_testing
+          MARIADB_DATABASE: db_dbs_testing
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      APP_ENV: testing
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: db_dbs_testing
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # PHP 8.1 mengikuti composer.json (^8.1) dan runtime produksi (dbs-php).
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo_mysql, mbstring, intl, bcmath, gd, zip, exif
+          coverage: none
+
+      - name: Validate Composer
+        run: composer validate --no-check-publish
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ runner.os }}-php8.1-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-php8.1-
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # UTANG GAYA: 139 berkas lama belum sesuai Pint (kebanyakan no_unused_imports,
+      # ordered_imports). Selama belum dirapikan dalam satu commit khusus, Pint hanya
+      # memberi informasi dan tidak menggagalkan rilis.
+      - name: Pint (informasi)
+        continue-on-error: true
+        run: vendor/bin/pint --test
+
+      - name: Test
+        run: php artisan test
+
+  assets:
+    name: Build aset
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Vite 4 butuh Node >=14.18; Node 20 aman dan dipakai luas.
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+  deploy:
+    name: Deploy ke produksi
+    runs-on: ubuntu-latest
+    needs: [quality, assets]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    # Deploy tidak boleh dibatalkan di tengah jalan (composer install, build aset, migrasi).
+    concurrency:
+      group: deploy-dbs
+      cancel-in-progress: false
+
+    steps:
+      # Gagal di sini belum memerahkan job; percobaan kedua di bawah yang menentukan.
+      # Penyebab umum: "dial tcp :22: i/o timeout" dari runner ke server (server sehat).
+      # flock -w 900: bila percobaan pertama sempat jalan di server, percobaan ini
+      # menunggu sampai selesai lalu menjalankan ulang. ~/docker-apps/deploy.sh aman
+      # diulang, dan kunci mencegah dua rilis berbarengan karena skripnya tanpa kunci.
+      - name: Rilis via SSH
+        id: rilis
+        continue-on-error: true
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 60s
+          command_timeout: 25m
+          script: |
+            flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
+
+      - name: Rilis via SSH (percobaan 2)
+        if: steps.rilis.outcome == 'failure'
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 60s
+          command_timeout: 25m
+          script: |
+            flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
