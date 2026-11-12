@@ -123,48 +123,21 @@ jobs:
         run: npm run build
 
   deploy:
-    name: Deploy ke produksi
-    runs-on: ubuntu-latest
+    name: Deploy ke produksi (cermat)
+    # Runner self-hosted di server cermat (hanya koneksi keluar ke GitHub, tanpa SSH masuk).
+    # Job ini hanya jalan untuk push ke main; PR (termasuk dari fork) tidak pernah sampai ke sini.
+    runs-on: [self-hosted, cermat]
     needs: [quality, assets]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 30
 
-    # Deploy tidak boleh dibatalkan di tengah jalan (composer install, build aset, migrasi).
+    # Deploy tidak boleh dibatalkan di tengah jalan (build image, migrasi).
     concurrency:
       group: deploy-dbs
       cancel-in-progress: false
 
     steps:
-      # Gagal di sini belum memerahkan job; percobaan kedua di bawah yang menentukan.
-      # Penyebab umum: "dial tcp :22: i/o timeout" dari runner ke server (server sehat).
-      # flock -w 900: bila percobaan pertama sempat jalan di server, percobaan ini
-      # menunggu sampai selesai lalu menjalankan ulang. ~/docker-apps/deploy.sh aman
-      # diulang, dan kunci mencegah dua rilis berbarengan karena skripnya tanpa kunci.
-      - name: Rilis via SSH
-        id: rilis
-        continue-on-error: true
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
-          command_timeout: 25m
-          script: |
-            flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
-
-      # Beri waktu pulih bila kegagalan berasal dari gangguan sesaat (jaringan atau GitHub).
-      - name: Jeda sebelum percobaan 2
-        if: steps.rilis.outcome == 'failure'
-        run: sleep 60
-
-      - name: Rilis via SSH (percobaan 2)
-        if: steps.rilis.outcome == 'failure'
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
-          command_timeout: 25m
-          script: |
-            flock -w 900 /tmp/deploy-dbs.lock ~/docker-apps/deploy.sh dbs
+      # ~/docker-apps/deploy.sh (di cermat): git pull --ff-only, build image, up -d, migrate --force.
+      # flock mencegah dua rilis berbarengan; skripnya aman diulang.
+      - name: Rilis di cermat
+        run: flock -w 900 /tmp/deploy-dbs.lock "$HOME/docker-apps/deploy.sh" dbs
